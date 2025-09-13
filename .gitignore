@@ -32,7 +32,9 @@ yarn-error.log*
 
 # env files (ignore all by default)
 .env
+.env.local
 .env.*
+
 !.env.example   # keep only safe template
 
 # vercel
