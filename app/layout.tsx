@@ -5,8 +5,6 @@ import { Inter } from 'next/font/google'
 import { CustomThemeProvider } from '@/components/ThemeContext'
 import { Providers } from '@/components/Providers'
 import { LayoutWrapper } from '@/components/LayoutWrapper'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -51,9 +49,7 @@ export default function RootLayout({
         <CustomThemeProvider>
           <Providers>
             <LayoutWrapper>
-              <Header />
               {children}
-              <Footer />
             </LayoutWrapper>
           </Providers>
         </CustomThemeProvider>

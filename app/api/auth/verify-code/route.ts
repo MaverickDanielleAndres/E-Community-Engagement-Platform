@@ -1,3 +1,5 @@
+//@/app/api/auth/verify-code/route.ts
+
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
@@ -35,7 +37,7 @@ export async function POST(req: Request) {
     
     // Check if code is expired
     const now = new Date()
-    const expires = new Date(tempUserData.verification_code_expires_at)
+    const expires = new Date(tempUserData.expires_at)
     
     if (expires < now) {
       // Delete expired temp user

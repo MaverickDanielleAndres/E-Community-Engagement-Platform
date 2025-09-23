@@ -1,0 +1,288 @@
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE public.accounts (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  type text NOT NULL,
+  provider text NOT NULL,
+  provider_account_id text NOT NULL,
+  refresh_token text,
+  access_token text,
+  expires_at bigint,
+  token_type text,
+  scope text,
+  id_token text,
+  session_state text,
+  refresh_token_expires_in bigint,
+  CONSTRAINT accounts_pkey PRIMARY KEY (id),
+  CONSTRAINT accounts_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.announcements (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  community_id uuid NOT NULL,
+  title text NOT NULL,
+  body text,
+  tldr text,
+  created_by uuid,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT announcements_pkey PRIMARY KEY (id),
+  CONSTRAINT announcements_community_id_fkey FOREIGN KEY (community_id) REFERENCES public.communities(id),
+  CONSTRAINT announcements_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.users(id)
+);
+CREATE TABLE public.anomaly_flags (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  community_id uuid NOT NULL,
+  entity_type text NOT NULL,
+  entity_id uuid NOT NULL,
+  anomaly_type text NOT NULL,
+  severity text NOT NULL CHECK (severity = ANY (ARRAY['low'::text, 'medium'::text, 'high'::text])),
+  details jsonb,
+  flagged_at timestamp with time zone NOT NULL DEFAULT now(),
+  resolved_at timestamp with time zone,
+  CONSTRAINT anomaly_flags_pkey PRIMARY KEY (id),
+  CONSTRAINT anomaly_flags_community_id_fkey FOREIGN KEY (community_id) REFERENCES public.communities(id)
+);
+CREATE TABLE public.audit_log (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  community_id uuid NOT NULL,
+  user_id uuid,
+  action_type text NOT NULL,
+  entity_type text NOT NULL,
+  entity_id uuid,
+  details jsonb,
+  ip_address inet,
+  user_agent text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT audit_log_pkey PRIMARY KEY (id),
+  CONSTRAINT audit_log_community_id_fkey FOREIGN KEY (community_id) REFERENCES public.communities(id),
+  CONSTRAINT audit_log_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.chat_messages (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  session_id uuid NOT NULL,
+  role text NOT NULL CHECK (role = ANY (ARRAY['user'::text, 'assistant'::text])),
+  content text NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT chat_messages_pkey PRIMARY KEY (id),
+  CONSTRAINT chat_messages_session_id_fkey FOREIGN KEY (session_id) REFERENCES public.chat_sessions(id)
+);
+CREATE TABLE public.chat_sessions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid,
+  session_token text NOT NULL UNIQUE,
+  community_id uuid,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  last_activity timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT chat_sessions_pkey PRIMARY KEY (id),
+  CONSTRAINT chat_sessions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
+  CONSTRAINT chat_sessions_community_id_fkey FOREIGN KEY (community_id) REFERENCES public.communities(id)
+);
+CREATE TABLE public.communities (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  code text NOT NULL UNIQUE,
+  logo_url text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT communities_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.community_invites (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  community_id uuid NOT NULL,
+  email text NOT NULL,
+  role USER-DEFINED NOT NULL DEFAULT 'Resident'::member_role,
+  code text NOT NULL UNIQUE,
+  expires_at timestamp with time zone NOT NULL,
+  created_by uuid,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT community_invites_pkey PRIMARY KEY (id),
+  CONSTRAINT community_invites_community_id_fkey FOREIGN KEY (community_id) REFERENCES public.communities(id),
+  CONSTRAINT community_invites_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.users(id)
+);
+CREATE TABLE public.community_members (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  community_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  role USER-DEFINED NOT NULL DEFAULT 'Resident'::member_role,
+  joined_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT community_members_pkey PRIMARY KEY (id),
+  CONSTRAINT community_members_community_id_fkey FOREIGN KEY (community_id) REFERENCES public.communities(id),
+  CONSTRAINT community_members_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
+  CONSTRAINT fk_community_members_user FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.complaints (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  community_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  title text NOT NULL,
+  description text,
+  category USER-DEFINED NOT NULL DEFAULT 'other'::complaint_category,
+  status USER-DEFINED NOT NULL DEFAULT 'pending'::complaint_status,
+  priority integer NOT NULL DEFAULT 0,
+  sentiment numeric,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT complaints_pkey PRIMARY KEY (id),
+  CONSTRAINT complaints_community_id_fkey FOREIGN KEY (community_id) REFERENCES public.communities(id),
+  CONSTRAINT complaints_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.email_verifications (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  email text NOT NULL UNIQUE,
+  otp text NOT NULL,
+  expires_at timestamp with time zone NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT email_verifications_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.event_rsvps (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  event_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  status text NOT NULL CHECK (status = ANY (ARRAY['yes'::text, 'no'::text, 'maybe'::text])),
+  responded_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT event_rsvps_pkey PRIMARY KEY (id),
+  CONSTRAINT event_rsvps_event_id_fkey FOREIGN KEY (event_id) REFERENCES public.events(id),
+  CONSTRAINT event_rsvps_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.events (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  community_id uuid NOT NULL,
+  title text NOT NULL,
+  description text,
+  starts_at timestamp with time zone NOT NULL,
+  ends_at timestamp with time zone,
+  location text,
+  created_by uuid,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT events_pkey PRIMARY KEY (id),
+  CONSTRAINT events_community_id_fkey FOREIGN KEY (community_id) REFERENCES public.communities(id),
+  CONSTRAINT events_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.users(id)
+);
+CREATE TABLE public.feedback (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  community_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  rating integer NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  comment text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT feedback_pkey PRIMARY KEY (id),
+  CONSTRAINT feedback_community_id_fkey FOREIGN KEY (community_id) REFERENCES public.communities(id),
+  CONSTRAINT feedback_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.notifications (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  type text NOT NULL,
+  title text NOT NULL,
+  body text,
+  link_url text,
+  is_read boolean NOT NULL DEFAULT false,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT notifications_pkey PRIMARY KEY (id),
+  CONSTRAINT notifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.otp_attempts (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  email text NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT otp_attempts_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.poll_options (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  poll_id uuid NOT NULL,
+  option_text text NOT NULL,
+  ord integer NOT NULL DEFAULT 0,
+  CONSTRAINT poll_options_pkey PRIMARY KEY (id),
+  CONSTRAINT poll_options_poll_id_fkey FOREIGN KEY (poll_id) REFERENCES public.polls(id)
+);
+CREATE TABLE public.poll_votes (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  poll_id uuid NOT NULL,
+  option_id uuid NOT NULL,
+  voter_id uuid NOT NULL,
+  voted_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT poll_votes_pkey PRIMARY KEY (id),
+  CONSTRAINT poll_votes_poll_id_fkey FOREIGN KEY (poll_id) REFERENCES public.polls(id),
+  CONSTRAINT poll_votes_option_id_fkey FOREIGN KEY (option_id) REFERENCES public.poll_options(id),
+  CONSTRAINT poll_votes_voter_id_fkey FOREIGN KEY (voter_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.polls (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  community_id uuid NOT NULL,
+  title text NOT NULL,
+  description text,
+  deadline timestamp with time zone,
+  created_by uuid,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  is_anonymous boolean NOT NULL DEFAULT false,
+  is_multi_select boolean NOT NULL DEFAULT false,
+  CONSTRAINT polls_pkey PRIMARY KEY (id),
+  CONSTRAINT polls_community_id_fkey FOREIGN KEY (community_id) REFERENCES public.communities(id),
+  CONSTRAINT polls_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.users(id)
+);
+CREATE TABLE public.sentiment_cache (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  text_hash text NOT NULL UNIQUE,
+  sentiment_score numeric,
+  confidence numeric,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT sentiment_cache_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.sessions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  session_token text NOT NULL UNIQUE,
+  user_id uuid NOT NULL,
+  expires timestamp with time zone NOT NULL,
+  CONSTRAINT sessions_pkey PRIMARY KEY (id),
+  CONSTRAINT sessions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.temp_users (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  email text NOT NULL UNIQUE,
+  name text NOT NULL,
+  hashed_password text NOT NULL,
+  verification_code text NOT NULL,
+  expires_at timestamp with time zone NOT NULL,
+  community_code text,
+  role text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT temp_users_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.topic_cache (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  text_hash text NOT NULL UNIQUE,
+  predicted_category text NOT NULL,
+  confidence numeric,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT topic_cache_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.users (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text,
+  email text NOT NULL UNIQUE,
+  email_verified timestamp with time zone,
+  image text,
+  hashed_password text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  role text DEFAULT 'Guest'::text,
+  CONSTRAINT users_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.verification_attempts (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  email text NOT NULL,
+  attempt_count integer NOT NULL DEFAULT 1,
+  last_attempt_at timestamp with time zone NOT NULL DEFAULT now(),
+  locked_until timestamp with time zone,
+  CONSTRAINT verification_attempts_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.verification_tokens (
+  identifier text NOT NULL,
+  token text NOT NULL,
+  expires timestamp with time zone NOT NULL,
+  CONSTRAINT verification_tokens_pkey PRIMARY KEY (identifier, token)
+);

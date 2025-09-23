@@ -1,7 +1,7 @@
 // @/app/api/auth/signup/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { EmailVerificationService } from '@/lib/email-verification'
+import { EmailVerificationService } from '@/lib/email-verification-dev'
 import bcrypt from 'bcryptjs'
 import { createClient } from '@supabase/supabase-js'
 
@@ -59,28 +59,55 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Generate verification code and expiry
+    const verificationCode = EmailVerificationService.generateCode()
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000) // 15 minutes
+
+    // Store temporary user data (don't create user yet - wait for verification)
+    // You might want to use a proper temporary storage like Redis in production
+    const tempUserData = {
+      name: validatedData.fullName,
+      email: validatedData.email,
+      hashed_password: await bcrypt.hash(validatedData.password, 12),
+      community_code: validatedData.communityCode || null,
+      role: validatedData.role,
+      verification_code: verificationCode,
+      expires_at: expiresAt.toISOString()
+    }
+
+    // Insert temp user data into temp_users table
+    const { error: tempUserError } = await supabase
+      .from('temp_users')
+      .insert([tempUserData])
+
+    if (tempUserError) {
+      console.error('Failed to store temp user data:', tempUserError)
+      return NextResponse.json({
+        success: false,
+        message: 'Failed to store temporary user data'
+      }, { status: 500 })
+    }
+
     // Send verification email
     const verificationResult = await EmailVerificationService.sendVerificationEmail(validatedData.email)
-    
+
     if (!verificationResult.success) {
+      // Clean up temp user if email failed
+      await supabase
+        .from('temp_users')
+        .delete()
+        .eq('email', validatedData.email)
+
       return NextResponse.json(
         { message: verificationResult.message },
         { status: 429 }
       )
     }
 
-    // Store temporary user data (don't create user yet - wait for verification)
-    // You might want to use a proper temporary storage like Redis in production
-    const tempUserData = {
-      ...validatedData,
-      hashedPassword: await bcrypt.hash(validatedData.password, 12),
-      timestamp: new Date().toISOString()
-    }
-
-    // Store in a temporary collection or cache
     // For now, we'll return success and handle user creation in verification endpoint
     
     return NextResponse.json({
+      success: true,
       message: 'Verification code sent to your email. Please check your inbox.',
       email: validatedData.email
     })

@@ -14,7 +14,7 @@ interface AuthGuardProps {
 
 export function AuthGuard({ 
   children, 
-  redirectTo = '/main/dashboard', 
+  redirectTo = '/', 
   redirectIfAuthenticated = true 
 }: AuthGuardProps) {
   const { data: session, status } = useSession()
@@ -25,7 +25,10 @@ export function AuthGuard({
     if (status === 'authenticated' && session && redirectIfAuthenticated) {
       setShowToast(true)
       setTimeout(() => {
-        router.push(redirectTo)
+        // Only redirect if redirectTo is not empty string
+        if (redirectTo) {
+          router.push(redirectTo)
+        }
       }, 2000)
     }
   }, [session, status, router, redirectTo, redirectIfAuthenticated])

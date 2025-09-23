@@ -26,10 +26,12 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.62.0",
+    "recharts": "^3.2.1",
     "resend": "^2.1.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@babel/preset-react": "^7.27.1",
     "@eslint/eslintrc": "^3",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/postcss": "^4.1.12",

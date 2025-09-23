@@ -1,8 +1,9 @@
-// @/components/LayoutWrapper.tsx
 'use client'
 
-import { ReactNode } from 'react'
 import { usePathname } from 'next/navigation'
+import { ReactNode } from 'react'
+import Header from '@/components/Header'
+import Footer from '@/components/Footer'
 
 interface LayoutWrapperProps {
   children: ReactNode
@@ -10,17 +11,18 @@ interface LayoutWrapperProps {
 
 export function LayoutWrapper({ children }: LayoutWrapperProps) {
   const pathname = usePathname()
-  
-  // You can add global layout logic here
-  // For example, different layouts for different route patterns
-  
-  const isAuthPage = pathname?.startsWith('/auth') || pathname?.startsWith('/login') || pathname?.startsWith('/signup')
-  const isDashboardPage = pathname?.startsWith('/main/dashboard') || pathname?.startsWith('/main')
-  const isHomePage = pathname === '/'
-  
+
+  const isAuthPage = pathname.startsWith('/auth/')
+  const isMainPage = pathname.startsWith('/main/admin') || pathname.startsWith('/main/user') || pathname.startsWith('/main/guest')
+
+  // Hide header/footer on auth pages and main pages (admin, user, guest)
+  const showHeaderFooter = !(isAuthPage || isMainPage)
+
   return (
-    <div className="min-h-screen">
+    <>
+      {showHeaderFooter && <Header />}
       {children}
-    </div>
+      {showHeaderFooter && <Footer />}
+    </>
   )
 }
