@@ -1,16 +1,17 @@
 // @/components/ui/AdminSidebar.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useTheme } from '@/components/ThemeContext'
 import { useSidebar } from '@/components/ui/SidebarContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Bot, BarChart3, Users, MessageSquareWarning,
-  Smile, PlusSquare, ScrollText, Bell, Settings, Menu, X,
+  Smile, PlusSquare, ScrollText, Bell, Settings,
   ChevronLeft, Target
 } from 'lucide-react'
 
@@ -27,11 +28,54 @@ interface NavSection {
 }
 
 export function AdminSidebar() {
-  const { isCollapsed, toggleSidebar } = useSidebar()
-  const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const { isCollapsed, toggleSidebar, isOpen, setIsOpen, setIsCollapsed } = useSidebar()
   const { isDark } = useTheme()
   const { data: session } = useSession()
   const pathname = usePathname()
+
+  // Check if mobile screens
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Force expanded sidebar on mobile/tablet
+  const effectiveIsCollapsed = isMobile ? false : isCollapsed
+
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 1024) // lg breakpoint
+    }
+
+    // Check on mount
+    checkScreenSize()
+
+    // Add resize listener
+    window.addEventListener('resize', checkScreenSize)
+
+    // Cleanup
+    return () => window.removeEventListener('resize', checkScreenSize)
+  }, [])
+
+  // Close sidebar when navigating to a new page on mobile
+  useEffect(() => {
+    if (isMobile && isOpen) {
+      // Close sidebar when pathname changes
+      const handleRouteChange = () => {
+        if (isOpen) {
+          // We'll need to import setIsOpen from the context
+          // For now, we'll use a timeout to close it
+          setTimeout(() => {
+            if (isOpen) {
+              // This will be handled by the navigation link click
+            }
+          }, 100)
+        }
+      }
+
+      // Listen for route changes
+      window.addEventListener('popstate', handleRouteChange)
+
+      return () => window.removeEventListener('popstate', handleRouteChange)
+    }
+  }, [pathname, isMobile, isOpen])
 
   const navigationSections: NavSection[] = [
     {
@@ -65,10 +109,17 @@ export function AdminSidebar() {
     const isActive = pathname === item.href
     const Icon = item.icon
 
+    const handleNavClick = () => {
+      // Close sidebar on mobile when navigation link is clicked
+      if (isMobile && isOpen) {
+        setIsOpen(false)
+      }
+    }
+
     return (
-      <Link href={item.href}>
+      <Link href={item.href} onClick={handleNavClick}>
         <motion.div
-          whileHover={{ x: isCollapsed ? 4 : 2, scale: 1.02 }}
+          whileHover={{ x: effectiveIsCollapsed ? 4 : 2, scale: 1.02 }}
           className={`
             relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 cursor-pointer group
             ${isActive
@@ -87,11 +138,11 @@ export function AdminSidebar() {
           )}
 
           <div className={`flex-shrink-0 ${isActive ? (isDark ? 'text-blue-400' : 'text-blue-600') : ''}`}>
-            <Icon className="w-5 h-5" />
+            <Icon size={20} />
           </div>
 
           <AnimatePresence>
-            {!isCollapsed && (
+            {!effectiveIsCollapsed && (
               <motion.div
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -125,7 +176,7 @@ export function AdminSidebar() {
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
         <AnimatePresence>
-          {!isCollapsed && (
+          {!effectiveIsCollapsed && (
             <motion.div
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
@@ -140,20 +191,29 @@ export function AdminSidebar() {
           )}
         </AnimatePresence>
 
-        <button
-          onClick={toggleSidebar}
-          className={`
-            p-2 rounded-lg transition-all duration-200 hover:scale-110
-            ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-600'}
-          `}
-        >
-          <motion.div
-            animate={{ rotate: isCollapsed ? 180 : 0 }}
-            transition={{ duration: 0.3 }}
+        {/* Toggle button - different behavior for mobile vs desktop */}
+        {!isMobile && (
+          <button
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setIsCollapsed(!isCollapsed)
+            }}
+            className={`
+              p-3 rounded-lg transition-all duration-200 hover:scale-110 z-50 relative
+              ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-600'}
+              border ${isDark ? 'border-slate-600' : 'border-slate-300'}
+            `}
+            title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
-            <ChevronLeft className="w-4 h-4" />
-          </motion.div>
-        </button>
+            <motion.div
+              animate={{ rotate: effectiveIsCollapsed ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </motion.div>
+          </button>
+        )}
       </div>
 
       {/* Navigation */}
@@ -161,7 +221,7 @@ export function AdminSidebar() {
         {navigationSections.map((section, sectionIndex) => (
           <div key={section.title}>
             <AnimatePresence>
-              {!isCollapsed && (
+              {!effectiveIsCollapsed && (
                 <motion.h3
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -182,7 +242,7 @@ export function AdminSidebar() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.3, delay: (sectionIndex * 0.1) + (itemIndex * 0.05) }}
                 >
-                  <NavItemComponent item={item} isCollapsed={isCollapsed} />
+                  <NavItemComponent item={item} isCollapsed={effectiveIsCollapsed} />
                 </motion.div>
               ))}
             </div>
@@ -193,7 +253,7 @@ export function AdminSidebar() {
       {/* Footer */}
       <div className="p-4 border-t border-slate-200 dark:border-slate-700">
         <AnimatePresence>
-          {!isCollapsed && (
+          {!effectiveIsCollapsed && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -217,75 +277,54 @@ export function AdminSidebar() {
     </div>
   )
 
+  // Mobile overlay/backdrop
+  if (isMobile) {
+    return (
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+              onClick={toggleSidebar}
+            />
+
+            {/* Mobile Sidebar Drawer */}
+            <motion.aside
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className={`
+                fixed left-0 top-0 bottom-0 z-50 w-80 lg:hidden
+                ${isDark ? 'bg-slate-900' : 'bg-white'}
+                border-r border-slate-200 dark:border-slate-700
+              `}
+            >
+              {sidebarContent}
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    )
+  }
+
+  // Desktop Sidebar
   return (
-    <>
-      {/* Mobile Menu Button */}
-      <button
-        onClick={() => setIsMobileOpen(true)}
-        className={`
-          fixed top-4 left-4 z-50 p-3 rounded-xl lg:hidden
-          ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-900'}
-          shadow-lg border border-slate-200 dark:border-slate-700
-        `}
-      >
-        <Menu className="w-5 h-5" />
-      </button>
-
-      {/* Mobile Overlay */}
-      <AnimatePresence>
-        {isMobileOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsMobileOpen(false)}
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Mobile Sidebar */}
-      <AnimatePresence>
-        {isMobileOpen && (
-          <motion.aside
-            initial={{ x: -320 }}
-            animate={{ x: 0 }}
-            exit={{ x: -320 }}
-            transition={{ type: "tween", duration: 0.3 }}
-            className={`
-              fixed left-0 top-0 bottom-0 w-80 z-50 lg:hidden
-              ${isDark ? 'bg-slate-900' : 'bg-white'}
-              border-r border-slate-200 dark:border-slate-700
-            `}
-          >
-            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
-              <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                EComAI
-              </h2>
-              <button
-                onClick={() => setIsMobileOpen(false)}
-                className={`p-2 rounded-lg ${isDark ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            {sidebarContent}
-          </motion.aside>
-        )}
-      </AnimatePresence>
-
-      {/* Desktop Sidebar */}
-      <motion.aside
-        animate={{ width: isCollapsed ? 80 : 280 }}
-        transition={{ duration: 0.3, ease: "easeInOut" }}
-        className={`
-          fixed left-0 top-0 bottom-0 z-30 hidden lg:block
-          ${isDark ? 'bg-slate-900/95' : 'bg-white/95'}
-          backdrop-blur-sm border-r border-slate-200 dark:border-slate-700
-        `}
-      >
-        {sidebarContent}
-      </motion.aside>
-    </>
+    <motion.aside
+      animate={{ width: isCollapsed ? 80 : 280 }}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
+      className={`
+        fixed left-0 top-0 bottom-0 z-30 hidden lg:block
+        ${isDark ? 'bg-slate-900/95' : 'bg-white/95'}
+        backdrop-blur-sm border-r border-slate-200 dark:border-slate-700
+      `}
+    >
+      {sidebarContent}
+    </motion.aside>
   )
 }

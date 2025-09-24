@@ -64,19 +64,9 @@ export default function AdminMembers() {
 
       const membersData = await membersResponse.json()
 
-      // Fetch community info from dashboard (which works in development mode)
-      const dashboardResponse = await fetch('/api/admin/dashboard')
-
-      if (dashboardResponse.ok) {
-        const dashboardData = await dashboardResponse.json()
-
-        // For development, we'll use a mock community code
-        // In production, this should come from a proper community API
-        setCommunityInfo({
-          id: 'community-1',
-          name: 'Community',
-          code: 'ADMIN123' // This should come from a proper community API
-        })
+      // Set community info from the API response
+      if (membersData.community) {
+        setCommunityInfo(membersData.community)
       }
 
       setMembers(membersData.members || [])
