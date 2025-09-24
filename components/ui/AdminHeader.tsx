@@ -5,8 +5,9 @@ import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useTheme } from '@/components/ThemeContext'
+import { useSidebar } from '@/components/ui/SidebarContext'
 import { ThemeToggle } from '@/components/ThemeToggle'
-import { Bell, Search, User, LogOut, Settings, ChevronDown, Mail } from 'lucide-react'
+import { Bell, Search, User, LogOut, Settings, ChevronDown, Mail, Menu } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface Notification {
@@ -24,6 +25,7 @@ export function AdminHeader() {
   const [searchQuery, setSearchQuery] = useState('')
   const { data: session } = useSession()
   const { isDark } = useTheme()
+  const { setIsOpen, toggleSidebar } = useSidebar()
   const router = useRouter()
 
   // Mock notifications - replace with real data
@@ -88,6 +90,20 @@ export function AdminHeader() {
       <div className="flex items-center justify-between px-6 py-4">
         {/* Left Section */}
         <div className="flex items-center space-x-4">
+          {/* Hamburger Menu Button - Mobile/Tablet */}
+          <button
+            onClick={toggleSidebar}
+            className={`
+              p-2 rounded-lg transition-all duration-200 hover:scale-110 lg:hidden
+              ${isDark
+                ? 'hover:bg-slate-800 text-slate-300 hover:text-white'
+                : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
+              }
+            `}
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+
           <div className="hidden lg:block">
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
               Admin Dashboard
