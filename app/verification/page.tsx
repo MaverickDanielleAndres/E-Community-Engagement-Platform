@@ -20,8 +20,7 @@ export default function VerificationPage() {
   const [isResending, setIsResending] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null)
   const [timeLeft, setTimeLeft] = useState(15 * 60) // 15 minutes in seconds
-  const [canResend, setCanResend] = useState(false)
-  const [userData, setUserData] = useState<any>(null)
+  const [canResend, setCanResend] = useState(true) // Start with true, rate limit on server
   
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
   const router = useRouter()
@@ -35,55 +34,18 @@ export default function VerificationPage() {
       return
     }
 
-    // Get user data from sessionStorage (stored during signup)
-    const storedUserData = sessionStorage.getItem('pendingUserData')
-    if (storedUserData) {
-      try {
-        const parsedData = JSON.parse(storedUserData)
-        
-        // Check if data has expired (30 minutes)
-        const expiresAt = new Date(parsedData.expiresAt)
-        const now = new Date()
-        
-        if (expiresAt < now) {
-          sessionStorage.removeItem('pendingUserData')
-          setToast({ message: 'Session expired. Please sign up again.', type: 'error' })
-          setTimeout(() => router.push('/auth/signup'), 3000)
-          return
-        }
-        
-        setUserData(parsedData)
-      } catch (error) {
-        console.error('Failed to parse user data:', error)
-        setToast({ message: 'Invalid session. Please sign up again.', type: 'error' })
-        setTimeout(() => router.push('/auth/signup'), 3000)
-        return
-      }
-    } else {
-      setToast({ message: 'No signup session found. Please sign up first.', type: 'error' })
-      setTimeout(() => router.push('/auth/signup'), 3000)
-      return
-    }
-
     // Start countdown timer
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
-          setCanResend(true)
           return 0
         }
         return prev - 1
       })
     }, 1000)
 
-    // Enable resend after 1 minute initially
-    const resendTimer = setTimeout(() => {
-      setCanResend(true)
-    }, 60000)
-
     return () => {
       clearInterval(timer)
-      clearTimeout(resendTimer)
     }
   }, [email, router])
 
@@ -140,13 +102,14 @@ export default function VerificationPage() {
       return
     }
 
-    if (!userData || !email) {
+    if (!email) {
       setToast({ message: 'Session expired. Please sign up again.', type: 'error' })
       router.push('/auth/signup')
       return
     }
 
     setIsVerifying(true)
+    console.log('Submitting verification with email:', email, 'code:', codeArray.join(''))
 
     try {
       const response = await fetch('/api/auth/verify-email', {
@@ -154,18 +117,15 @@ export default function VerificationPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email,
-          code: codeArray.join(''),
-          userData
+          code: codeArray.join('')
         }),
       })
 
       const result = await response.json()
+      console.log('Verification response:', result)
 
       if (response.ok && result.success) {
         setToast({ message: result.message, type: 'success' })
-        
-        // Clear stored user data
-        sessionStorage.removeItem('pendingUserData')
         
         // Redirect to login after success
         setTimeout(() => {
@@ -185,9 +145,10 @@ export default function VerificationPage() {
   }
 
   const handleResendCode = async () => {
-    if (!canResend || !email || isResending) return
+    if (!email || isResending) return
 
     setIsResending(true)
+    console.log('Resending code to:', email)
 
     try {
       const response = await fetch('/api/auth/verify-email', {
@@ -197,20 +158,28 @@ export default function VerificationPage() {
       })
 
       const result = await response.json()
+      console.log('Resend response:', result)
 
       if (result.success) {
         setToast({ message: result.message, type: 'success' })
         setTimeLeft(15 * 60) // Reset timer
-        setCanResend(false)
         setCode(['', '', '', '', '', '']) // Clear current code
         inputRefs.current[0]?.focus()
         
-        // Enable resend again after 1 minute
+        // Disable resend temporarily
+        setCanResend(false)
         setTimeout(() => {
           setCanResend(true)
-        }, 60000)
+        }, 60000) // 1 minute
       } else {
         setToast({ message: result.message, type: 'error' })
+        // If it's a rate limit error, disable resend temporarily
+        if (response.status === 429) {
+          setCanResend(false)
+          setTimeout(() => {
+            setCanResend(true)
+          }, 60000)
+        }
       }
     } catch (error) {
       console.error('Resend error:', error)
@@ -335,7 +304,7 @@ export default function VerificationPage() {
                 `}
               >
                 {isResending ? (
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center justify-center gap-2">
                     <ArrowPathIcon className="w-4 h-4 animate-spin" />
                     Sending...
                   </span>

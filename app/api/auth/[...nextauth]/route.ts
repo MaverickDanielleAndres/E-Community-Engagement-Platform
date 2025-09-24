@@ -95,7 +95,8 @@ export const authOptions: NextAuthOptions = {
                   name: user.name,
                   email: user.email,
                   email_verified: new Date().toISOString(),
-                  image: user.image
+                  image: user.image,
+                  role: 'Guest' // Default role for new OAuth users
                 }
               ])
               .select('id')
@@ -127,18 +128,62 @@ export const authOptions: NextAuthOptions = {
         token.picture = user.image
       }
 
+      // Fetch user role from database
+      if (token.id) {
+        try {
+          // First, check if user is a community member (has specific role)
+          const { data: communityMember } = await supabase
+            .from('community_members')
+            .select('role')
+            .eq('user_id', token.id as string)
+            .single()
+
+          if (communityMember) {
+            token.role = communityMember.role
+          } else {
+            // Fallback to user table role
+            const { data: userData } = await supabase
+              .from('users')
+              .select('role')
+              .eq('id', token.id as string)
+              .single()
+
+            token.role = userData?.role || 'Guest'
+          }
+        } catch (error) {
+          console.error('Error fetching user role:', error)
+          token.role = 'Guest'
+        }
+      }
+
       // Force refresh token data on update
       if (trigger === 'update') {
         const { data: userData } = await supabase
           .from('users')
-          .select('id, name, email, image')
+          .select('id, name, email, image, role')
           .eq('id', token.id as string)
           .single()
-        
+
         if (userData) {
           token.name = userData.name
           token.email = userData.email
           token.picture = userData.image
+          token.role = userData.role
+        }
+
+        // Re-fetch community role on update
+        try {
+          const { data: communityMember } = await supabase
+            .from('community_members')
+            .select('role')
+            .eq('user_id', token.id as string)
+            .single()
+
+          if (communityMember) {
+            token.role = communityMember.role
+          }
+        } catch (error) {
+          console.error('Error re-fetching user role:', error)
         }
       }
 
@@ -151,6 +196,7 @@ export const authOptions: NextAuthOptions = {
         session.user.email = token.email as string
         session.user.name = token.name as string
         session.user.image = token.picture as string
+        session.user.role = token.role as string
       }
       return session
     }
@@ -199,7 +245,6 @@ export const authOptions: NextAuthOptions = {
     },
     async signOut({ token }) {
       console.log(`User ${token?.email} signed out`)
-      // Additional cleanup if needed
     },
     async createUser({ user }) {
       console.log(`New user created: ${user.email}`)

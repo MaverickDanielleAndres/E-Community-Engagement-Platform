@@ -1,8 +1,11 @@
+//@/components/AuthForm.tsx
+
 'use client'
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { signIn } from 'next-auth/react'
+import { signIn, getSession } from 'next-auth/react'
+import { getSupabaseClient } from '@/lib/supabase'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -60,6 +63,7 @@ interface AuthFormProps {
 }
 
 export default function AuthForm({ type }: AuthFormProps) {
+  // Remove the supabase client creation to avoid multiple instances
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null)
@@ -131,6 +135,8 @@ export default function AuthForm({ type }: AuthFormProps) {
 
     try {
       if (isLogin) {
+        console.log('Attempting login for:', data.email)
+        
         const result = await signIn('credentials', {
           email: data.email,
           password: data.password,
@@ -138,6 +144,7 @@ export default function AuthForm({ type }: AuthFormProps) {
         })
 
         if (result?.error) {
+          console.log('Login error:', result.error)
           if (result.error.includes('verify')) {
             setError('Please verify your email before signing in')
           } else if (result.error.includes('OAuth')) {
@@ -146,12 +153,44 @@ export default function AuthForm({ type }: AuthFormProps) {
             setError('Invalid email or password')
           }
         } else {
+          console.log('Login successful, getting session...')
           setToast({ message: 'Successfully signed in! Redirecting...', type: 'success' })
-          setTimeout(() => {
-            router.push('/main/dashboard')
+          
+          // Wait for session to be established, then redirect based on role
+          setTimeout(async () => {
+            try {
+              // Fetch user role from API instead of session
+              const response = await fetch('/api/me/summary')
+              const data = await response.json()
+              const role = data.user?.role?.toLowerCase() || ''
+              
+              let redirectPath = ''
+              switch (role) {
+                case 'admin':
+                  redirectPath = '/main/admin'
+                  break
+                case 'resident':
+                  redirectPath = '/main/user'
+                  break
+                case 'guest':
+                  redirectPath = '/main/guest'
+                  break
+                default:
+                  redirectPath = '/main/guest'
+              }
+              
+              console.log('Redirecting to:', redirectPath, 'for role:', role)
+              window.location.href = redirectPath
+            } catch (error) {
+              console.error('Role fetch failed, using fallback redirect:', error)
+              window.location.href = '/main'
+            }
           }, 1500)
         }
       } else {
+        // Signup flow
+        console.log('Attempting signup for:', data.email)
+        
         // Check for duplicate email before signup
         const emailCheckResponse = await fetch(`/api/auth/check-email?email=${encodeURIComponent(data.email)}`)
         const { exists } = await emailCheckResponse.json()
@@ -162,35 +201,27 @@ export default function AuthForm({ type }: AuthFormProps) {
           return
         }
 
-        // Signup flow
         const response = await fetch('/api/auth/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
         })
 
-        if (response.ok) {
-          const result = await response.json()
-          
-          // Store user data in sessionStorage with longer expiry
-          const userDataWithExpiry = {
-            ...data,
-            timestamp: new Date().toISOString(),
-            expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString() // 30 minutes
-          }
-          sessionStorage.setItem('pendingUserData', JSON.stringify(userDataWithExpiry))
-          
+        const result = await response.json()
+        console.log('Signup response:', result)
+
+        if (response.ok && result.success) {
           setToast({ message: result.message, type: 'success' })
           
           setTimeout(() => {
             router.push(`/verification?email=${encodeURIComponent(result.email)}`)
           }, 1500)
         } else {
-          const errorData = await response.json()
-          setError(errorData.message || 'Something went wrong')
+          setError(result.message || 'Something went wrong')
         }
       }
     } catch (err) {
+      console.error('Auth error:', err)
       setError('An unexpected error occurred')
     } finally {
       setIsLoading(false)
@@ -200,7 +231,14 @@ export default function AuthForm({ type }: AuthFormProps) {
   const handleOAuthSignIn = async (provider: string) => {
     setIsLoading(true)
     try {
-      await signIn(provider, { callbackUrl: '/main/dashboard' })
+      const result = await signIn(provider, { 
+        redirect: false,
+        callbackUrl: '/main'
+      })
+      
+      if (result?.error) {
+        setError('OAuth sign-in failed')
+      }
     } catch (err) {
       setError('OAuth sign-in failed')
     } finally {
@@ -533,7 +571,7 @@ export default function AuthForm({ type }: AuthFormProps) {
               <p className={`text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
                 {isLogin ? "Don't have an account? " : "Already have an account? "}
                 <Link
-                  href={isLogin ? '/signup' : '/login'}
+                  href={isLogin ? '/auth/signup' : '/auth/login'}
                   className={isDark ? 'font-medium text-white hover:text-white/80' : 'font-medium text-black hover:text-black/80'}
                 >
                   {isLogin ? 'Sign up' : 'Sign in'}

@@ -47,14 +47,14 @@ export default function AdminPolls() {
       const response = await fetch(`/api/polls/${deleteDialog.pollId}`, {
         method: 'DELETE'
       })
-      
+
       if (response.ok) {
         setPolls(polls.filter(poll => poll.id !== deleteDialog.pollId))
       }
     } catch (error) {
       console.error('Failed to delete poll:', error)
     }
-    
+
     setDeleteDialog({ isOpen: false, pollId: '', title: '' })
   }
 
@@ -171,7 +171,7 @@ export default function AdminPolls() {
             description="Create your first poll to engage with the community"
             icon={PlusSquare}
             actionLabel="Create Poll"
-            actionHref="/main/admin/polls/create"
+            // actionHref="/main/admin/polls/create"
           />
         ) : (
           <DataTable
