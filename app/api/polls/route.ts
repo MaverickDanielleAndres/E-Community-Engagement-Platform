@@ -1,4 +1,4 @@
-// @/app/api/polls/route.ts - Updated
+// @/app/api/polls/route.ts - Updated for multi-question polls
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { createClient } from '@supabase/supabase-js'
@@ -7,6 +7,14 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
+
+interface PollQuestion {
+  id: string
+  type: 'radio' | 'checkbox' | 'text'
+  question: string
+  options?: string[]
+  required: boolean
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -35,7 +43,7 @@ export async function GET(request: NextRequest) {
 
     const communityId = user.community_members[0].community_id
 
-    // Fetch polls with vote counts
+    // Fetch polls with response counts
     const { data: polls, error } = await supabase
       .from('polls')
       .select(`
@@ -45,22 +53,24 @@ export async function GET(request: NextRequest) {
         deadline,
         created_at,
         is_anonymous,
-        is_multi_select
+        questions,
+        footer_note,
+        complaint_link
       `)
       .eq('community_id', communityId)
       .order('created_at', { ascending: false })
 
-    // Get vote counts for each poll
-    const pollsWithVotes = await Promise.all(
+    // Get response counts for each poll
+    const pollsWithResponses = await Promise.all(
       (polls || []).map(async (poll) => {
-        const { count: voteCount } = await supabase
-          .from('poll_votes')
+        const { count: responseCount } = await supabase
+          .from('poll_responses')
           .select('*', { count: 'exact', head: true })
           .eq('poll_id', poll.id)
 
         return {
           ...poll,
-          vote_count: voteCount || 0,
+          response_count: responseCount || 0,
           status: poll.deadline && new Date(poll.deadline) < new Date() ? 'closed' : 'active'
         }
       })
@@ -71,7 +81,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch polls' }, { status: 500 })
     }
 
-    return NextResponse.json({ polls: pollsWithVotes })
+    return NextResponse.json({ polls: pollsWithResponses })
   } catch (error) {
     console.error('Server error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -87,11 +97,29 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, description, deadline, is_anonymous, is_multi_select, options } = body
+    const { title, description, deadline, is_anonymous, questions, footer_note, complaint_link } = body
 
-    if (!title || !options || options.length < 2) {
+    if (!title || !questions || questions.length === 0) {
       return NextResponse.json({
-        error: 'Title and at least 2 options are required'
+        error: 'Title and at least 1 question are required'
+      }, { status: 400 })
+    }
+
+    // Validate questions
+    const validationErrors: string[] = []
+    questions.forEach((question: PollQuestion, index: number) => {
+      if (!question.question?.trim()) {
+        validationErrors.push(`Question ${index + 1} is required`)
+      }
+      if (question.type === 'radio' && (!question.options || question.options.length < 2)) {
+        validationErrors.push(`Question ${index + 1} must have at least 2 options`)
+      }
+    })
+
+    if (validationErrors.length > 0) {
+      return NextResponse.json({
+        error: 'Validation errors',
+        details: validationErrors
       }, { status: 400 })
     }
 
@@ -108,7 +136,7 @@ export async function POST(request: NextRequest) {
       .eq('email', session.user.email)
       .single()
 
-    if (!user || user.community_members?.[0]?.role !== 'admin') {
+    if (!user || user.community_members?.[0]?.role !== 'Admin') {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
@@ -123,7 +151,10 @@ export async function POST(request: NextRequest) {
         description,
         deadline: deadline || null,
         is_anonymous: is_anonymous || false,
-        is_multi_select: is_multi_select || false,
+        is_multi_select: false, // Not used in new system
+        questions: questions,
+        footer_note: footer_note || null,
+        complaint_link: complaint_link || '/main/complaints',
         created_by: user.id
       })
       .select()
@@ -132,24 +163,6 @@ export async function POST(request: NextRequest) {
     if (pollError) {
       console.error('Poll creation error:', pollError)
       return NextResponse.json({ error: 'Failed to create poll' }, { status: 500 })
-    }
-
-    // Create poll options
-    const optionsData = options.map((option: string, index: number) => ({
-      poll_id: poll.id,
-      option_text: option,
-      ord: index
-    }))
-
-    const { error: optionsError } = await supabase
-      .from('poll_options')
-      .insert(optionsData)
-
-    if (optionsError) {
-      console.error('Options creation error:', optionsError)
-      // Rollback poll creation
-      await supabase.from('polls').delete().eq('id', poll.id)
-      return NextResponse.json({ error: 'Failed to create poll options' }, { status: 500 })
     }
 
     // Log audit trail
@@ -161,7 +174,7 @@ export async function POST(request: NextRequest) {
         action_type: 'create_poll',
         entity_type: 'poll',
         entity_id: poll.id,
-        details: { title, options_count: options.length }
+        details: { title, questions_count: questions.length }
       })
 
     return NextResponse.json({ poll, message: 'Poll created successfully' })

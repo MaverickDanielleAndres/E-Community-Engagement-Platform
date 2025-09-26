@@ -57,7 +57,7 @@ export async function PUT(
 ) {
   try {
     const session = await getServerSession()
-    
+
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -65,20 +65,39 @@ export async function PUT(
     const { id } = params
     const body = await request.json()
 
-    // Get user and check if admin
+    // First get the complaint to find its community
+    const { data: complaint } = await supabase
+      .from('complaints')
+      .select('community_id')
+      .eq('id', id)
+      .single()
+
+    if (!complaint) {
+      return NextResponse.json({ error: 'Complaint not found' }, { status: 404 })
+    }
+
+    // Get user
     const { data: user } = await supabase
       .from('users')
-      .select(`
-        id,
-        community_members(
-          community_id,
-          role
-        )
-      `)
+      .select('id, role')
       .eq('email', session.user.email)
       .single()
 
-    if (!user || user.community_members?.[0]?.role !== 'admin') {
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    // Check if user is admin in the complaint's community
+    const { data: membership } = await supabase
+      .from('community_members')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('community_id', complaint.community_id)
+      .single()
+
+    // Check role: prefer community role, fallback to user role
+    const userRole = membership?.role || user.role
+    if (userRole !== 'admin') {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 

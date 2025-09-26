@@ -109,8 +109,7 @@ CREATE TABLE public.community_members (
   joined_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT community_members_pkey PRIMARY KEY (id),
   CONSTRAINT community_members_community_id_fkey FOREIGN KEY (community_id) REFERENCES public.communities(id),
-  CONSTRAINT community_members_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
-  CONSTRAINT fk_community_members_user FOREIGN KEY (user_id) REFERENCES public.users(id)
+  CONSTRAINT community_members_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
 );
 CREATE TABLE public.complaints (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -168,9 +167,24 @@ CREATE TABLE public.feedback (
   rating integer NOT NULL CHECK (rating >= 1 AND rating <= 5),
   comment text,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
+  form_data jsonb,
+  template_id uuid,
   CONSTRAINT feedback_pkey PRIMARY KEY (id),
   CONSTRAINT feedback_community_id_fkey FOREIGN KEY (community_id) REFERENCES public.communities(id),
-  CONSTRAINT feedback_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+  CONSTRAINT feedback_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
+  CONSTRAINT feedback_template_id_fkey FOREIGN KEY (template_id) REFERENCES public.feedback_form_templates(id)
+);
+CREATE TABLE public.feedback_form_templates (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  community_id uuid NOT NULL,
+  title text NOT NULL DEFAULT 'Client Satisfaction Form'::text,
+  subtitle text DEFAULT 'Your feedback helps us improve our services'::text,
+  fields jsonb NOT NULL DEFAULT '[{"id": "rating", "type": "rating", "label": "How satisfied are you with our service?", "options": {"max": 5, "emojis": ["😡", "😞", "😐", "😊", "😄"], "labels": ["Very Poor", "Poor", "Good", "Very Good", "Excellent"]}, "required": true}, {"id": "comment", "type": "textarea", "label": "Comments/Suggestions/Feedback?", "required": false, "placeholder": "Please share your thoughts..."}]'::jsonb,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT feedback_form_templates_pkey PRIMARY KEY (id),
+  CONSTRAINT feedback_form_templates_community_id_fkey FOREIGN KEY (community_id) REFERENCES public.communities(id)
 );
 CREATE TABLE public.notifications (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -198,6 +212,16 @@ CREATE TABLE public.poll_options (
   CONSTRAINT poll_options_pkey PRIMARY KEY (id),
   CONSTRAINT poll_options_poll_id_fkey FOREIGN KEY (poll_id) REFERENCES public.polls(id)
 );
+CREATE TABLE public.poll_responses (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  poll_id uuid NOT NULL,
+  respondent_id uuid NOT NULL,
+  responses jsonb NOT NULL,
+  submitted_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT poll_responses_pkey PRIMARY KEY (id),
+  CONSTRAINT poll_responses_poll_id_fkey FOREIGN KEY (poll_id) REFERENCES public.polls(id),
+  CONSTRAINT poll_responses_respondent_id_fkey FOREIGN KEY (respondent_id) REFERENCES public.users(id)
+);
 CREATE TABLE public.poll_votes (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   poll_id uuid NOT NULL,
@@ -220,6 +244,9 @@ CREATE TABLE public.polls (
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   is_anonymous boolean NOT NULL DEFAULT false,
   is_multi_select boolean NOT NULL DEFAULT false,
+  questions jsonb DEFAULT '[]'::jsonb,
+  footer_note text,
+  complaint_link text DEFAULT '/main/complaints'::text,
   CONSTRAINT polls_pkey PRIMARY KEY (id),
   CONSTRAINT polls_community_id_fkey FOREIGN KEY (community_id) REFERENCES public.communities(id),
   CONSTRAINT polls_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.users(id)
@@ -284,5 +311,5 @@ CREATE TABLE public.verification_tokens (
   identifier text NOT NULL,
   token text NOT NULL,
   expires timestamp with time zone NOT NULL,
-  CONSTRAINT verification_tokens_pkey PRIMARY KEY (identifier, token)
+  CONSTRAINT verification_tokens_pkey PRIMARY KEY (token, identifier)
 );

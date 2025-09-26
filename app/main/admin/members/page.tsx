@@ -7,7 +7,7 @@ import { useSession } from 'next-auth/react'
 import { motion } from 'framer-motion'
 import {
   Users, Copy, Edit, Trash2, Shield, User, Crown,
-  Search, Filter, MoreVertical, Eye, UserCheck
+  Search, Filter, MoreVertical, Eye, UserCheck, RefreshCw
 } from 'lucide-react'
 import { useTheme } from '@/components/ThemeContext'
 import { Toast } from '@/components/Toast'
@@ -86,6 +86,27 @@ export default function AdminMembers() {
       } catch (error) {
         setToast({ message: 'Failed to copy code', type: 'error' })
       }
+    }
+  }
+
+  const handleRegenerateCode = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/admin/members?regenerate=true')
+
+      if (!response.ok) {
+        throw new Error('Failed to regenerate community code')
+      }
+
+      const data = await response.json()
+      setCommunityInfo(data.community)
+      setMembers(data.members || [])
+      setToast({ message: 'Community code regenerated successfully', type: 'success' })
+    } catch (error) {
+      console.error('Failed to regenerate code:', error)
+      setToast({ message: 'Error regenerating community code', type: 'error' })
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -250,6 +271,14 @@ export default function AdminMembers() {
                 >
                   <Copy className="w-4 h-4" />
                   <span>Copy</span>
+                </button>
+                <button
+                  onClick={handleRegenerateCode}
+                  disabled={loading}
+                  className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 px-3 py-2 rounded-lg transition-colors duration-200 disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                  <span>Regenerate</span>
                 </button>
               </div>
             </div>

@@ -1,12 +1,13 @@
 // @/components/ui/AdminHeader.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useTheme } from '@/components/ThemeContext'
 import { useSidebar } from '@/components/ui/SidebarContext'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { getSupabaseClient } from '@/lib/supabase'
 import { Bell, Search, User, LogOut, Settings, ChevronDown, Mail, Menu } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -15,48 +16,51 @@ interface Notification {
   type: 'info' | 'warning' | 'success' | 'error'
   title: string
   message: string
-  time: string
-  unread: boolean
+  created_at: string
+  is_read: boolean
 }
 
 export function AdminHeader() {
   const [showNotifications, setShowNotifications] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [notifications, setNotifications] = useState<Notification[]>([])
   const { data: session } = useSession()
   const { isDark } = useTheme()
-  const { setIsOpen, toggleSidebar } = useSidebar()
+  const { isCollapsed, setIsCollapsed } = useSidebar()
   const router = useRouter()
 
-  // Mock notifications - replace with real data
-  const notifications: Notification[] = [
-    {
-      id: '1',
-      type: 'warning',
-      title: 'High Complaint Volume',
-      message: 'Unusual spike in complaints detected',
-      time: '5m ago',
-      unread: true
-    },
-    {
-      id: '2',
-      type: 'success',
-      title: 'Poll Completed',
-      message: 'Community Garden poll has ended',
-      time: '1h ago',
-      unread: true
-    },
-    {
-      id: '3',
-      type: 'info',
-      title: 'New Member',
-      message: 'John Doe joined the community',
-      time: '2h ago',
-      unread: false
-    }
-  ]
+  const unreadCount = notifications.filter(n => !n.is_read).length
 
-  const unreadCount = notifications.filter(n => n.unread).length
+  useEffect(() => {
+    if (!session?.user?.email) return
+
+    const supabase = getSupabaseClient()
+
+    const fetchNotifications = async () => {
+      try {
+        const response = await fetch('/api/admin/notifications')
+        const data = await response.json()
+        setNotifications(data.notifications || [])
+      } catch (error) {
+        console.error('Error fetching notifications:', error)
+      }
+    }
+
+    fetchNotifications()
+
+    // Subscribe to real-time updates
+    const channel = supabase
+      .channel('header_notifications')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, (payload) => {
+        fetchNotifications() // Refetch on any change
+      })
+      .subscribe()
+
+    return () => {
+      channel.unsubscribe()
+    }
+  }, [session?.user?.email])
 
   const handleSignOut = async () => {
     const { signOut } = await import('next-auth/react')
@@ -90,20 +94,6 @@ export function AdminHeader() {
       <div className="flex items-center justify-between px-6 py-4">
         {/* Left Section */}
         <div className="flex items-center space-x-4">
-          {/* Hamburger Menu Button - Mobile/Tablet */}
-          <button
-            onClick={toggleSidebar}
-            className={`
-              p-2 rounded-lg transition-all duration-200 hover:scale-110 lg:hidden
-              ${isDark
-                ? 'hover:bg-slate-800 text-slate-300 hover:text-white'
-                : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
-              }
-            `}
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-
           <div className="hidden lg:block">
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
               Admin Dashboard
@@ -194,7 +184,7 @@ export function AdminHeader() {
                         transition={{ duration: 0.2, delay: index * 0.05 }}
                         className={`
                           p-4 border-b border-slate-200 dark:border-slate-700 last:border-b-0
-                          ${notification.unread ? (isDark ? 'bg-slate-700/50' : 'bg-blue-50/50') : ''}
+                          ${!notification.is_read ? (isDark ? 'bg-slate-700/50' : 'bg-blue-50/50') : ''}
                           hover:${isDark ? 'bg-slate-700' : 'bg-slate-50'} transition-colors duration-150
                         `}
                       >
@@ -208,10 +198,10 @@ export function AdminHeader() {
                               {notification.message}
                             </p>
                             <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                              {notification.time}
+                              {new Date(notification.created_at).toLocaleString()}
                             </p>
                           </div>
-                          {notification.unread && (
+                          {!notification.is_read && (
                             <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                           )}
                         </div>
@@ -220,7 +210,13 @@ export function AdminHeader() {
                   </div>
                   
                   <div className="p-3 border-t border-slate-200 dark:border-slate-700">
-                    <button className="w-full text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                    <button
+                      onClick={() => {
+                        router.push('/main/admin/notifications')
+                        setShowNotifications(false)
+                      }}
+                      className="w-full text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                    >
                       View all notifications
                     </button>
                   </div>
@@ -247,8 +243,8 @@ export function AdminHeader() {
               `}>
                 {session?.user?.name?.charAt(0)?.toUpperCase() || 'A'}
               </div>
-              <div className="hidden sm:block text-left">
-                <p className="text-sm font-medium text-slate-900 dark:text-white">
+              <div className="hidden sm:block text-left min-w-0 flex-1 max-w-[150px]">
+                <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
                   {session?.user?.name || 'Administrator'}
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">Admin</p>
@@ -264,7 +260,7 @@ export function AdminHeader() {
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
                   transition={{ duration: 0.2 }}
                   className={`
-                    absolute right-0 mt-2 w-56 rounded-2xl shadow-2xl border z-50
+                    absolute right-0 mt-2 w-80 rounded-2xl shadow-2xl border z-50
                     ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}
                   `}
                 >
@@ -276,11 +272,11 @@ export function AdminHeader() {
                       `}>
                         {session?.user?.name?.charAt(0)?.toUpperCase() || 'A'}
                       </div>
-                      <div>
-                        <p className="font-medium text-slate-900 dark:text-white">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-slate-900 dark:text-white truncate">
                           {session?.user?.name || 'Administrator'}
                         </p>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                        <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
                           {session?.user?.email || 'admin@example.com'}
                         </p>
                       </div>

@@ -26,6 +26,10 @@ export async function GET(request: NextRequest) {
 
     console.log('Session found:', session.user.email)
 
+    // Check for regenerate query param
+    const { searchParams } = new URL(request.url)
+    const regenerate = searchParams.get('regenerate') === 'true'
+
     // First, let's check if the user exists using admin client
     const { data: userData, error: userError } = await supabaseAdmin
       .from('users')
@@ -154,11 +158,53 @@ export async function GET(request: NextRequest) {
     } else {
       communityId = communityData.community_id
       // Handle the communities data properly
-      const communitiesData = Array.isArray(communityData.communities) 
-        ? communityData.communities[0] 
+      const communitiesData = Array.isArray(communityData.communities)
+        ? communityData.communities[0]
         : communityData.communities
       communityInfo = communitiesData
       console.log('Community found:', communityId)
+    }
+
+    // Handle regeneration if requested
+    if (regenerate && communityInfo) {
+      console.log('Regenerating community code')
+
+      // Generate unique community code
+      let newCommunityCode = ''
+      let counter = 1
+
+      while (true) {
+        const testCode = `ADMIN${String(counter).padStart(3, '0')}`
+        const { data: existing } = await supabaseAdmin
+          .from('communities')
+          .select('id')
+          .eq('code', testCode)
+          .single()
+
+        if (!existing) {
+          newCommunityCode = testCode
+          break
+        }
+        counter++
+      }
+
+      // Update the community code
+      const { error: updateError } = await supabaseAdmin
+        .from('communities')
+        .update({ code: newCommunityCode })
+        .eq('id', communityId)
+
+      if (updateError) {
+        console.error('Failed to update community code:', updateError)
+        return NextResponse.json({
+          error: 'Failed to regenerate community code',
+          details: updateError.message
+        }, { status: 500 })
+      }
+
+      // Update communityInfo with new code
+      communityInfo.code = newCommunityCode
+      console.log('Community code regenerated to:', newCommunityCode)
     }
 
     // Fetch all community members

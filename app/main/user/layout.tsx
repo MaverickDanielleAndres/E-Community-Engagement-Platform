@@ -7,7 +7,9 @@ export default function UserLayout({
 }) {
   return (
     <RoleGuard allowedRoles={['Resident', 'Admin']}>
-      {children}
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+        {children}
+      </div>
     </RoleGuard>
   )
 }

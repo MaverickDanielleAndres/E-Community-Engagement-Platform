@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Bot, BarChart3, Users, MessageSquareWarning,
   Smile, PlusSquare, ScrollText, Bell, Settings,
-  ChevronLeft, Target
+  ChevronLeft, ChevronRight, Target
 } from 'lucide-react'
 
 interface NavItem {
@@ -28,54 +28,65 @@ interface NavSection {
 }
 
 export function AdminSidebar() {
-  const { isCollapsed, toggleSidebar, isOpen, setIsOpen, setIsCollapsed } = useSidebar()
+  const { isCollapsed, setIsCollapsed } = useSidebar()
   const { isDark } = useTheme()
   const { data: session } = useSession()
   const pathname = usePathname()
 
-  // Check if mobile screens
-  const [isMobile, setIsMobile] = useState(false)
+  // Check if mobile/tablet screens using matchMedia for better reliability (default collapsed below xl)
+  const [isSmallScreen, setIsSmallScreen] = useState(false)
 
-  // Force expanded sidebar on mobile/tablet
-  const effectiveIsCollapsed = isMobile ? false : isCollapsed
+  // Use isCollapsed directly, no forcing
+  const effectiveIsCollapsed = isCollapsed
+
+  // Dynamic badge counts
+  const [complaintCount, setComplaintCount] = useState(0)
+  const [notificationCount, setNotificationCount] = useState(0)
 
   useEffect(() => {
-    const checkScreenSize = () => {
-      setIsMobile(window.innerWidth < 1024) // lg breakpoint
+    if (typeof window === 'undefined') return
+
+    const mediaQuery = window.matchMedia('(max-width: 1279px)') // xl breakpoint -1 for tablet/mobile
+    setIsSmallScreen(mediaQuery.matches)
+
+    const handleChange = (e: MediaQueryListEvent) => {
+      setIsSmallScreen(e.matches)
     }
 
-    // Check on mount
-    checkScreenSize()
+    mediaQuery.addEventListener('change', handleChange)
 
-    // Add resize listener
-    window.addEventListener('resize', checkScreenSize)
-
-    // Cleanup
-    return () => window.removeEventListener('resize', checkScreenSize)
+    return () => {
+      mediaQuery.removeEventListener('change', handleChange)
+    }
   }, [])
 
-  // Close sidebar when navigating to a new page on mobile
+  // Fetch dynamic counts
   useEffect(() => {
-    if (isMobile && isOpen) {
-      // Close sidebar when pathname changes
-      const handleRouteChange = () => {
-        if (isOpen) {
-          // We'll need to import setIsOpen from the context
-          // For now, we'll use a timeout to close it
-          setTimeout(() => {
-            if (isOpen) {
-              // This will be handled by the navigation link click
-            }
-          }, 100)
+    if (!session?.user?.email) return
+
+    const fetchCounts = async () => {
+      try {
+        // Fetch complaints count (total pending/unresolved)
+        const complaintsResponse = await fetch('/api/complaints?status=pending')
+        if (complaintsResponse.ok) {
+          const complaintsData = await complaintsResponse.json()
+          setComplaintCount(complaintsData.complaints?.length || 0)
         }
+
+        // Fetch notifications count (unread)
+        const notificationsResponse = await fetch('/api/admin/notifications')
+        if (notificationsResponse.ok) {
+          const notificationsData = await notificationsResponse.json()
+          const unread = notificationsData.notifications?.filter((n: any) => !n.is_read).length || 0
+          setNotificationCount(unread)
+        }
+      } catch (error) {
+        console.error('Error fetching counts:', error)
       }
-
-      // Listen for route changes
-      window.addEventListener('popstate', handleRouteChange)
-
-      return () => window.removeEventListener('popstate', handleRouteChange)
     }
-  }, [pathname, isMobile, isOpen])
+
+    fetchCounts()
+  }, [session?.user?.email])
 
   const navigationSections: NavSection[] = [
     {
@@ -90,7 +101,7 @@ export function AdminSidebar() {
       title: "Management",
       items: [
         { label: "Members", href: "/main/admin/members", icon: Users },
-        { label: "Complaints", href: "/main/admin/complaints", icon: MessageSquareWarning, badge: 3 },
+        { label: "Complaints", href: "/main/admin/complaints", icon: MessageSquareWarning, badge: complaintCount },
         { label: "Feedback", href: "/main/admin/feedback", icon: Smile },
         { label: "Polls", href: "/main/admin/polls", icon: PlusSquare }
       ]
@@ -99,7 +110,7 @@ export function AdminSidebar() {
       title: "System",
       items: [
         { label: "Audit Log", href: "/main/admin/audit-log", icon: ScrollText },
-        { label: "Notifications", href: "/main/admin/notifications", icon: Bell, badge: 5 },
+        { label: "Notifications", href: "/main/admin/notifications", icon: Bell, badge: notificationCount },
         { label: "Settings", href: "/main/admin/settings", icon: Settings }
       ]
     }
@@ -110,9 +121,9 @@ export function AdminSidebar() {
     const Icon = item.icon
 
     const handleNavClick = () => {
-      // Close sidebar on mobile when navigation link is clicked
-      if (isMobile && isOpen) {
-        setIsOpen(false)
+      // Collapse sidebar on small screens when navigation link is clicked
+      if (isSmallScreen && !isCollapsed) {
+        setIsCollapsed(true)
       }
     }
 
@@ -191,33 +202,30 @@ export function AdminSidebar() {
           )}
         </AnimatePresence>
 
-        {/* Toggle button - different behavior for mobile vs desktop */}
-        {!isMobile && (
-          <button
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              setIsCollapsed(!isCollapsed)
-            }}
-            className={`
-              p-3 rounded-lg transition-all duration-200 hover:scale-110 z-50 relative
-              ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-600'}
-              border ${isDark ? 'border-slate-600' : 'border-slate-300'}
-            `}
-            title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            <motion.div
-              animate={{ rotate: effectiveIsCollapsed ? 180 : 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </motion.div>
-          </button>
-        )}
+        {/* Toggle button - always visible */}
+        <button
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            setIsCollapsed(!isCollapsed)
+          }}
+          className={`
+            p-3 rounded-lg transition-all duration-200 hover:scale-110 z-50 relative
+            ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-600'}
+            border ${isDark ? 'border-slate-600' : 'border-slate-300'}
+          `}
+          title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {effectiveIsCollapsed ? (
+            <ChevronRight className="w-5 h-5" />
+          ) : (
+            <ChevronLeft className="w-5 h-5" />
+          )}
+        </button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-4 space-y-6">
+      <nav className="flex-1 p-4 space-y-6">
         {navigationSections.map((section, sectionIndex) => (
           <div key={section.title}>
             <AnimatePresence>
@@ -264,12 +272,6 @@ export function AdminSidebar() {
                 ${isDark ? 'bg-gradient-to-r from-slate-800 to-slate-700' : 'bg-gradient-to-r from-slate-100 to-slate-50'}
               `}
             >
-              <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">
-                EComAI v2.0
-              </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Professional Edition
-              </p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -277,49 +279,14 @@ export function AdminSidebar() {
     </div>
   )
 
-  // Mobile overlay/backdrop
-  if (isMobile) {
-    return (
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-              onClick={toggleSidebar}
-            />
-
-            {/* Mobile Sidebar Drawer */}
-            <motion.aside
-              initial={{ x: '-100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-              className={`
-                fixed left-0 top-0 bottom-0 z-50 w-80 lg:hidden
-                ${isDark ? 'bg-slate-900' : 'bg-white'}
-                border-r border-slate-200 dark:border-slate-700
-              `}
-            >
-              {sidebarContent}
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
-    )
-  }
-
-  // Desktop Sidebar
+  // Always render the sidebar, no mobile drawer
   return (
     <motion.aside
-      animate={{ width: isCollapsed ? 80 : 280 }}
+      initial={false}
+      animate={{ width: isCollapsed ? 80 : 320 }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
       className={`
-        fixed left-0 top-0 bottom-0 z-30 hidden lg:block
+        fixed left-0 top-0 bottom-0 z-30
         ${isDark ? 'bg-slate-900/95' : 'bg-white/95'}
         backdrop-blur-sm border-r border-slate-200 dark:border-slate-700
       `}

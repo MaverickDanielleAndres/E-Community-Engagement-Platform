@@ -13,7 +13,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <AdminSidebar />
 
-      <div className={`${isCollapsed ? 'lg:ml-20' : 'lg:ml-72'} transition-all duration-300`}>
+      <div className={`${isCollapsed ? 'ml-[80px]' : 'ml-[320px]'} transition-all duration-300`}>
         <AdminHeader />
 
         <main className="p-6">

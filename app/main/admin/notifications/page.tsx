@@ -4,6 +4,8 @@
 import { useState, useEffect } from 'react'
 import { DataTable, SearchInput } from '@/components/mainapp/components'
 import { Bell, Check, X, AlertTriangle, Info } from 'lucide-react'
+import { getSupabaseClient } from '@/lib/supabase'
+import { useSession } from 'next-auth/react'
 
 interface Notification {
   id: string
@@ -12,38 +14,45 @@ interface Notification {
   message: string
   created_at: string
   is_read: boolean
-  user: string
+  user_id: string
 }
 
 export default function AdminNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
+  const { data: session } = useSession()
 
   useEffect(() => {
-    // Mock data
-    const mockNotifications: Notification[] = [
-      {
-        id: '1',
-        type: 'warning',
-        title: 'High Complaint Volume',
-        message: 'Unusual spike in complaints detected in the past hour',
-        created_at: new Date().toISOString(),
-        is_read: false,
-        user: 'System'
-      },
-      {
-        id: '2',
-        type: 'info',
-        title: 'New Poll Created',
-        message: 'Community Garden Proposal poll has been created',
-        created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        is_read: true,
-        user: 'Admin'
+    if (!session?.user?.email) return
+
+    const supabase = getSupabaseClient()
+
+    const fetchNotifications = async () => {
+      try {
+        const response = await fetch('/api/admin/notifications')
+        const data = await response.json()
+        setNotifications(data.notifications || [])
+        setLoading(false)
+      } catch (error) {
+        console.error('Error fetching notifications:', error)
+        setLoading(false)
       }
-    ]
-    setNotifications(mockNotifications)
-    setLoading(false)
-  }, [])
+    }
+
+    fetchNotifications()
+
+    // Subscribe to real-time updates
+    const channel = supabase
+      .channel('notifications')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, (payload) => {
+        fetchNotifications() // Refetch on any change
+      })
+      .subscribe()
+
+    return () => {
+      channel.unsubscribe()
+    }
+  }, [session?.user?.email])
 
   const getTypeIcon = (type: string) => {
     switch (type) {

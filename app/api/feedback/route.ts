@@ -1,3 +1,4 @@
+// @/app/api/feedback/route.ts - Updated to support new form structure
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { createClient } from '@supabase/supabase-js'
@@ -45,6 +46,8 @@ export async function GET(request: NextRequest) {
         id,
         rating,
         comment,
+        form_data,
+        template_id,
         created_at,
         users(name, email)
       `)
@@ -80,9 +83,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { rating, comment } = body
+    const { rating, comment, form_data, template_id } = body
 
-    if (!rating || rating < 1 || rating > 5) {
+    // Validate rating if provided (backwards compatibility)
+    if (rating && (rating < 1 || rating > 5)) {
       return NextResponse.json({ 
         error: 'Rating must be between 1 and 5' 
       }, { status: 400 })
@@ -107,15 +111,41 @@ export async function POST(request: NextRequest) {
 
     const communityId = user.community_members[0].community_id
 
-    // Create feedback
+    // Create feedback entry
+    const feedbackData: any = {
+      community_id: communityId,
+      user_id: user.id,
+    }
+
+    // Handle new form data structure or legacy rating/comment
+    if (form_data && template_id) {
+      feedbackData.form_data = form_data
+      feedbackData.template_id = template_id
+      
+      // Extract rating from form data if it exists for backwards compatibility
+      const ratingField = Object.values(form_data).find((value: any) => 
+        typeof value === 'number' && value >= 1 && value <= 5
+      )
+      if (ratingField) {
+        feedbackData.rating = ratingField
+      }
+      
+      // Extract comment from form data if it exists
+      const commentField = Object.values(form_data).find((value: any) => 
+        typeof value === 'string' && value.length > 10
+      )
+      if (commentField) {
+        feedbackData.comment = commentField
+      }
+    } else {
+      // Legacy support for old rating/comment structure
+      if (rating) feedbackData.rating = rating
+      if (comment) feedbackData.comment = comment
+    }
+
     const { data: feedback, error: feedbackError } = await supabase
       .from('feedback')
-      .insert({
-        community_id: communityId,
-        user_id: user.id,
-        rating,
-        comment: comment || null
-      })
+      .insert(feedbackData)
       .select()
       .single()
 
@@ -133,7 +163,11 @@ export async function POST(request: NextRequest) {
         action_type: 'create_feedback',
         entity_type: 'feedback',
         entity_id: feedback.id,
-        details: { rating, has_comment: !!comment }
+        details: { 
+          has_form_data: !!form_data,
+          has_rating: !!feedbackData.rating,
+          has_comment: !!feedbackData.comment 
+        }
       })
 
     return NextResponse.json({ feedback, message: 'Feedback submitted successfully' })

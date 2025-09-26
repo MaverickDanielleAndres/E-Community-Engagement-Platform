@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { DataTable, EmptyState, ConfirmDialog } from '@/components/mainapp/components'
+import { Toast } from '@/components/Toast'
 import { PlusSquare, Eye, Edit, Trash2, Calendar, Users } from 'lucide-react'
 
 interface Poll {
@@ -23,6 +24,7 @@ export default function AdminPolls() {
     pollId: '',
     title: ''
   })
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
 
   useEffect(() => {
     const fetchPolls = async () => {
@@ -43,16 +45,35 @@ export default function AdminPolls() {
   }, [])
 
   const handleDeletePoll = async () => {
+    const pollToDelete = polls.find(poll => poll.id === deleteDialog.pollId)
+    if (!pollToDelete) {
+      setDeleteDialog({ isOpen: false, pollId: '', title: '' })
+      return
+    }
+
+    // Optimistic update: remove from UI immediately
+    setPolls(prev => prev.filter(poll => poll.id !== deleteDialog.pollId))
+    setToast({ message: 'Deleting poll...', type: 'info' })
+
     try {
       const response = await fetch(`/api/polls/${deleteDialog.pollId}`, {
         method: 'DELETE'
       })
 
-      if (response.ok) {
-        setPolls(polls.filter(poll => poll.id !== deleteDialog.pollId))
+      if (!response.ok) {
+        // Revert optimistic update on failure
+        setPolls(prev => [...prev, pollToDelete])
+        const errorData = await response.json()
+        setToast({ message: errorData.error || 'Failed to delete poll', type: 'error' })
+        return
       }
+
+      setToast({ message: 'Poll deleted successfully', type: 'success' })
     } catch (error) {
+      // Revert optimistic update on error
+      setPolls(prev => [...prev, pollToDelete])
       console.error('Failed to delete poll:', error)
+      setToast({ message: 'Failed to delete poll', type: 'error' })
     }
 
     setDeleteDialog({ isOpen: false, pollId: '', title: '' })
@@ -193,6 +214,15 @@ export default function AdminPolls() {
         confirmLabel="Delete"
         variant="danger"
       />
+
+      {/* Toast Notifications */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   )
 }

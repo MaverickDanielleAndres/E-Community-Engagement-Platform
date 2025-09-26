@@ -75,7 +75,7 @@ export async function PUT(
 ) {
   try {
     const session = await getServerSession()
-    
+
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -83,20 +83,38 @@ export async function PUT(
     const { pollId } = params
     const body = await request.json()
 
-    // Get user and check if admin
+    // First get the poll to find its community
+    const { data: poll } = await supabase
+      .from('polls')
+      .select('community_id')
+      .eq('id', pollId)
+      .single()
+
+    if (!poll) {
+      return NextResponse.json({ error: 'Poll not found' }, { status: 404 })
+    }
+
+    // Get user
     const { data: user } = await supabase
       .from('users')
-      .select(`
-        id,
-        community_members(
-          community_id,
-          role
-        )
-      `)
+      .select('id, role')
       .eq('email', session.user.email)
       .single()
 
-    if (!user || user.community_members?.[0]?.role !== 'admin') {
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    // Check if user is admin in the poll's community
+    const { data: membership } = await supabase
+      .from('community_members')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('community_id', poll.community_id)
+      .single()
+
+    // Check if user is global admin or community admin
+    if (!(user.role === 'Admin' || membership?.role === 'Admin')) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
@@ -114,7 +132,7 @@ export async function PUT(
     await supabase
       .from('audit_log')
       .insert({
-        community_id: user.community_members[0].community_id,
+        community_id: poll.community_id,
         user_id: user.id,
         action_type: 'update_poll',
         entity_type: 'poll',
@@ -135,27 +153,45 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession()
-    
+
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { pollId } = params
 
-    // Get user and check if admin
+    // First get the poll to find its community
+    const { data: poll } = await supabase
+      .from('polls')
+      .select('community_id')
+      .eq('id', pollId)
+      .single()
+
+    if (!poll) {
+      return NextResponse.json({ error: 'Poll not found' }, { status: 404 })
+    }
+
+    // Get user
     const { data: user } = await supabase
       .from('users')
-      .select(`
-        id,
-        community_members(
-          community_id,
-          role
-        )
-      `)
+      .select('id, role')
       .eq('email', session.user.email)
       .single()
 
-    if (!user || user.community_members?.[0]?.role !== 'admin') {
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    // Check if user is admin in the poll's community
+    const { data: membership } = await supabase
+      .from('community_members')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('community_id', poll.community_id)
+      .single()
+
+    // Check if user is global admin or community admin
+    if (!(user.role === 'Admin' || membership?.role === 'Admin')) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
@@ -173,7 +209,7 @@ export async function DELETE(
     await supabase
       .from('audit_log')
       .insert({
-        community_id: user.community_members[0].community_id,
+        community_id: poll.community_id,
         user_id: user.id,
         action_type: 'delete_poll',
         entity_type: 'poll',

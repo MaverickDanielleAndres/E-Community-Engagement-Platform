@@ -1,19 +1,20 @@
-
-// @/app/main/admin/feedback/page.tsx - Updated with full functionality
+// @/app/main/admin/feedback/page.tsx - Updated with form editor
 'use client'
 
 import { useState, useEffect } from 'react'
 import { DataTable, EmptyState, ChartCard, SearchInput } from '@/components/mainapp/components'
-import { Smile, Star, User, Calendar, TrendingUp } from 'lucide-react'
+import { Smile, Star, User, Calendar, TrendingUp, Settings, Edit, Eye } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
 import { useTheme } from '@/components/ThemeContext'
 import { Toast } from '@/components/Toast'
+import FeedbackFormEditor from '@/components/ui/FeedbackFormEditor'
 
 interface Feedback {
   id: string
   rating: number
   comment: string
   created_at: string
+  form_data?: any
   users: { name: string; email: string }
 }
 
@@ -21,29 +22,32 @@ export default function AdminFeedback() {
   const [feedback, setFeedback] = useState<Feedback[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [activeTab, setActiveTab] = useState<'responses' | 'form-editor'>('responses')
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
   const { isDark } = useTheme()
 
   useEffect(() => {
-    const fetchFeedback = async () => {
-      try {
-        const response = await fetch('/api/feedback')
-        if (response.ok) {
-          const data = await response.json()
-          setFeedback(data.feedback || [])
-        } else {
-          setToast({ message: 'Failed to load feedback', type: 'error' })
-        }
-      } catch (error) {
-        console.error('Failed to fetch feedback:', error)
-        setToast({ message: 'Failed to load feedback', type: 'error' })
-      } finally {
-        setLoading(false)
-      }
+    if (activeTab === 'responses') {
+      fetchFeedback()
     }
+  }, [activeTab])
 
-    fetchFeedback()
-  }, [])
+  const fetchFeedback = async () => {
+    try {
+      const response = await fetch('/api/feedback')
+      if (response.ok) {
+        const data = await response.json()
+        setFeedback(data.feedback || [])
+      } else {
+        setToast({ message: 'Failed to load feedback', type: 'error' })
+      }
+    } catch (error) {
+      console.error('Failed to fetch feedback:', error)
+      setToast({ message: 'Failed to load feedback', type: 'error' })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const getRatingStats = () => {
     const ratings = [1, 2, 3, 4, 5].map(rating => ({
@@ -145,6 +149,20 @@ export default function AdminFeedback() {
     ? (feedback.reduce((sum, f) => sum + f.rating, 0) / feedback.length).toFixed(1)
     : '0'
 
+  const TabButton = ({ tab, label, icon: Icon }: { tab: 'responses' | 'form-editor', label: string, icon: any }) => (
+    <button
+      onClick={() => setActiveTab(tab)}
+      className={`flex items-center px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
+        activeTab === tab
+          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
+          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+      }`}
+    >
+      <Icon className="w-4 h-4 mr-2" />
+      {label}
+    </button>
+  )
+
   return (
     <div className="space-y-6">
       {/* Toast */}
@@ -156,140 +174,151 @@ export default function AdminFeedback() {
         />
       )}
 
-      {/* Header */}
+      {/* Header with Tabs */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Community Feedback
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Review and analyze community feedback and ratings
+            Manage feedback forms and view community responses
           </p>
         </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
-          <div className="flex items-center">
-            <Smile className="w-8 h-8 text-green-500 mr-3" />
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Average Rating</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{averageRating}/5</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
-          <div className="flex items-center">
-            <TrendingUp className="w-8 h-8 text-blue-500 mr-3" />
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Feedback</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{feedback.length}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
-          <div className="flex items-center">
-            <Star className="w-8 h-8 text-yellow-500 mr-3" />
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">5-Star Ratings</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {feedback.filter(f => f.rating === 5).length}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
-          <div className="flex items-center">
-            <User className="w-8 h-8 text-purple-500 mr-3" />
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">With Comments</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {feedback.filter(f => f.comment && f.comment.trim() !== '').length}
-              </p>
-            </div>
-          </div>
+        
+        <div className="flex items-center space-x-2 mt-4 sm:mt-0">
+          <TabButton tab="responses" label="View Responses" icon={Eye} />
+          <TabButton tab="form-editor" label="Edit Form" icon={Edit} />
         </div>
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ChartCard title="Rating Distribution">
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={getRatingStats()}>
-              <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#374151" : "#e5e7eb"} />
-              <XAxis dataKey="rating" stroke={isDark ? "#9CA3AF" : "#6B7280"} />
-              <YAxis stroke={isDark ? "#9CA3AF" : "#6B7280"} />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: isDark ? '#1F2937' : '#FFFFFF', 
-                  border: 'none', 
-                  borderRadius: '8px',
-                  color: isDark ? '#F9FAFB' : '#111827'
-                }} 
-                formatter={(value: any, name: string) => [`${value} responses (${getRatingStats().find(r => r.count === value)?.percentage}%)`, 'Count']}
+      {activeTab === 'responses' ? (
+        <>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+              <div className="flex items-center">
+                <Smile className="w-8 h-8 text-green-500 mr-3" />
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Average Rating</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{averageRating}/5</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+              <div className="flex items-center">
+                <TrendingUp className="w-8 h-8 text-blue-500 mr-3" />
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Feedback</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{feedback.length}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+              <div className="flex items-center">
+                <Star className="w-8 h-8 text-yellow-500 mr-3" />
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">5-Star Ratings</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {feedback.filter(f => f.rating === 5).length}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+              <div className="flex items-center">
+                <User className="w-8 h-8 text-purple-500 mr-3" />
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">With Comments</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {feedback.filter(f => f.comment && f.comment.trim() !== '').length}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ChartCard title="Rating Distribution">
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={getRatingStats()}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#374151" : "#e5e7eb"} />
+                  <XAxis dataKey="rating" stroke={isDark ? "#9CA3AF" : "#6B7280"} />
+                  <YAxis stroke={isDark ? "#9CA3AF" : "#6B7280"} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: isDark ? '#1F2937' : '#FFFFFF', 
+                      border: 'none', 
+                      borderRadius: '8px',
+                      color: isDark ? '#F9FAFB' : '#111827'
+                    }} 
+                    formatter={(value: any, name: string) => [`${value} responses (${getRatingStats().find(r => r.count === value)?.percentage}%)`, 'Count']}
+                  />
+                  <Bar dataKey="count" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="Monthly Rating Trend">
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={getMonthlyTrend()}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#374151" : "#e5e7eb"} />
+                  <XAxis dataKey="month" stroke={isDark ? "#9CA3AF" : "#6B7280"} />
+                  <YAxis stroke={isDark ? "#9CA3AF" : "#6B7280"} domain={[1, 5]} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: isDark ? '#1F2937' : '#FFFFFF', 
+                      border: 'none', 
+                      borderRadius: '8px',
+                      color: isDark ? '#F9FAFB' : '#111827'
+                    }} 
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="average" 
+                    stroke="#10B981" 
+                    strokeWidth={3}
+                    dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+          </div>
+
+          {/* Search */}
+          <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
+            <SearchInput
+              placeholder="Search feedback..."
+              value={searchTerm}
+              onChange={setSearchTerm}
+              className="sm:max-w-md"
+            />
+          </div>
+
+          {/* Feedback Table */}
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+            {filteredFeedback.length === 0 && !loading ? (
+              <EmptyState
+                title="No feedback found"
+                description="No feedback matches your current search"
+                icon={Smile}
               />
-              <Bar dataKey="count" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        <ChartCard title="Monthly Rating Trend">
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={getMonthlyTrend()}>
-              <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#374151" : "#e5e7eb"} />
-              <XAxis dataKey="month" stroke={isDark ? "#9CA3AF" : "#6B7280"} />
-              <YAxis stroke={isDark ? "#9CA3AF" : "#6B7280"} domain={[1, 5]} />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: isDark ? '#1F2937' : '#FFFFFF', 
-                  border: 'none', 
-                  borderRadius: '8px',
-                  color: isDark ? '#F9FAFB' : '#111827'
-                }} 
+            ) : (
+              <DataTable
+                data={filteredFeedback}
+                columns={columns}
+                loading={loading}
+                emptyMessage="No feedback available"
               />
-              <Line 
-                type="monotone" 
-                dataKey="average" 
-                stroke="#10B981" 
-                strokeWidth={3}
-                dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </div>
-
-      {/* Search */}
-      <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
-        <SearchInput
-          placeholder="Search feedback..."
-          value={searchTerm}
-          onChange={setSearchTerm}
-          className="sm:max-w-md"
-        />
-      </div>
-
-      {/* Feedback Table */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-        {filteredFeedback.length === 0 && !loading ? (
-          <EmptyState
-            title="No feedback found"
-            description="No feedback matches your current search"
-            icon={Smile}
-          />
-        ) : (
-          <DataTable
-            data={filteredFeedback}
-            columns={columns}
-            loading={loading}
-            emptyMessage="No feedback available"
-          />
-        )}
-      </div>
+            )}
+          </div>
+        </>
+      ) : (
+        <FeedbackFormEditor />
+      )}
     </div>
   )
 }

@@ -12,9 +12,6 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession()
 
-    // For development, allow access without strict authentication
-    // In production, uncomment the strict checks below
-    /*
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -32,16 +29,11 @@ export async function GET(request: NextRequest) {
       .eq('email', session.user.email)
       .single()
 
-    if (!user || user.community_members?.[0]?.role !== 'admin') {
+    if (!user || user.community_members?.[0]?.role !== 'Admin') {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
-    */
 
-    // Development mode: allow access for testing
-    // In production, use the commented code above
-
-    // For development, use a mock community ID
-    const communityId = 'mock-community-id'
+    const communityId = user.community_members[0].community_id
 
     // Get dashboard stats in parallel
     const [
