@@ -1,4 +1,3 @@
-
 // @/app/api/notifications/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
@@ -12,7 +11,7 @@ const supabase = createClient(
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession()
-    
+
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -49,7 +48,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession()
-    
+
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -76,6 +75,50 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ notification })
+  } catch (error) {
+    console.error('Server error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await getServerSession()
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { notificationIds } = body
+
+    if (!Array.isArray(notificationIds) || notificationIds.length === 0) {
+      return NextResponse.json({ error: 'Invalid notification IDs' }, { status: 400 })
+    }
+
+    const { data: user } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', session.user.email)
+      .single()
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    const { data, error } = await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .in('id', notificationIds)
+      .eq('user_id', user.id)
+      .select()
+
+    if (error) {
+      console.error('Mark as read error:', error)
+      return NextResponse.json({ error: 'Failed to mark notifications as read' }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true, updated: data?.length || 0 })
   } catch (error) {
     console.error('Server error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

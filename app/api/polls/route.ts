@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
       .eq('community_id', communityId)
       .order('created_at', { ascending: false })
 
-    // Get response counts for each poll
+    // Get response counts and user_voted for each poll
     const pollsWithResponses = await Promise.all(
       (polls || []).map(async (poll) => {
         const { count: responseCount } = await supabase
@@ -68,9 +68,17 @@ export async function GET(request: NextRequest) {
           .select('*', { count: 'exact', head: true })
           .eq('poll_id', poll.id)
 
+        const { data: userResponse } = await supabase
+          .from('poll_responses')
+          .select('id')
+          .eq('poll_id', poll.id)
+          .eq('user_id', user.id)
+          .maybeSingle()
+
         return {
           ...poll,
-          response_count: responseCount || 0,
+          vote_count: responseCount || 0,
+          user_voted: !!userResponse,
           status: poll.deadline && new Date(poll.deadline) < new Date() ? 'closed' : 'active'
         }
       })

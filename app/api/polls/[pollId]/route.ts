@@ -15,14 +15,25 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession()
-    
+
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { pollId } = params
 
-    // Fetch poll with options and vote counts
+    // Get user
+    const { data: user } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', session.user.email)
+      .single()
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    // Fetch poll with questions and responses
     const { data: poll, error } = await supabase
       .from('polls')
       .select(`
@@ -32,12 +43,9 @@ export async function GET(
         deadline,
         created_at,
         is_anonymous,
-        is_multi_select,
-        poll_options(
-          id,
-          option_text,
-          poll_votes(count)
-        )
+        questions,
+        footer_note,
+        complaint_link
       `)
       .eq('id', pollId)
       .single()
@@ -46,19 +54,33 @@ export async function GET(
       return NextResponse.json({ error: 'Poll not found' }, { status: 404 })
     }
 
-    // Format the data
-    const options = poll.poll_options.map(option => ({
-      id: option.id,
-      option_text: option.option_text,
-      vote_count: option.poll_votes?.length || 0
-    }))
+    // Get user's existing response
+    const { data: userResponse } = await supabase
+      .from('poll_responses')
+      .select('responses')
+      .eq('poll_id', pollId)
+      .eq('respondent_id', user.id)
+      .maybeSingle()
 
-    const total_votes = options.reduce((sum, option) => sum + option.vote_count, 0)
+    // Get response counts for each question
+    const questionsWithStats = poll.questions.map((question: any) => {
+      const responses = supabase
+        .from('poll_responses')
+        .select('responses')
+
+      // For now, return question with basic info
+      // We'll calculate stats on the frontend or add more complex queries later
+      return {
+        ...question,
+        responses: [] // Will be populated with response data
+      }
+    })
 
     const formattedPoll = {
       ...poll,
-      options,
-      total_votes,
+      questions: questionsWithStats,
+      user_voted: !!userResponse,
+      user_responses: userResponse?.responses || {},
       status: poll.deadline && new Date(poll.deadline) < new Date() ? 'closed' : 'active'
     }
 

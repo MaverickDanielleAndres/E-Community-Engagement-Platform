@@ -4,8 +4,17 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { EmptyState, ChartCard } from '@/components/mainapp/components'
 import { useTheme } from '@/components/ThemeContext'
-import { PieChart, Calendar, Users, CheckCircle, Clock } from 'lucide-react'
+import { PieChart, Calendar, Users, CheckCircle, Clock, FileText, MessageSquare } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+
+interface PollQuestion {
+  id: string
+  type: 'radio' | 'checkbox' | 'text'
+  question: string
+  options?: string[]
+  required: boolean
+  responses: any[]
+}
 
 interface PollData {
   id: string
@@ -14,16 +23,12 @@ interface PollData {
   deadline: string
   created_at: string
   is_anonymous: boolean
-  is_multi_select: boolean
-  options: Array<{
-    id: string
-    option_text: string
-    vote_count: number
-  }>
-  total_votes: number
+  questions: PollQuestion[]
+  footer_note?: string
+  complaint_link?: string
   status: 'active' | 'closed'
   user_voted: boolean
-  user_votes: string[]
+  user_responses: Record<string, any>
 }
 
 export default function UserPollDetails() {
@@ -33,8 +38,8 @@ export default function UserPollDetails() {
   const pollId = params.pollId as string
   const [poll, setPoll] = useState<PollData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [voting, setVoting] = useState(false)
-  const [selectedOptions, setSelectedOptions] = useState<string[]>([])
+  const [submitting, setSubmitting] = useState(false)
+  const [responses, setResponses] = useState<Record<string, any>>({})
 
   useEffect(() => {
     const fetchPoll = async () => {
@@ -43,9 +48,9 @@ export default function UserPollDetails() {
         if (response.ok) {
           const data = await response.json()
           setPoll(data.poll)
-          // Set pre-selected options if user already voted
-          if (data.poll?.user_votes) {
-            setSelectedOptions(data.poll.user_votes)
+          // Set existing responses if user already voted
+          if (data.poll?.user_responses) {
+            setResponses(data.poll.user_responses)
           }
         }
       } catch (error) {
@@ -60,44 +65,50 @@ export default function UserPollDetails() {
     }
   }, [pollId])
 
-  const handleOptionChange = (optionId: string) => {
-    if (!poll) return
-
-    if (poll.is_multi_select) {
-      setSelectedOptions(prev => 
-        prev.includes(optionId) 
-          ? prev.filter(id => id !== optionId)
-          : [...prev, optionId]
-      )
-    } else {
-      setSelectedOptions([optionId])
-    }
+  const handleResponseChange = (questionId: string, value: any) => {
+    setResponses(prev => ({
+      ...prev,
+      [questionId]: value
+    }))
   }
 
-  const handleVote = async () => {
-    if (!poll || selectedOptions.length === 0) return
+  const handleSubmit = async () => {
+    if (!poll) return
 
-    setVoting(true)
+    // Validate required questions
+    const missingRequired = poll.questions.filter(q =>
+      q.required && (!responses[q.id] || responses[q.id].toString().trim() === '')
+    )
+
+    if (missingRequired.length > 0) {
+      alert(`Please answer all required questions: ${missingRequired.map(q => q.question).join(', ')}`)
+      return
+    }
+
+    setSubmitting(true)
     try {
-      const response = await fetch(`/api/polls/${pollId}/vote`, {
+      const response = await fetch(`/api/polls/${pollId}/respond`, {
         method: 'POST',
-        body: JSON.stringify({ 
-          optionIds: selectedOptions 
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ responses }),
       })
-      
+
       if (response.ok) {
-        // Refresh poll data to show updated results
+        // Refresh poll data
         const updatedResponse = await fetch(`/api/polls/${pollId}`)
         if (updatedResponse.ok) {
           const data = await updatedResponse.json()
           setPoll(data.poll)
         }
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Failed to submit response')
       }
     } catch (error) {
-      console.error('Failed to vote:', error)
+      console.error('Failed to submit:', error)
+      alert('Failed to submit response')
     }
-    setVoting(false)
+    setSubmitting(false)
   }
 
   if (loading) {
@@ -118,14 +129,8 @@ export default function UserPollDetails() {
     )
   }
 
-  const canVote = poll.status === 'active' && (!poll.deadline || new Date(poll.deadline) > new Date())
+  const canRespond = poll.status === 'active' && (!poll.deadline || new Date(poll.deadline) > new Date())
   const isExpired = poll.deadline && new Date(poll.deadline) < new Date()
-
-  const chartData = poll.options.map(option => ({
-    name: option.option_text.length > 30 ? option.option_text.substring(0, 30) + '...' : option.option_text,
-    votes: option.vote_count,
-    percentage: poll.total_votes > 0 ? ((option.vote_count / poll.total_votes) * 100).toFixed(1) : 0
-  }))
 
   return (
     <div className="space-y-6">
@@ -141,25 +146,23 @@ export default function UserPollDetails() {
             </p>
           )}
         </div>
-        
-        {canVote && !poll.user_voted && (
-          <div className="mt-4 sm:mt-0 sm:ml-6">
-            <div className="flex items-center space-x-2">
-              {isExpired && (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                  <Clock className="w-4 h-4 mr-1" />
-                  Expired
-                </span>
-              )}
-              {poll.user_voted && (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                  <CheckCircle className="w-4 h-4 mr-1" />
-                  You've voted
-                </span>
-              )}
-            </div>
+
+        <div className="mt-4 sm:mt-0 sm:ml-6">
+          <div className="flex items-center space-x-2">
+            {isExpired && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                <Clock className="w-4 h-4 mr-1" />
+                Expired
+              </span>
+            )}
+            {poll.user_voted && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                <CheckCircle className="w-4 h-4 mr-1" />
+                You've responded
+              </span>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Poll Info */}
@@ -168,8 +171,8 @@ export default function UserPollDetails() {
           <div className="flex items-center">
             <Users className="w-6 h-6 text-blue-500 mr-3" />
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Votes</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{poll.total_votes}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Questions</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{poll.questions.length}</p>
             </div>
           </div>
         </div>
@@ -199,155 +202,164 @@ export default function UserPollDetails() {
         </div>
       </div>
 
-      {/* Voting Section */}
-      {canVote && !poll.user_voted && !isExpired && (
+      {/* Response Form */}
+      {canRespond && !poll.user_voted && !isExpired && (
         <div className={`p-6 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Cast Your Vote
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+            Answer the Questions
           </h2>
-          
-          <div className="space-y-3">
-            {poll.options.map((option, index) => (
-              <label
-                key={option.id}
-                className={`
-                  flex items-center p-4 rounded-lg border cursor-pointer transition-all duration-200
-                  ${selectedOptions.includes(option.id)
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                    : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
-                  }
-                `}
-              >
-                <input
-                  type={poll.is_multi_select ? 'checkbox' : 'radio'}
-                  name="poll-option"
-                  value={option.id}
-                  checked={selectedOptions.includes(option.id)}
-                  onChange={() => handleOptionChange(option.id)}
-                  className="mr-3"
-                />
-                <span className="flex-1 font-medium text-gray-900 dark:text-white">
-                  {index + 1}. {option.option_text}
-                </span>
-              </label>
+
+          <div className="space-y-8">
+            {poll.questions.map((question, index) => (
+              <div key={question.id} className="space-y-3">
+                <div className="flex items-start">
+                  <span className="text-sm font-medium text-gray-900 dark:text-white mr-2">
+                    {index + 1}.
+                  </span>
+                  <div className="flex-1">
+                    <h3 className="text-base font-medium text-gray-900 dark:text-white">
+                      {question.question}
+                      {question.required && <span className="text-red-500 ml-1">*</span>}
+                    </h3>
+
+                    {question.type === 'radio' && question.options && (
+                      <div className="mt-3 space-y-2">
+                        {question.options.map((option, optIndex) => (
+                          <label key={optIndex} className="flex items-center">
+                            <input
+                              type="radio"
+                              name={question.id}
+                              value={option}
+                              checked={responses[question.id] === option}
+                              onChange={(e) => handleResponseChange(question.id, e.target.value)}
+                              className="mr-3"
+                            />
+                            <span className="text-gray-700 dark:text-gray-300">{option}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+
+                    {question.type === 'checkbox' && question.options && (
+                      <div className="mt-3 space-y-2">
+                        {question.options.map((option, optIndex) => (
+                          <label key={optIndex} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              value={option}
+                              checked={(responses[question.id] || []).includes(option)}
+                              onChange={(e) => {
+                                const current = responses[question.id] || []
+                                const updated = e.target.checked
+                                  ? [...current, option]
+                                  : current.filter((item: string) => item !== option)
+                                handleResponseChange(question.id, updated)
+                              }}
+                              className="mr-3"
+                            />
+                            <span className="text-gray-700 dark:text-gray-300">{option}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+
+                    {question.type === 'text' && (
+                      <textarea
+                        value={responses[question.id] || ''}
+                        onChange={(e) => handleResponseChange(question.id, e.target.value)}
+                        placeholder="Enter your answer..."
+                        className="mt-3 w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        rows={3}
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
 
-          <div className="mt-6 flex items-center justify-between">
+          <div className="mt-8 flex items-center justify-between">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              {poll.is_multi_select ? 'Select multiple options' : 'Select one option'}
+              * Required questions must be answered
             </p>
-            
+
             <button
-              onClick={handleVote}
-              disabled={voting || selectedOptions.length === 0}
+              onClick={handleSubmit}
+              disabled={submitting}
               className="inline-flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             >
-              {voting ? (
+              {submitting ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
               ) : (
                 <CheckCircle className="w-4 h-4 mr-2" />
               )}
-              {voting ? 'Voting...' : 'Submit Vote'}
+              {submitting ? 'Submitting...' : 'Submit Response'}
             </button>
           </div>
         </div>
       )}
 
-      {/* Results */}
-      <ChartCard title="Poll Results">
-        {poll.total_votes > 0 ? (
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
-              <XAxis 
-                dataKey="name" 
-                stroke="#6B7280"
-                angle={-45}
-                textAnchor="end"
-                height={80}
-              />
-              <YAxis stroke="#6B7280" />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#1F2937', 
-                  border: 'none', 
-                  borderRadius: '8px',
-                  color: '#F9FAFB'
-                }} 
-                formatter={(value: any, name: string) => [`${value} votes (${chartData.find(d => d.votes === value)?.percentage}%)`, 'Votes']}
-              />
-              <Bar dataKey="votes" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="text-center py-12">
-            <PieChart className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-gray-400">No votes yet</p>
+      {/* Already Responded */}
+      {poll.user_voted && (
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-6">
+          <div className="flex items-center">
+            <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400 mr-3" />
+            <div>
+              <h3 className="text-lg font-semibold text-green-800 dark:text-green-200">
+                Response Submitted
+              </h3>
+              <p className="text-green-700 dark:text-green-300 mt-1">
+                Thank you for participating in this poll. Your responses have been recorded.
+              </p>
+            </div>
           </div>
-        )}
-      </ChartCard>
-
-      {/* Detailed Results */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Detailed Results
-        </h2>
-        
-        <div className="space-y-4">
-          {poll.options.map((option, index) => {
-            const percentage = poll.total_votes > 0 ? (option.vote_count / poll.total_votes) * 100 : 0
-            const isUserChoice = selectedOptions.includes(option.id) || poll.user_votes?.includes(option.id)
-            
-            return (
-              <div key={option.id} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className={`text-sm font-medium ${isUserChoice ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'}`}>
-                    {index + 1}. {option.option_text}
-                    {isUserChoice && ' ✓'}
-                  </span>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {option.vote_count} votes ({percentage.toFixed(1)}%)
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full transition-all duration-300 ${
-                      isUserChoice ? 'bg-blue-600' : 'bg-gray-400'
-                    }`}
-                    style={{ width: `${percentage}%` }}
-                  />
-                </div>
-              </div>
-            )
-          })}
         </div>
+      )}
 
-        {poll.total_votes === 0 && (
-          <p className="text-center text-gray-500 dark:text-gray-400 py-4">
-            No votes have been cast yet
-          </p>
-        )}
-      </div>
+      {/* Footer Note */}
+      {poll.footer_note && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6">
+          <div className="flex items-start">
+            <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400 mr-3 mt-0.5" />
+            <div>
+              <h3 className="text-base font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                Additional Information
+              </h3>
+              <p className="text-blue-700 dark:text-blue-300 whitespace-pre-wrap">
+                {poll.footer_note}
+              </p>
+              {poll.complaint_link && (
+                <a
+                  href={poll.complaint_link}
+                  className="inline-flex items-center mt-3 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                >
+                  <MessageSquare className="w-4 h-4 mr-1" />
+                  Submit a complaint
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Poll Settings */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           Poll Information
         </h2>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div className="flex items-center">
             <CheckCircle className={`w-4 h-4 mr-2 ${poll.is_anonymous ? 'text-green-500' : 'text-gray-400'}`} />
             <span className="text-gray-700 dark:text-gray-300">
-              Anonymous voting {poll.is_anonymous ? 'enabled' : 'disabled'}
+              Anonymous responses {poll.is_anonymous ? 'enabled' : 'disabled'}
             </span>
           </div>
-          
+
           <div className="flex items-center">
-            <CheckCircle className={`w-4 h-4 mr-2 ${poll.is_multi_select ? 'text-green-500' : 'text-gray-400'}`} />
+            <CheckCircle className={`w-4 h-4 mr-2 ${poll.questions.some(q => q.type === 'checkbox') ? 'text-green-500' : 'text-gray-400'}`} />
             <span className="text-gray-700 dark:text-gray-300">
-              Multiple selections {poll.is_multi_select ? 'allowed' : 'not allowed'}
+              Multiple choice questions {poll.questions.some(q => q.type === 'checkbox') ? 'included' : 'not included'}
             </span>
           </div>
         </div>

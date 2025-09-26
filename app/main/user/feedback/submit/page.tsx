@@ -1,102 +1,226 @@
 // @/app/main/user/feedback/submit/page.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTheme } from '@/components/ThemeContext'
-import { Star, Send } from 'lucide-react'
+import { Star, Send, Loader2 } from 'lucide-react'
+import { Toast } from '@/components/Toast'
+import type { FormTemplate, FormField } from '@/types/feedback'
 
 export default function SubmitFeedback() {
   const router = useRouter()
   const { isDark } = useTheme()
   const [loading, setLoading] = useState(false)
-  const [rating, setRating] = useState(0)
+  const [templateLoading, setTemplateLoading] = useState(true)
+  const [template, setTemplate] = useState<FormTemplate | null>(null)
+  const [formData, setFormData] = useState<Record<string, string | number | boolean>>({})
   const [hoveredRating, setHoveredRating] = useState(0)
-  const [comment, setComment] = useState('')
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+
+  useEffect(() => {
+    fetchTemplate()
+  }, [])
+
+  const fetchTemplate = async () => {
+    try {
+      const response = await fetch('/api/admin/feedback-form')
+      if (response.ok) {
+        const { template: fetchedTemplate } = await response.json()
+        setTemplate(fetchedTemplate)
+        // Initialize form data with default values
+        const initialData: Record<string, string | number | boolean> = {}
+        fetchedTemplate.fields.forEach((field: FormField) => {
+          if (field.type === 'checkbox') {
+            initialData[field.id] = false
+          } else {
+            initialData[field.id] = ''
+          }
+        })
+        setFormData(initialData)
+      } else {
+        console.error('Failed to fetch template')
+      }
+    } catch (error) {
+      console.error('Error fetching template:', error)
+    } finally {
+      setTemplateLoading(false)
+    }
+  }
+
+  const handleFieldChange = (fieldId: string, value: string | number | boolean) => {
+    setFormData(prev => ({ ...prev, [fieldId]: value }))
+  }
+
+  const handleRatingChange = (fieldId: string, star: number) => {
+    handleFieldChange(fieldId, star)
+    setHoveredRating(0)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (rating === 0) return
+    if (!template) return
+
+    // Validate required fields
+    const hasErrors = template.fields.some((field: FormField) => {
+      if (!field.required) return false
+      const value = formData[field.id]
+      if (field.type === 'checkbox') {
+        return value !== true
+      }
+      return !value || value.toString().trim() === ''
+    })
+    if (hasErrors) {
+      setToast({ message: 'Please fill all required fields', type: 'error' })
+      return
+    }
 
     setLoading(true)
     try {
       const response = await fetch('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rating, comment: comment.trim() || undefined }),
+        body: JSON.stringify({
+          form_data: formData,
+          template_id: template.id
+        }),
       })
 
       if (response.ok) {
-        router.push('/main/user/feedback/my')
+        setToast({ message: 'Feedback submitted successfully!', type: 'success' })
+        setTimeout(() => router.push('/main/user/feedback/my'), 2000)
+      } else {
+        const error = await response.json()
+        setToast({ message: error.error || 'Failed to submit feedback', type: 'error' })
       }
     } catch (error) {
       console.error('Error submitting feedback:', error)
+      setToast({ message: 'Error submitting feedback', type: 'error' })
     } finally {
       setLoading(false)
     }
   }
 
+  if (templateLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
+  }
+
+  if (!template) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-500">No feedback form available</p>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Submit Feedback
+          {template.title || 'Submit Feedback'}
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Share your thoughts about the community
+          {template.subtitle || 'Share your thoughts about the community'}
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className={`p-6 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
           <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
-                How would you rate your overall experience? *
-              </label>
-              <div className="flex items-center space-x-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => setRating(star)}
-                    onMouseEnter={() => setHoveredRating(star)}
-                    onMouseLeave={() => setHoveredRating(0)}
-                    className="p-1 transition-colors"
+            {template.fields.map((field: FormField) => (
+              <div key={field.id}>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {field.label} {field.required && <span className="text-red-500">*</span>}
+                </label>
+                {field.type === 'rating' ? (
+                  <div className="flex items-center space-x-2">
+                    {Array.from({ length: field.options?.max || 5 }, (_, i) => i + 1).map((star: number) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => handleRatingChange(field.id, star)}
+                        onMouseEnter={() => setHoveredRating(star)}
+                        onMouseLeave={() => setHoveredRating(0)}
+                        className="p-1 transition-colors"
+                      >
+                        <span
+                          className={`text-3xl ${
+                            star <= (hoveredRating || (formData[field.id] as number))
+                              ? 'opacity-100'
+                              : 'opacity-50'
+                          }`}
+                        >
+                          {field.options?.emojis?.[star - 1] || '⭐'}
+                        </span>
+                      </button>
+                    ))}
+                    {formData[field.id] && (
+                      <span className="ml-4 text-sm text-gray-600 dark:text-gray-400">
+                        {field.options?.labels?.[(formData[field.id] as number) - 1] || formData[field.id]}
+                      </span>
+                    )}
+                  </div>
+                ) : field.type === 'select' ? (
+                  <select
+                    value={formData[field.id] as string || ''}
+                    onChange={(e) => handleFieldChange(field.id, e.target.value)}
+                    className={`w-full px-3 py-2 rounded-lg border ${isDark ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-300 text-gray-900'}`}
+                    required={field.required}
                   >
-                    <Star
-                      className={`w-8 h-8 ${
-                        star <= (hoveredRating || rating)
-                          ? 'text-yellow-400 fill-current'
-                          : 'text-gray-300 dark:text-gray-600'
-                      }`}
+                    <option value="">Select an option...</option>
+                    {field.options?.choices?.map((choice, idx) => (
+                      <option key={idx} value={choice}>{choice}</option>
+                    ))}
+                  </select>
+                ) : field.type === 'checkbox' ? (
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData[field.id] === true}
+                      onChange={(e) => handleFieldChange(field.id, e.target.checked)}
+                      className="w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600"
+                      required={field.required}
                     />
-                  </button>
-                ))}
-                {rating > 0 && (
-                  <span className="ml-4 text-sm text-gray-600 dark:text-gray-400">
-                    {rating === 1 && "Poor"}
-                    {rating === 2 && "Fair"}
-                    {rating === 3 && "Good"}
-                    {rating === 4 && "Very Good"}
-                    {rating === 5 && "Excellent"}
-                  </span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
+                      {field.label}
+                    </span>
+                  </label>
+                ) : field.type === 'textarea' ? (
+                  <textarea
+                    rows={field.rows || 4}
+                    value={formData[field.id] as string || ''}
+                    onChange={(e) => handleFieldChange(field.id, e.target.value)}
+                    className={`w-full px-3 py-2 rounded-lg border ${isDark ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-300 text-gray-900'}`}
+                    placeholder={field.placeholder || ''}
+                    required={field.required}
+                  />
+                ) : (
+                  <input
+                    type={field.type === 'email' ? 'email' : 'text'}
+                    value={formData[field.id] as string || ''}
+                    onChange={(e) => handleFieldChange(field.id, e.target.value)}
+                    className={`w-full px-3 py-2 rounded-lg border ${isDark ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-300 text-gray-900'}`}
+                    placeholder={field.placeholder || ''}
+                    required={field.required}
+                  />
+                )}
+                {field.description && (
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{field.description}</p>
                 )}
               </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Comments (Optional)
-              </label>
-              <textarea
-                rows={4}
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                className={`w-full px-3 py-2 rounded-lg border ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-white border-slate-300'}`}
-                placeholder="Tell us more about your experience..."
-              />
-            </div>
+            ))}
           </div>
         </div>
 
@@ -105,21 +229,27 @@ export default function SubmitFeedback() {
             type="button"
             onClick={() => router.back()}
             className={`px-4 py-2 border rounded-lg ${isDark ? 'border-slate-600 hover:bg-slate-700' : 'border-slate-300 hover:bg-gray-50'}`}
+            disabled={loading}
           >
             Cancel
           </button>
 
           <button
             type="submit"
-            disabled={loading || rating === 0}
+            disabled={loading || !template}
             className="inline-flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
           >
             {loading ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Submitting...
+              </>
             ) : (
-              <Send className="w-4 h-4 mr-2" />
+              <>
+                <Send className="w-4 h-4 mr-2" />
+                Submit Feedback
+              </>
             )}
-            {loading ? 'Submitting...' : 'Submit Feedback'}
           </button>
         </div>
       </form>

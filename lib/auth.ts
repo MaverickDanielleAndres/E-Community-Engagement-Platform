@@ -1,9 +1,9 @@
 // lib/auth.ts
 
-import NextAuth, { NextAuthOptions } from 'next-auth'
+import NextAuth from 'next-auth'
+import type { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import GoogleProvider from 'next-auth/providers/google'
-import { SupabaseAdapter } from '@auth/supabase-adapter'
 import bcrypt from 'bcryptjs'
 import { createClient } from '@supabase/supabase-js'
 
@@ -14,11 +14,6 @@ const supabase = createClient(
 )
 
 export const authOptions: NextAuthOptions = {
-  // Type cast the adapter to avoid TypeScript errors
-  adapter: SupabaseAdapter({
-    url: process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    secret: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  }) as any,
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -49,7 +44,7 @@ export const authOptions: NextAuthOptions = {
 
         // Verify password
         const isValid = await bcrypt.compare(credentials.password, user.hashed_password)
-        
+
         if (!isValid) {
           throw new Error('Invalid password')
         }
@@ -63,7 +58,8 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           name: user.name,
           email: user.email,
-          image: user.image
+          image: user.image,
+          role: user.role || 'Guest'
         }
       }
     }),
@@ -73,40 +69,103 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   callbacks: {
-    async jwt({ token, user, account }) {
-      // Initial sign in
-      if (account && user) {
-        token.accessToken = account.access_token
-        token.id = user.id
+    async signIn({ user, account, profile }) {
+      if (account?.provider === 'google') {
+        try {
+          // Check if user exists
+          const { data: existingUser } = await supabase
+            .from('users')
+            .select('*')
+            .eq('email', user.email!)
+            .single()
+
+          if (!existingUser) {
+            // Create new user
+            const { data: newUser, error } = await supabase
+              .from('users')
+              .insert({
+                name: user.name,
+                email: user.email,
+                email_verified: new Date().toISOString(),
+                image: user.image,
+                role: 'Guest'
+              })
+              .select()
+              .single()
+
+            if (error) {
+              console.error('Error creating Google user:', error)
+              return false
+            }
+            user.id = newUser.id
+          } else {
+            user.id = existingUser.id
+          }
+        } catch (error) {
+          console.error('Google sign-in error:', error)
+          return false
+        }
       }
+      return true
+    },
+    async jwt({ token, user, account, trigger }) {
+      // Initial sign in
+      if (user) {
+        token.id = user.id
+        token.role = user.role
+      }
+
+      // Fetch/update role from DB
+      if (token.id && trigger !== 'update') {
+        try {
+          // Check community role first
+          const { data: communityRole } = await supabase
+            .from('community_members')
+            .select('role')
+            .eq('user_id', token.id)
+            .single()
+
+          if (communityRole) {
+            token.role = communityRole.role
+          } else {
+            // Fallback to user role
+            const { data: userRole } = await supabase
+              .from('users')
+              .select('role')
+              .eq('id', token.id)
+              .single()
+
+            token.role = userRole?.role || 'Guest'
+          }
+        } catch (error) {
+          console.error('Error fetching role:', error)
+          token.role = 'Guest'
+        }
+      }
+
+      if (trigger === 'update' && token.id) {
+        // Refresh role on update
+        try {
+          const { data: communityRole } = await supabase
+            .from('community_members')
+            .select('role')
+            .eq('user_id', token.id)
+            .single()
+
+          token.role = communityRole ? communityRole.role : token.role
+        } catch (error) {
+          console.error('Error refreshing role:', error)
+        }
+      }
+
       return token
     },
     async session({ session, token }) {
       if (token) {
-        session.accessToken = token.accessToken
         session.user.id = token.id as string
+        session.user.role = token.role as string
       }
       return session
-    },
-    async signIn({ user, account, profile }) {
-      // Handle OAuth sign in
-      if (account?.provider === 'google') {
-        // Update user info if needed
-        const { data, error } = await supabase
-          .from('users')
-          .update({
-            name: user.name,
-            image: user.image,
-            email_verified: new Date()
-          })
-          .eq('email', user.email)
-          .select()
-        
-        if (error) {
-          console.error('Error updating user:', error)
-        }
-      }
-      return true
     }
   },
   pages: {
@@ -117,9 +176,11 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60, // Refresh every day
   },
   jwt: {
-    secret: process.env.NEXTAUTH_JWT_SECRET,
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+    secret: process.env.NEXTAUTH_SECRET,
   },
   secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === 'development',

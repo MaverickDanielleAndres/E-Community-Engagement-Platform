@@ -67,7 +67,61 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch feedback' }, { status: 500 })
     }
 
-    return NextResponse.json({ feedback: feedback || [] })
+    // Enrich feedback with resolved details
+    const enrichedFeedback = await Promise.all(
+      (feedback || []).map(async (item: any) => {
+        if (item.form_data && typeof item.form_data === 'object') {
+          let details = '';
+
+          // Resolve any UUID values from common entities
+          for (const [key, value] of Object.entries(item.form_data)) {
+            if (typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)) {
+              // Try complaints first
+              let resolvedText = '';
+              const { data: complaint } = await supabase
+                .from('complaints')
+                .select('description')
+                .eq('id', value)
+                .single();
+              if (complaint?.description) {
+                resolvedText = complaint.description;
+              } else {
+                // Then polls
+                const { data: poll } = await supabase
+                  .from('polls')
+                  .select('question')
+                  .eq('id', value)
+                  .single();
+                if (poll?.question) {
+                  resolvedText = poll.question;
+                }
+              }
+              if (resolvedText) {
+                details += `${key.charAt(0).toUpperCase() + key.slice(1)}: ${resolvedText}. `;
+              }
+            }
+          }
+
+          // Extract non-UUID text fields
+          const textEntries = Object.entries(item.form_data).filter(
+            ([key, val]) => typeof val === 'string' && val.length > 0 && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val)
+          );
+          for (const [key, val] of textEntries) {
+            details += `${key.charAt(0).toUpperCase() + key.slice(1)}: ${val}. `;
+          }
+
+          item.resolved_details = details.trim() || 'Form data submitted without details';
+        } else if (item.comment) {
+          item.resolved_details = item.comment;
+        } else {
+          item.resolved_details = 'No details provided';
+        }
+
+        return item;
+      })
+    );
+
+    return NextResponse.json({ feedback: enrichedFeedback })
   } catch (error) {
     console.error('Server error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
