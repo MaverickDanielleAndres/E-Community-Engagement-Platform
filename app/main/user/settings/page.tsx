@@ -4,7 +4,9 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useTheme } from '@/components/ThemeContext'
-import { Save, User, Bell, Shield, Users } from 'lucide-react'
+import { Save, User, Bell, Shield, Users, Camera } from 'lucide-react'
+import { getSupabaseClient } from '@/lib/supabase'
+import { Toast } from '@/components/Toast'
 
 interface CommunityInfo {
   name: string
@@ -13,7 +15,7 @@ interface CommunityInfo {
 }
 
 export default function UserSettings() {
-  const { data: session } = useSession()
+  const { data: session, update: sessionUpdate } = useSession()
   const { isDark } = useTheme()
   const [settings, setSettings] = useState({
     name: '',
@@ -28,9 +30,14 @@ export default function UserSettings() {
       activityVisible: false
     }
   })
+  const [profileImage, setProfileImage] = useState('')
   const [community, setCommunity] = useState<CommunityInfo | null>(null)
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null)
+
+  const supabase = getSupabaseClient()
 
   useEffect(() => {
     fetchUserData()
@@ -40,12 +47,18 @@ export default function UserSettings() {
     if (!session?.user) return
 
     try {
-      // Fetch user profile
-      setSettings(prev => ({
-        ...prev,
-        name: session.user.name || '',
-        email: session.user.email || ''
-      }))
+      // Fetch user summary with settings
+      const summaryResponse = await fetch('/api/me/summary')
+      if (summaryResponse.ok) {
+        const summaryData = await summaryResponse.json()
+        setSettings({
+          name: summaryData.user.name || '',
+          email: summaryData.user.email || '',
+          notifications: summaryData.settings.notifications,
+          privacy: summaryData.settings.privacy
+        })
+        setProfileImage(summaryData.settings.image || '')
+      }
 
       // Fetch community info
       const communityResponse = await fetch('/api/user/community')
@@ -60,10 +73,37 @@ export default function UserSettings() {
     }
   }
 
+  const handleImageUpload = async (file: File) => {
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('image', file)
+
+      const response = await fetch('/api/me/summary', {
+        method: 'PATCH',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to upload image')
+      }
+
+      const result = await response.json()
+      setProfileImage(result.imageUrl)
+      setToast({ message: 'Profile image uploaded successfully!', type: 'success' })
+    } catch (error: any) {
+      console.error('Error uploading image:', error)
+      setToast({ message: `Upload failed: ${error.message}`, type: 'error' })
+    } finally {
+      setUploading(false)
+    }
+  }
+
   const handleSave = async () => {
     setSaving(true)
     try {
-      // Save profile settings
+      // Save profile settings (non-image)
       const response = await fetch('/api/me/summary', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -75,10 +115,19 @@ export default function UserSettings() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to save settings')
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to save settings')
       }
-    } catch (error) {
+
+      // Update the session with new user data (image is no longer stored in session)
+      await sessionUpdate({
+        name: settings.name
+      })
+
+      setToast({ message: 'Settings saved successfully!', type: 'success' })
+    } catch (error: any) {
       console.error('Error saving settings:', error)
+      setToast({ message: `Failed to save settings: ${error.message}`, type: 'error' })
     } finally {
       setSaving(false)
     }
@@ -134,6 +183,33 @@ export default function UserSettings() {
         </div>
 
         <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Profile Picture</label>
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <img
+                  src={profileImage || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMzIiIGN5PSIyNCIgcj0iOCIgZmlsbD0iI2U1ZTdlYiIvPgo8cGF0aCBkPSJNMjQgNDAgUTMyIDQ4IDQwIDQwIiBzdHJva2U9IiM2YjcyODAiIHN0cm9rZS13aWR0aD0iMiIgZmlsbD0ibm9uZSIvPgo8Y2lyY2xlIGN4PSIzMiIgY3k9IjMyIiByPSIzMiIgZmlsbD0iI2U1ZTdlYiIvPgo8L3N2Zz4K'}
+                  alt="Profile"
+                  className="w-16 h-16 rounded-full object-cover border-2 border-gray-300 dark:border-gray-600"
+                />
+                <label className="absolute bottom-0 right-0 bg-blue-600 text-white p-1 rounded-full cursor-pointer hover:bg-blue-700">
+                  <Camera className="w-3 h-3" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) handleImageUpload(file)
+                    }}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+              {uploading && (
+                <div className="text-sm text-gray-500 dark:text-gray-400">Uploading...</div>
+              )}
+            </div>
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Name</label>
             <input
@@ -228,6 +304,15 @@ export default function UserSettings() {
         )}
         {saving ? 'Saving...' : 'Save Changes'}
       </button>
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+          duration={4000}
+        />
+      )}
     </div>
   )
 }

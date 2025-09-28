@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
       .select(`
         community_id, 
         role,
-        communities!inner(id, name, code)
+        communities!inner(id, name, code, logo_url)
       `)
       .eq('user_id', userId)
       .single()
@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
           name: `${session.user.name || 'Admin'}'s Community`,
           code: communityCode
         })
-        .select('id, name, code')
+        .select('id, name, code, logo_url')
         .single()
 
       if (communityCreateError) {
@@ -162,6 +162,17 @@ export async function GET(request: NextRequest) {
         ? communityData.communities[0]
         : communityData.communities
       communityInfo = communitiesData
+
+      // If code is empty, generate one and update the DB
+      if (communityInfo && !communityInfo.code) {
+        communityInfo.code = `${session.user.name?.substring(0, 4).toUpperCase() || 'COMM'}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`
+        // Update the community with the new code
+        await supabaseAdmin
+          .from('communities')
+          .update({ code: communityInfo.code })
+          .eq('id', communityId)
+      }
+
       console.log('Community found:', communityId)
     }
 
@@ -219,6 +230,7 @@ export async function GET(request: NextRequest) {
           id,
           name,
           email,
+          image,
           updated_at
         )
       `)
@@ -242,6 +254,7 @@ export async function GET(request: NextRequest) {
         id: user?.id || member.user_id,
         name: user?.name || 'Unknown User',
         email: user?.email || '',
+        image: user?.image || null,
         role: member.role,
         created_at: member.joined_at,
         updated_at: user?.updated_at || null,

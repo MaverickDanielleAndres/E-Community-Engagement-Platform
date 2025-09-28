@@ -1,35 +1,17 @@
--- Add 'admin' to member_role enum if not exists
--- Run this in Supabase SQL Editor before other migrations
+-- Add admin role to user
+-- Replace 'admin@example.com' with the actual user email if different
 
-DO $$
-BEGIN
-  -- Check if 'admin' already exists in the enum
-  IF NOT EXISTS (
-    SELECT 1 
-    FROM pg_enum 
-    WHERE enumtypid = 'public.member_role'::regtype 
-    AND enumlabel = 'admin'
-  ) THEN
-    -- Add 'admin' to the enum
-    ALTER TYPE public.member_role ADD VALUE 'admin';
-  END IF;
-END $$;
+-- First, get the user id
+-- Then, ensure they are in community_members with role 'Admin'
 
--- Also add 'moderator' if needed for future use
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 
-    FROM pg_enum 
-    WHERE enumtypid = 'public.member_role'::regtype 
-    AND enumlabel = 'moderator'
-  ) THEN
-    ALTER TYPE public.member_role ADD VALUE 'moderator';
-  END IF;
-END $$;
+-- Assuming there's a community with id 1 (adjust if needed)
+INSERT INTO community_members (user_id, community_id, role, created_at)
+SELECT u.id, 1, 'Admin', NOW()
+FROM users u
+WHERE u.email = 'maverickdanielle@gmail.com'
+ON CONFLICT (user_id, community_id) DO UPDATE SET role = 'Admin';
 
--- Verify the enum values
-SELECT enumlabel 
-FROM pg_enum 
-WHERE enumtypid = 'public.member_role'::regtype 
-ORDER BY enumsortorder;
+-- If the community doesn't exist, create one
+INSERT INTO communities (name, code, created_at)
+VALUES ('Default Community', 'DEFAULT', NOW())
+ON CONFLICT (code) DO NOTHING;

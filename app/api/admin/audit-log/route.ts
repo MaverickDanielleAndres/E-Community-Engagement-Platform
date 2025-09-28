@@ -1,3 +1,5 @@
+// app/api/admin/audit-log/route.ts
+
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { createClient } from '@supabase/supabase-js'

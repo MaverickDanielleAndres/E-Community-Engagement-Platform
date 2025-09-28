@@ -1,10 +1,20 @@
+// app/main/admin/polls/[pollId]/page.tsx
 'use client'
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { ChartCard, EmptyState, ConfirmDialog } from '@/components/mainapp/components'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { PieChart, Calendar, Users, AlertTriangle, CheckCircle } from 'lucide-react'
+import { PieChart, Calendar, Users, AlertTriangle, CheckCircle, FileText, MessageSquare } from 'lucide-react'
+
+interface PollQuestion {
+  id: string
+  type: 'radio' | 'checkbox' | 'text'
+  question: string
+  options?: string[]
+  required: boolean
+  responses: any[]
+}
 
 interface PollData {
   id: string
@@ -13,14 +23,11 @@ interface PollData {
   deadline: string
   created_at: string
   is_anonymous: boolean
-  is_multi_select: boolean
-  options: Array<{
-    id: string
-    option_text: string
-    vote_count: number
-  }>
-  total_votes: number
-  status: 'active' | 'closed' | 'draft'
+  questions: PollQuestion[]
+  footer_note?: string
+  complaint_link?: string
+  status: 'active' | 'closed'
+  totalResponses?: number
 }
 
 export default function PollDetails() {
@@ -59,9 +66,14 @@ export default function PollDetails() {
         },
         body: JSON.stringify({ status: 'closed' }),
       })
-      
+
       if (response.ok) {
-        setPoll(prev => prev ? { ...prev, status: 'closed' } : null)
+        // Refresh poll data to get updated status and responses
+        const updatedResponse = await fetch(`/api/polls/${pollId}`)
+        if (updatedResponse.ok) {
+          const data = await updatedResponse.json()
+          setPoll(data.poll)
+        }
       }
     } catch (error) {
       console.error('Failed to close poll:', error)
@@ -87,11 +99,8 @@ export default function PollDetails() {
     )
   }
 
-  const chartData = poll.options.map(option => ({
-    name: option.option_text.length > 20 ? option.option_text.substring(0, 20) + '...' : option.option_text,
-    votes: option.vote_count,
-    percentage: poll.total_votes > 0 ? ((option.vote_count / poll.total_votes) * 100).toFixed(1) : 0
-  }))
+  // Use total responses from API (number of unique respondents)
+  const totalResponses = poll.totalResponses || 0
 
   return (
     <div className="space-y-6">
@@ -107,7 +116,7 @@ export default function PollDetails() {
             </p>
           )}
         </div>
-        
+
         {poll.status === 'active' && (
           <button
             onClick={() => setCloseDialog(true)}
@@ -125,20 +134,18 @@ export default function PollDetails() {
           <div className="flex items-center">
             <Users className="w-5 h-5 text-blue-500 mr-2" />
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Votes</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{poll.total_votes}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Total Responses</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">{totalResponses}</p>
             </div>
           </div>
         </div>
 
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
           <div className="flex items-center">
-            <Calendar className="w-5 h-5 text-green-500 mr-2" />
+            <PieChart className="w-5 h-5 text-green-500 mr-2" />
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Created</p>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
-                {new Date(poll.created_at).toLocaleDateString()}
-              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Questions</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">{poll.questions.length}</p>
             </div>
           </div>
         </div>
@@ -168,96 +175,158 @@ export default function PollDetails() {
         </div>
       </div>
 
-      {/* Results Chart */}
-      <ChartCard title="Poll Results">
-        {poll.total_votes > 0 ? (
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
-              <XAxis 
-                dataKey="name" 
-                stroke="#6B7280"
-                angle={-45}
-                textAnchor="end"
-                height={60}
-              />
-              <YAxis stroke="#6B7280" />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#1F2937', 
-                  border: 'none', 
-                  borderRadius: '8px',
-                  color: '#F9FAFB'
-                }} 
-                formatter={(value: any, name: string) => [`${value} votes (${chartData.find(d => d.votes === value)?.percentage}%)`, 'Votes']}
-              />
-              <Bar dataKey="votes" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="text-center py-12">
-            <PieChart className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-gray-400">No votes yet</p>
-          </div>
-        )}
-      </ChartCard>
+      {/* Questions and Results */}
+      {poll.questions.map((question, questionIndex) => {
+        const responses = question.responses || []
+        const responseCount = responses.length
 
-      {/* Detailed Results */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Detailed Results
-        </h2>
-        
-        <div className="space-y-4">
-          {poll.options.map((option, index) => {
-            const percentage = poll.total_votes > 0 ? (option.vote_count / poll.total_votes) * 100 : 0
-            
-            return (
-              <div key={option.id} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {index + 1}. {option.option_text}
-                  </span>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {option.vote_count} votes ({percentage.toFixed(1)}%)
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
-                  <div 
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${percentage}%` }}
-                  />
-                </div>
+        return (
+          <div key={question.id} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  Question {questionIndex + 1}
+                  {question.required && <span className="text-red-500 ml-1">*</span>}
+                </h3>
+                <p className="text-gray-700 dark:text-gray-300 mb-2">{question.question}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Type: {question.type} • {responseCount} responses
+                </p>
               </div>
-            )
-          })}
+            </div>
+
+            {/* Question Results */}
+            {question.type === 'radio' && question.options && (
+              <div className="space-y-4">
+                {question.options.map((option, optionIndex) => {
+                  const optionResponses = responses.filter((r: any) => r === option).length
+                  const percentage = responseCount > 0 ? (optionResponses / responseCount) * 100 : 0
+
+                  return (
+                    <div key={optionIndex} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">
+                          {option}
+                        </span>
+                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                          {optionResponses} responses ({percentage.toFixed(1)}%)
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {question.type === 'checkbox' && question.options && (
+              <div className="space-y-4">
+                {question.options.map((option, optionIndex) => {
+                  const optionResponses = responses.filter((r: any[]) => r && r.includes(option)).length
+                  const percentage = responseCount > 0 ? (optionResponses / responseCount) * 100 : 0
+
+                  return (
+                    <div key={optionIndex} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">
+                          {option}
+                        </span>
+                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                          {optionResponses} responses ({percentage.toFixed(1)}%)
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
+                        <div
+                          className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {question.type === 'text' && (
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-gray-900 dark:text-white">Text Responses:</h4>
+                {responses.length > 0 ? (
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {responses.slice(0, 10).map((response: string, index: number) => (
+                      <div key={index} className="p-3 bg-gray-50 dark:bg-slate-700 rounded-lg">
+                        <p className="text-sm text-gray-700 dark:text-gray-300">{response || 'No response'}</p>
+                      </div>
+                    ))}
+                    {responses.length > 10 && (
+                      <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+                        ... and {responses.length - 10} more responses
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No responses yet</p>
+                )}
+              </div>
+            )}
+
+            {responseCount === 0 && (
+              <p className="text-center text-gray-500 dark:text-gray-400 py-4">
+                No responses yet for this question
+              </p>
+            )}
+          </div>
+        )
+      })}
+
+      {/* Footer Note */}
+      {poll.footer_note && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6">
+          <div className="flex items-start">
+            <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400 mr-3 mt-0.5" />
+            <div>
+              <h3 className="text-base font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                Additional Information
+              </h3>
+              <p className="text-blue-700 dark:text-blue-300 whitespace-pre-wrap">
+                {poll.footer_note}
+              </p>
+              {poll.complaint_link && (
+                <a
+                  href={poll.complaint_link}
+                  className="inline-flex items-center mt-3 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                >
+                  <MessageSquare className="w-4 h-4 mr-1" />
+                  Submit a complaint
+                </a>
+              )}
+            </div>
+          </div>
         </div>
+      )}
 
-        {poll.total_votes === 0 && (
-          <p className="text-center text-gray-500 dark:text-gray-400 py-4">
-            No votes have been cast yet
-          </p>
-        )}
-      </div>
-
-      {/* Settings Info */}
+      {/* Poll Settings */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Poll Settings
+          Poll Information
         </h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div className="flex items-center">
             <CheckCircle className={`w-4 h-4 mr-2 ${poll.is_anonymous ? 'text-green-500' : 'text-gray-400'}`} />
-            <span className="text-sm text-gray-700 dark:text-gray-300">
-              Anonymous voting {poll.is_anonymous ? 'enabled' : 'disabled'}
+            <span className="text-gray-700 dark:text-gray-300">
+              Anonymous responses {poll.is_anonymous ? 'enabled' : 'disabled'}
             </span>
           </div>
-          
+
           <div className="flex items-center">
-            <CheckCircle className={`w-4 h-4 mr-2 ${poll.is_multi_select ? 'text-green-500' : 'text-gray-400'}`} />
-            <span className="text-sm text-gray-700 dark:text-gray-300">
-              Multiple selections {poll.is_multi_select ? 'allowed' : 'not allowed'}
+            <CheckCircle className={`w-4 h-4 mr-2 ${poll.questions.some(q => q.type === 'checkbox') ? 'text-green-500' : 'text-gray-400'}`} />
+            <span className="text-gray-700 dark:text-gray-300">
+              Multiple choice questions {poll.questions.some(q => q.type === 'checkbox') ? 'included' : 'not included'}
             </span>
           </div>
         </div>

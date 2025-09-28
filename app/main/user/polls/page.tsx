@@ -1,3 +1,5 @@
+//  app/main/user/polls/page.tsx
+
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -36,6 +38,11 @@ export default function UserPolls() {
     }
 
     fetchPolls()
+
+    // Poll for updates every 30 seconds to reflect status changes
+    const interval = setInterval(fetchPolls, 30000)
+
+    return () => clearInterval(interval)
   }, [])
 
   const getStatusColor = (status: string) => {

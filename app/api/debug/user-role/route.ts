@@ -1,5 +1,4 @@
-// STEP 1: First, add this debug API endpoint to check what's actually in your database
-// Create: @/app/api/debug/user-role/route.ts
+// @/app/api/debug/user-role/route.ts
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'

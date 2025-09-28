@@ -1,3 +1,5 @@
+// Tailwind CSS Configuration with Enhanced Theming and Custom Utilities
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [

@@ -1,8 +1,8 @@
 // @/components/ui/UserHeader.tsx
 'use client'
 
-import { useState } from 'react'
-import { useSession } from 'next-auth/react'
+import { useState, useEffect } from 'react'
+import { useSession, signOut } from 'next-auth/react'
 import { useTheme } from '@/components/ThemeContext'
 import { motion } from 'framer-motion'
 import { Bell, Search, User, LogOut, Settings, Menu, ChevronDown, PlusSquare, FileText } from 'lucide-react'
@@ -14,8 +14,37 @@ export function UserHeader() {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [userImage, setUserImage] = useState<string>('')
+  const [communityLogo, setCommunityLogo] = useState('')
 
   const user = session?.user
+
+  // Fetch user image and community logo
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!session?.user) return
+
+      try {
+        // Fetch user summary
+        const userResponse = await fetch('/api/me/summary')
+        if (userResponse.ok) {
+          const userData = await userResponse.json()
+          setUserImage(userData.settings?.image || '')
+        }
+
+        // Fetch community info
+        const communityResponse = await fetch('/api/user/community')
+        if (communityResponse.ok) {
+          const communityData = await communityResponse.json()
+          setCommunityLogo(communityData.logo_url || '')
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error)
+      }
+    }
+
+    fetchUserData()
+  }, [session])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -43,6 +72,15 @@ export function UserHeader() {
       <div className="flex items-center justify-between">
         {/* Left: Search and Actions */}
         <div className="flex items-center space-x-4">
+          {/* Community Logo */}
+          {communityLogo && (
+            <img
+              src={communityLogo}
+              alt="Community Logo"
+              className="w-8 h-8 rounded-lg object-cover hidden md:block"
+            />
+          )}
+
           {/* Search */}
           <form onSubmit={handleSearch} className="relative hidden md:block">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -151,8 +189,16 @@ export function UserHeader() {
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               className="flex items-center space-x-2 p-2 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded-lg"
             >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
-                <User className="w-4 h-4 text-white" />
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+                {userImage ? (
+                  <img
+                    src={userImage}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User className="w-4 h-4 text-white" />
+                )}
               </div>
               {!isProfileOpen && (
                 <span className="hidden sm:inline text-sm font-medium text-slate-900 dark:text-white">
@@ -179,9 +225,9 @@ export function UserHeader() {
                 </Link>
                 <hr className="my-1 border-slate-200 dark:border-slate-700" />
                 <button
-                  onClick={() => {
-                    // Implement logout
-                    window.location.href = '/api/auth/signout'
+                  onClick={async () => {
+                    setIsProfileOpen(false)
+                    await signOut({ callbackUrl: '/' })
                   }}
                   className="w-full flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                 >

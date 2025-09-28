@@ -1,9 +1,13 @@
+
+// @/app/main/admin/complaints/page.tsx - Updated with full functionality
 'use client'
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { DataTable, EmptyState, SearchInput } from '@/components/mainapp/components'
 import { MessageSquareWarning, Eye, Calendar, User, AlertCircle } from 'lucide-react'
+import { useTheme } from '@/components/ThemeContext'
+import { Toast } from '@/components/Toast'
 
 interface Complaint {
   id: string
@@ -20,11 +24,13 @@ interface Complaint {
 export default function AdminComplaints() {
   const [complaints, setComplaints] = useState<Complaint[]>([])
   const [loading, setLoading] = useState(true)
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
   const [filters, setFilters] = useState({
     status: '',
     category: '',
     search: ''
   })
+  const { isDark } = useTheme()
 
   useEffect(() => {
     const fetchComplaints = async () => {
@@ -37,16 +43,19 @@ export default function AdminComplaints() {
         if (response.ok) {
           const data = await response.json()
           setComplaints(data.complaints || [])
+        } else {
+          setToast({ message: 'Failed to load complaints', type: 'error' })
         }
       } catch (error) {
         console.error('Failed to fetch complaints:', error)
+        setToast({ message: 'Failed to load complaints', type: 'error' })
       } finally {
         setLoading(false)
       }
     }
 
     fetchComplaints()
-  }, [filters])
+  }, [filters.status, filters.category])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -171,6 +180,15 @@ export default function AdminComplaints() {
 
   return (
     <div className="space-y-6">
+      {/* Toast */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -194,7 +212,9 @@ export default function AdminComplaints() {
         <select
           value={filters.status}
           onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-          className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className={`px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+            isDark ? 'border-slate-600 bg-slate-700 text-white' : 'border-slate-300 bg-white text-gray-900'
+          }`}
         >
           <option value="">All Status</option>
           <option value="pending">Pending</option>
@@ -205,7 +225,9 @@ export default function AdminComplaints() {
         <select
           value={filters.category}
           onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-          className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className={`px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+            isDark ? 'border-slate-600 bg-slate-700 text-white' : 'border-slate-300 bg-white text-gray-900'
+          }`}
         >
           <option value="">All Categories</option>
           <option value="maintenance">Maintenance</option>

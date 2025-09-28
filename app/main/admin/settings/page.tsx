@@ -4,9 +4,11 @@
 
 import { useState, useEffect } from 'react'
 import { useTheme } from '@/components/ThemeContext'
-import { Save, Settings, Shield, Bell, Bot, Upload, Check } from 'lucide-react'
+import { getSupabaseClient } from '@/lib/supabase'
+import { Save, Settings, Shield, Bell, Bot, Upload, Check, Camera } from 'lucide-react'
 
 interface CommunitySettings {
+  community_id: string
   name: string
   description: string
   code: string
@@ -32,6 +34,7 @@ interface CommunitySettings {
 export default function AdminSettings() {
   const { isDark } = useTheme()
   const [settings, setSettings] = useState<CommunitySettings>({
+    community_id: '',
     name: '',
     description: '',
     code: '',
@@ -56,6 +59,7 @@ export default function AdminSettings() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -88,6 +92,7 @@ export default function AdminSettings() {
           name: settings.name,
           description: settings.description,
           code: settings.code,
+          logo_url: settings.logo_url,
         }),
       })
 
@@ -104,12 +109,30 @@ export default function AdminSettings() {
     }
   }
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const handleImageUpload = async (file: File) => {
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('image', file)
 
-    // Handle image upload logic here
-    console.log('Uploading image:', file)
+      const response = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to upload image')
+      }
+
+      const result = await response.json()
+      setSettings(prev => ({ ...prev, logo_url: result.logoUrl }))
+    } catch (error: any) {
+      console.error('Upload error:', error)
+      alert(`Upload failed: ${error.message}`)
+    } finally {
+      setUploading(false)
+    }
   }
 
   if (loading) {
@@ -217,29 +240,37 @@ export default function AdminSettings() {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Community Logo
             </label>
-            <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 rounded-lg bg-gray-200 dark:bg-slate-700 flex items-center justify-center">
-                {settings.logo_url ? (
-                  <img src={settings.logo_url} alt="Community Logo" className="w-full h-full rounded-lg object-cover" />
-                ) : (
-                  <Upload className="w-6 h-6 text-gray-400" />
-                )}
-              </div>
+            <div className="relative w-20 h-20 rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden">
+              {settings.logo_url ? (
+                <img src={settings.logo_url} alt="Community Logo" className="w-full h-full rounded-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <Upload className="w-8 h-8 text-gray-400" />
+                </div>
+              )}
               <input
                 type="file"
                 accept="image/*"
-                onChange={handleImageUpload}
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) handleImageUpload(file)
+                }}
                 className="hidden"
                 id="logo-upload"
+                disabled={uploading}
               />
               <label
                 htmlFor="logo-upload"
-                className="cursor-pointer inline-flex items-center px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600"
+                className={`absolute bottom-0 right-0 bg-blue-600 rounded-full p-2 cursor-pointer hover:bg-blue-700 transition-colors ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                <Upload className="w-4 h-4 mr-2" />
-                Upload Logo
+                {uploading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  <Camera className="w-4 h-4 text-white" />
+                )}
               </label>
             </div>
+            {uploading && <p className="text-sm text-blue-600 mt-2">Uploading...</p>}
           </div>
         </div>
       </div>

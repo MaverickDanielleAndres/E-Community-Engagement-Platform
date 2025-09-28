@@ -62,23 +62,41 @@ export async function GET(
       .eq('respondent_id', user.id)
       .maybeSingle()
 
-    // Get response counts for each question
-    const questionsWithStats = poll.questions.map((question: any) => {
-      const responses = supabase
-        .from('poll_responses')
-        .select('responses')
+    // Get all responses for this poll
+    const { data: allResponses, error: responsesError } = await supabase
+      .from('poll_responses')
+      .select('responses')
+      .eq('poll_id', pollId)
 
-      // For now, return question with basic info
-      // We'll calculate stats on the frontend or add more complex queries later
-      return {
-        ...question,
-        responses: [] // Will be populated with response data
-      }
-    })
+    if (responsesError) {
+      console.error('Error fetching responses:', responsesError)
+    }
+
+    // Aggregate responses by question
+    const responseMap: { [questionId: string]: any[] } = {}
+
+    if (allResponses) {
+      allResponses.forEach((responseRecord: any) => {
+        const responses = responseRecord.responses || {}
+        Object.entries(responses).forEach(([questionId, answer]) => {
+          if (!responseMap[questionId]) {
+            responseMap[questionId] = []
+          }
+          responseMap[questionId].push(answer)
+        })
+      })
+    }
+
+    // Add responses to each question
+    const questionsWithStats = poll.questions.map((question: any) => ({
+      ...question,
+      responses: responseMap[question.id] || []
+    }))
 
     const formattedPoll = {
       ...poll,
       questions: questionsWithStats,
+      totalResponses: allResponses?.length || 0,
       user_voted: !!userResponse,
       user_responses: userResponse?.responses || {},
       status: poll.deadline && new Date(poll.deadline) < new Date() ? 'closed' : 'active'
@@ -106,13 +124,13 @@ export async function PUT(
     const body = await request.json()
 
     // First get the poll to find its community
-    const { data: poll } = await supabase
+    const { data: pollData } = await supabase
       .from('polls')
-      .select('community_id')
+      .select('community_id, title')
       .eq('id', pollId)
       .single()
 
-    if (!poll) {
+    if (!pollData) {
       return NextResponse.json({ error: 'Poll not found' }, { status: 404 })
     }
 
@@ -132,7 +150,7 @@ export async function PUT(
       .from('community_members')
       .select('role')
       .eq('user_id', user.id)
-      .eq('community_id', poll.community_id)
+      .eq('community_id', pollData.community_id)
       .single()
 
     // Check if user is global admin or community admin
@@ -140,13 +158,43 @@ export async function PUT(
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
+    // Handle manual poll closure - only update deadline, ignore status field
+    const { status, ...otherUpdates } = body
+    let updateData: any = { ...otherUpdates }
+    if (status === 'closed') {
+      updateData.deadline = new Date(Date.now() - 5000).toISOString() // 5 seconds ago to ensure closed
+      console.log('Closing poll, setting deadline to:', updateData.deadline)
+
+      // Create notification for community members
+      const { data: members } = await supabase
+        .from('community_members')
+        .select('user_id')
+        .eq('community_id', pollData.community_id)
+
+      if (members && members.length > 0) {
+        const memberIds = members.map((m: any) => m.user_id)
+        const notifications = memberIds.map((memberId: string) => ({
+          user_id: memberId,
+          type: 'poll_closed',
+          title: `Poll "${pollData.title}" has been closed`,
+          body: 'The poll is no longer accepting responses.',
+          link_url: `/main/user/polls/${pollId}`,
+          is_read: false,
+          created_at: new Date().toISOString()
+        }))
+
+        await supabase.from('notifications').insert(notifications)
+      }
+    }
+
     // Update poll
     const { error } = await supabase
       .from('polls')
-      .update(body)
+      .update(updateData)
       .eq('id', pollId)
 
     if (error) {
+      console.error('Update error:', error)
       return NextResponse.json({ error: 'Failed to update poll' }, { status: 500 })
     }
 
@@ -154,12 +202,12 @@ export async function PUT(
     await supabase
       .from('audit_log')
       .insert({
-        community_id: poll.community_id,
+        community_id: pollData.community_id,
         user_id: user.id,
         action_type: 'update_poll',
         entity_type: 'poll',
         entity_id: pollId,
-        details: body
+        details: { ...body, status: undefined } // Don't log computed status
       })
 
     return NextResponse.json({ message: 'Poll updated successfully' })

@@ -145,7 +145,7 @@ export default function UserDashboard() {
           {recentActivity.length > 0 ? (
             recentActivity.map((activity, index) => (
               <motion.div
-                key={activity.title}
+                key={`${activity.title}-${activity.date}-${index}`}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}

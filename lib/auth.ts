@@ -113,10 +113,25 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id
         token.role = user.role
+        // Don't store image in JWT to avoid size limits
+        token.name = user.name
+        token.email = user.email
+        // Force refresh to remove any existing image data from old sessions
+        token.forceRefresh = true
       }
 
-      // Fetch/update role from DB
-      if (token.id && trigger !== 'update') {
+      // Force refresh token if it contains image data (from old sessions)
+      if (token.picture || token.image || (token as any).userImage) {
+        console.log('Detected old JWT with image data, forcing refresh')
+        // Clear any image data and force refresh
+        delete token.picture
+        delete token.image
+        delete (token as any).userImage
+        token.forceRefresh = true
+      }
+
+      // Fetch/update user data from DB (role, name only - image excluded to prevent JWT bloat)
+      if (token.id) {
         try {
           // Check community role first
           const { data: communityRole } = await supabase
@@ -137,15 +152,27 @@ export const authOptions: NextAuthOptions = {
 
             token.role = userRole?.role || 'Guest'
           }
+
+          // Fetch user name only (image excluded from JWT)
+          const { data: userData } = await supabase
+            .from('users')
+            .select('name')
+            .eq('id', token.id)
+            .single()
+
+          if (userData) {
+            token.name = userData.name
+          }
         } catch (error) {
-          console.error('Error fetching role:', error)
+          console.error('Error fetching user data:', error)
           token.role = 'Guest'
         }
       }
 
       if (trigger === 'update' && token.id) {
-        // Refresh role on update
+        // Refresh user data on update
         try {
+          // Refresh role
           const { data: communityRole } = await supabase
             .from('community_members')
             .select('role')
@@ -153,8 +180,19 @@ export const authOptions: NextAuthOptions = {
             .single()
 
           token.role = communityRole ? communityRole.role : token.role
+
+          // Refresh name only (image excluded from JWT)
+          const { data: userData } = await supabase
+            .from('users')
+            .select('name')
+            .eq('id', token.id)
+            .single()
+
+          if (userData) {
+            token.name = userData.name
+          }
         } catch (error) {
-          console.error('Error refreshing role:', error)
+          console.error('Error refreshing user data:', error)
         }
       }
 
@@ -164,6 +202,10 @@ export const authOptions: NextAuthOptions = {
       if (token) {
         session.user.id = token.id as string
         session.user.role = token.role as string
+        // Image is not stored in JWT to avoid size limits - fetch separately when needed
+        session.user.name = token.name as string | undefined
+        // Ensure no large data is stored in session
+        session.user.email = token.email as string | undefined
       }
       return session
     }

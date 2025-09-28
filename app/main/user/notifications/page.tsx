@@ -70,39 +70,6 @@ export default function UserNotifications() {
 
   const columns = [
     {
-      key: 'select' as const,
-      header: (
-        <input
-          type="checkbox"
-          checked={selectedNotifications.length === notifications.filter(n => !n.is_read).length && notifications.filter(n => !n.is_read).length > 0}
-          onChange={(e) => {
-            if (e.target.checked) {
-              setSelectedNotifications(notifications.filter(n => !n.is_read).map(n => n.id))
-            } else {
-              setSelectedNotifications([])
-            }
-          }}
-          className="rounded"
-        />
-      ),
-      render: (value: any, row: Notification) => (
-        !row.is_read && (
-          <input
-            type="checkbox"
-            checked={selectedNotifications.includes(row.id)}
-            onChange={(e) => {
-              if (e.target.checked) {
-                setSelectedNotifications(prev => [...prev, row.id])
-              } else {
-                setSelectedNotifications(prev => prev.filter(id => id !== row.id))
-              }
-            }}
-            className="rounded"
-          />
-        )
-      )
-    },
-    {
       key: 'type' as const,
       header: 'Type',
       render: (value: string) => getTypeIcon(value)

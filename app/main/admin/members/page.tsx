@@ -16,6 +16,7 @@ interface Member {
   id: string
   name: string
   email: string
+  image?: string | null
   role: string
   created_at: string
   updated_at: string | null
@@ -26,6 +27,7 @@ interface CommunityInfo {
   id: string
   name: string
   code: string
+  logo_url?: string
 }
 
 
@@ -239,12 +241,26 @@ export default function AdminMembers() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <h1 className={`text-4xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-          Community Members
-        </h1>
-        <p className={isDark ? 'text-slate-400' : 'text-slate-600'}>
-          Manage your community members and their access levels
-        </p>
+        <div className="flex items-center space-x-4 mb-4">
+          {communityInfo && (
+            <img
+              src={communityInfo.logo_url || '/default-logo.png'}
+              alt="Community Logo"
+              className="w-12 h-12 rounded-lg object-cover"
+              onError={(e) => {
+                e.currentTarget.src = '/default-logo.png'
+              }}
+            />
+          )}
+          <div>
+            <h1 className={`text-4xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              Community Members
+            </h1>
+            <p className={isDark ? 'text-slate-400' : 'text-slate-600'}>
+              Manage your community members and their access levels
+            </p>
+          </div>
+        </div>
       </motion.div>
 
       {/* Community Code Section */}
@@ -434,15 +450,38 @@ export default function AdminMembers() {
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        isDark ? 'bg-slate-600' : 'bg-slate-200'
-                      }`}>
-                        <span className={`text-sm font-medium ${
-                          isDark ? 'text-white' : 'text-slate-900'
+                      {member.image ? (
+                        <div className="relative w-10 h-10 rounded-full overflow-hidden">
+                          <img
+                            src={member.image}
+                            alt={`${member.name}'s profile`}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              (e.currentTarget.nextSibling as HTMLElement)?.classList.remove('hidden');
+                            }}
+                          />
+                          <div className={`absolute inset-0 w-10 h-10 rounded-full flex items-center justify-center ${
+                            isDark ? 'bg-slate-600' : 'bg-slate-200'
+                          } hidden`}>
+                            <span className={`text-sm font-medium ${
+                              isDark ? 'text-white' : 'text-slate-900'
+                            }`}>
+                              {member.name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          isDark ? 'bg-slate-600' : 'bg-slate-200'
                         }`}>
-                          {member.name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
+                          <span className={`text-sm font-medium ${
+                            isDark ? 'text-white' : 'text-slate-900'
+                          }`}>
+                            {member.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      )}
                       <div className="ml-4">
                         <div className={`text-sm font-medium ${
                           isDark ? 'text-white' : 'text-slate-900'

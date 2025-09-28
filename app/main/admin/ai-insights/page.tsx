@@ -1,3 +1,5 @@
+// app/main/admin/ai-insights/page.tsx
+
 'use client'
 
 import { useState, useEffect } from 'react'

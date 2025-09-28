@@ -29,6 +29,9 @@ export async function GET(request: NextRequest) {
         name,
         email,
         role,
+        image,
+        notifications,
+        privacy,
         community_members!community_members_user_id_fkey(
           community_id,
           role,
@@ -60,7 +63,7 @@ export async function GET(request: NextRequest) {
       const communityMember = user.community_members[0]
       userRole = communityMember.role
       communityId = communityMember.community_id
-communityName = communityMember.communities[0]?.name
+      communityName = communityMember.communities[0]?.name
       console.log('Using community role:', userRole)
     } else {
       console.log('No community membership found, using user table role:', userRole)
@@ -79,6 +82,14 @@ communityName = communityMember.communities[0]?.name
 
     if (communityId) {
       // Get community-specific stats
+      // Get poll IDs for the community for myVotes filter
+      const { data: communityPolls } = await supabase
+        .from('polls')
+        .select('id')
+        .eq('community_id', communityId)
+
+      const pollIds = communityPolls ? communityPolls.map(p => p.id) : []
+
       const [
         { count: totalMembers },
         { count: activePolls },
@@ -114,12 +125,16 @@ communityName = communityMember.communities[0]?.name
         supabase
           .from('complaints')
           .select('*', { count: 'exact', head: true })
+          .eq('community_id', communityId)
           .eq('user_id', user.id),
         
-        supabase
-          .from('poll_votes')
-          .select('*', { count: 'exact', head: true })
-          .eq('voter_id', user.id),
+        pollIds.length > 0 
+          ? supabase
+              .from('poll_votes')
+              .select('*', { count: 'exact', head: true })
+              .in('poll_id', pollIds)
+              .eq('voter_id', user.id)
+          : Promise.resolve({ count: 0 }),
         
         supabase
           .from('feedback')
@@ -177,6 +192,11 @@ communityName = communityMember.communities[0]?.name
         role: userRole, // This is the key fix - using the determined role
         community: communityName || 'No Community'
       },
+      settings: {
+        image: user.image,
+        notifications: user.notifications || { email: true, push: true, digest: false },
+        privacy: user.privacy || { profileVisible: true, activityVisible: false }
+      },
       stats,
       recentActivity: recentActivity.map((activity: any) => ({
         id: activity.id,
@@ -193,5 +213,82 @@ communityName = communityMember.communities[0]?.name
   } catch (error) {
     console.error('Server error in /api/me/summary:', error)
     return NextResponse.json({ error: 'Internal server error', details: error }, { status: 500 })
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    console.log('=== API /me/summary PATCH called ===')
+
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const contentType = request.headers.get('content-type')
+    let updateData: any = { updated_at: new Date().toISOString() }
+    let imageUrl: string | null = null
+
+    if (contentType?.includes('multipart/form-data')) {
+      // Handle file upload
+      const formData = await request.formData()
+      const imageFile = formData.get('image') as File
+
+      if (imageFile) {
+        // Upload to Supabase Storage
+        const fileExt = imageFile.name.split('.').pop()
+        const fileName = `${session.user.id}-${Date.now()}.${fileExt}`
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('public-images')
+          .upload(fileName, imageFile, {
+            cacheControl: '3600',
+            upsert: false
+          })
+
+        if (uploadError || !uploadData) {
+          console.error('Storage upload error:', uploadError)
+          return NextResponse.json({ error: 'Failed to upload image' }, { status: 500 })
+        }
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('public-images')
+          .getPublicUrl(fileName)
+
+        updateData.image = publicUrl
+        imageUrl = publicUrl
+      }
+    } else {
+      // Handle JSON data for other settings
+      const body = await request.json()
+      const { name, notifications, privacy } = body
+
+      if (name !== undefined) updateData.name = name
+      if (notifications !== undefined) updateData.notifications = notifications
+      if (privacy !== undefined) updateData.privacy = privacy
+    }
+
+    // Update user settings
+    const { data, error } = await supabase
+      .from('users')
+      .update(updateData)
+      .eq('email', session.user.email)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error updating user:', error)
+      return NextResponse.json({ error: 'Failed to update settings' }, { status: 500 })
+    }
+
+    const response: any = { success: true, user: data }
+    if (imageUrl) {
+      response.imageUrl = imageUrl
+    }
+
+    return NextResponse.json(response)
+  } catch (error) {
+    console.error('Server error in PATCH /me/summary:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

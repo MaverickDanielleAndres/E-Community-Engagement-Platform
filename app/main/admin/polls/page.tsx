@@ -42,6 +42,11 @@ export default function AdminPolls() {
     }
 
     fetchPolls()
+
+    // Poll for updates every 30 seconds to reflect status changes
+    const interval = setInterval(fetchPolls, 30000)
+
+    return () => clearInterval(interval)
   }, [])
 
   const handleDeletePoll = async () => {

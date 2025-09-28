@@ -1,8 +1,10 @@
+// app/api/complaints/[id]/route.ts
+
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
+const supabaase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
@@ -27,7 +29,7 @@ export async function POST(
     }
 
     // Get user
-    const { data: user } = await supabase
+    const { data: user } = await supabaase
       .from('users')
       .select(`
         id,
@@ -44,7 +46,7 @@ export async function POST(
     }
 
     // Get poll details
-    const { data: poll } = await supabase
+    const { data: poll } = await supabaase
       .from('polls')
       .select('id, deadline, is_multi_select, community_id')
       .eq('id', pollId)
@@ -70,7 +72,7 @@ export async function POST(
     }
 
     // Remove existing votes
-    await supabase
+    await supabaase
       .from('poll_votes')
       .delete()
       .eq('poll_id', pollId)
@@ -83,7 +85,7 @@ export async function POST(
       voter_id: user.id
     }))
 
-    const { error: voteError } = await supabase
+    const { error: voteError } = await supabaase
       .from('poll_votes')
       .insert(votes)
 

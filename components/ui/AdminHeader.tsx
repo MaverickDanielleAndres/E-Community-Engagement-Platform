@@ -25,6 +25,8 @@ export function AdminHeader() {
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [notifications, setNotifications] = useState<Notification[]>([])
+  const [communityLogo, setCommunityLogo] = useState('')
+  const [userImage, setUserImage] = useState('')
   const { data: session } = useSession()
   const { isDark } = useTheme()
   const { isCollapsed, setIsCollapsed } = useSidebar()
@@ -47,7 +49,38 @@ export function AdminHeader() {
       }
     }
 
+    const fetchCommunityLogo = async () => {
+      try {
+        const response = await fetch('/api/admin/settings')
+        if (response.ok) {
+          const data = await response.json()
+          setCommunityLogo(data.logo_url || '')
+        } else if (response.status === 403) {
+          // If forbidden, try to get logo from a public endpoint or skip
+          console.warn('Unable to fetch community logo: Admin access required')
+        } else {
+          console.error('Error fetching community logo:', response.status)
+        }
+      } catch (error) {
+        console.error('Error fetching community logo:', error)
+      }
+    }
+
+    const fetchUserImage = async () => {
+      try {
+        const response = await fetch('/api/me/summary')
+        if (response.ok) {
+          const data = await response.json()
+          setUserImage(data.settings?.image || '')
+        }
+      } catch (error) {
+        console.error('Error fetching user image:', error)
+      }
+    }
+
     fetchNotifications()
+    fetchCommunityLogo()
+    fetchUserImage()
 
     // Subscribe to real-time updates
     const channel = supabase
@@ -64,8 +97,7 @@ export function AdminHeader() {
 
   const handleSignOut = async () => {
     const { signOut } = await import('next-auth/react')
-    await signOut({ redirect: false })
-    router.push('/')
+    await signOut({ callbackUrl: '/' })
   }
 
   const getNotificationIcon = (type: string) => {
@@ -85,8 +117,8 @@ export function AdminHeader() {
       transition={{ duration: 0.5, ease: "easeOut" }}
       className={`
         sticky top-0 z-40 border-b backdrop-blur-md
-        ${isDark 
-          ? 'bg-slate-900/80 border-slate-700' 
+        ${isDark
+          ? 'bg-slate-900/80 border-slate-700'
           : 'bg-white/80 border-slate-200'
         }
       `}
@@ -95,12 +127,23 @@ export function AdminHeader() {
         {/* Left Section */}
         <div className="flex items-center space-x-4">
           <div className="hidden lg:block">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-              Admin Dashboard
-            </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Welcome back, {session?.user?.name || 'Administrator'}
-            </p>
+            <div className="flex items-center space-x-3">
+              {communityLogo && (
+                <img
+                  src={communityLogo}
+                  alt="Community Logo"
+                  className="w-10 h-10 rounded-lg object-cover"
+                />
+              )}
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+                  Admin Dashboard
+                </h1>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Welcome back, {session?.user?.name || 'Administrator'}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -116,8 +159,8 @@ export function AdminHeader() {
               className={`
                 w-full pl-10 pr-4 py-2.5 rounded-xl border transition-all duration-200
                 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                ${isDark 
-                  ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-400' 
+                ${isDark
+                  ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-400'
                   : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-500'
                 }
               `}
@@ -136,8 +179,8 @@ export function AdminHeader() {
               onClick={() => setShowNotifications(!showNotifications)}
               className={`
                 relative p-2.5 rounded-xl transition-all duration-200
-                ${isDark 
-                  ? 'hover:bg-slate-800 text-slate-300 hover:text-white' 
+                ${isDark
+                  ? 'hover:bg-slate-800 text-slate-300 hover:text-white'
                   : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
                 }
               `}
@@ -174,7 +217,7 @@ export function AdminHeader() {
                       {unreadCount} unread notifications
                     </p>
                   </div>
-                  
+
                   <div className="max-h-64 overflow-y-auto">
                     {notifications.map((notification, index) => (
                       <motion.div
@@ -208,7 +251,7 @@ export function AdminHeader() {
                       </motion.div>
                     ))}
                   </div>
-                  
+
                   <div className="p-3 border-t border-slate-200 dark:border-slate-700">
                     <button
                       onClick={() => {
@@ -231,17 +274,30 @@ export function AdminHeader() {
               onClick={() => setShowUserMenu(!showUserMenu)}
               className={`
                 flex items-center space-x-2 p-2 rounded-xl transition-all duration-200
-                ${isDark 
-                  ? 'hover:bg-slate-800 text-slate-300' 
+                ${isDark
+                  ? 'hover:bg-slate-800 text-slate-300'
                   : 'hover:bg-slate-100 text-slate-600'
                 }
               `}
             >
-              <div className={`
-                w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm
-                ${isDark ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'}
-              `}>
-                {session?.user?.name?.charAt(0)?.toUpperCase() || 'A'}
+              <div className="w-8 h-8 rounded-full overflow-hidden">
+                {userImage ? (
+                  <img
+                    src={userImage}
+                    alt="User Avatar"
+                    className="w-full h-full object-cover"
+                  />
+                ) : communityLogo ? (
+                  <img
+                    src={communityLogo}
+                    alt="Community Logo"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center w-full h-full font-semibold text-sm">
+                    {session?.user?.name?.charAt(0)?.toUpperCase() || 'A'}
+                  </div>
+                )}
               </div>
               <div className="hidden sm:block text-left min-w-0 flex-1 max-w-[150px]">
                 <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
@@ -266,11 +322,24 @@ export function AdminHeader() {
                 >
                   <div className="p-4 border-b border-slate-200 dark:border-slate-700">
                     <div className="flex items-center space-x-3">
-                      <div className={`
-                        w-10 h-10 rounded-full flex items-center justify-center font-semibold
-                        ${isDark ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'}
-                      `}>
-                        {session?.user?.name?.charAt(0)?.toUpperCase() || 'A'}
+                      <div className="w-10 h-10 rounded-full overflow-hidden">
+                        {userImage ? (
+                          <img
+                            src={userImage}
+                            alt="User Avatar"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : communityLogo ? (
+                          <img
+                            src={communityLogo}
+                            alt="Community Logo"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center w-full h-full font-semibold">
+                            {session?.user?.name?.charAt(0)?.toUpperCase() || 'A'}
+                          </div>
+                        )}
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="font-medium text-slate-900 dark:text-white truncate">
@@ -288,8 +357,8 @@ export function AdminHeader() {
                       onClick={() => router.push('/main/admin/settings')}
                       className={`
                         w-full flex items-center space-x-3 px-4 py-2.5 text-sm transition-colors duration-150
-                        ${isDark 
-                          ? 'text-slate-300 hover:bg-slate-700 hover:text-white' 
+                        ${isDark
+                          ? 'text-slate-300 hover:bg-slate-700 hover:text-white'
                           : 'text-slate-700 hover:bg-slate-100'
                         }
                       `}
@@ -297,13 +366,13 @@ export function AdminHeader() {
                       <Settings className="w-4 h-4" />
                       <span>Settings</span>
                     </button>
-                    
+
                     <button
                       onClick={() => window.open(`mailto:${session?.user?.email}`, '_blank')}
                       className={`
                         w-full flex items-center space-x-3 px-4 py-2.5 text-sm transition-colors duration-150
-                        ${isDark 
-                          ? 'text-slate-300 hover:bg-slate-700 hover:text-white' 
+                        ${isDark
+                          ? 'text-slate-300 hover:bg-slate-700 hover:text-white'
                           : 'text-slate-700 hover:bg-slate-100'
                         }
                       `}
@@ -318,8 +387,8 @@ export function AdminHeader() {
                       onClick={handleSignOut}
                       className={`
                         w-full flex items-center space-x-3 px-4 py-2.5 text-sm transition-colors duration-150
-                        ${isDark 
-                          ? 'text-red-400 hover:bg-red-900/20' 
+                        ${isDark
+                          ? 'text-red-400 hover:bg-red-900/20'
                           : 'text-red-600 hover:bg-red-50'
                         }
                       `}

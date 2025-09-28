@@ -1,3 +1,5 @@
+// app/main/admin/complaints/[complaintId]/page.tsx
+
 'use client'
 
 import { useState, useEffect } from 'react'

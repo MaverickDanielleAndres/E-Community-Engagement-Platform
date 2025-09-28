@@ -12,8 +12,8 @@ export default withAuth(
     const isRootPath = req.nextUrl.pathname === '/'
     const isApiAuth = req.nextUrl.pathname.startsWith('/api/auth')
 
-    // Allow API auth routes and static files
-    if (isApiAuth || req.nextUrl.pathname.startsWith('/_next') || req.nextUrl.pathname.startsWith('/favicon')) {
+    // Allow all API routes and static files
+    if (req.nextUrl.pathname.startsWith('/api') || req.nextUrl.pathname.startsWith('/_next') || req.nextUrl.pathname.startsWith('/favicon')) {
       return NextResponse.next()
     }
 

@@ -116,7 +116,7 @@ export async function PUT(
     await supabase
       .from('audit_log')
       .insert({
-        community_id: user.community_members[0].community_id,
+        community_id: complaint.community_id,
         user_id: user.id,
         action_type: 'update_complaint',
         entity_type: 'complaint',

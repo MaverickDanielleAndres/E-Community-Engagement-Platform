@@ -7,7 +7,7 @@ declare module 'next-auth' {
       id: string
       name?: string | null
       email?: string | null
-      image?: string | null
+      // image is not stored in session to avoid JWT size limits - fetch from API separately
       role?: string
       community?: {
         name: string

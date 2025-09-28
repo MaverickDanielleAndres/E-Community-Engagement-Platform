@@ -1,3 +1,5 @@
+// app/auth/signup/page.tsx
+
 import { Metadata } from 'next'
 import AuthForm from '@/components/AuthForm'
 
