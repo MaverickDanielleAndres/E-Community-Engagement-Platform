@@ -11,15 +11,11 @@ const supabase = createClient(
 )
 
 const signupSchema = z.object({
-  fullName: z.string().min(2, 'Full name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email address'),
   password: z.string()
     .min(8, 'Password must be at least 8 characters')
     .regex(/(?=.*[0-9])/, 'Password must contain at least one number')
-    .regex(/(?=.*[!@#$%^&*])/, 'Password must contain at least one symbol'),
-  communityCode: z.string().optional(),
-  role: z.enum(['Resident', 'Admin', 'Guest']),
-  terms: z.boolean().refine(val => val === true, 'You must accept the terms and conditions')
+    .regex(/(?=.*[!@#$%^&*])/, 'Password must contain at least one symbol')
 })
 
 export async function POST(request: NextRequest) {
@@ -43,34 +39,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate community code if provided
-    if (validatedData.communityCode) {
-      const { data: community, error: communityError } = await supabase
-        .from('communities')
-        .select('id')
-        .eq('code', validatedData.communityCode)
-        .single()
-
-      if (!community) {
-        return NextResponse.json(
-          { message: 'Invalid community code' },
-          { status: 400 }
-        )
-      }
-    }
-
     // Generate verification code and expiry
     const verificationCode = EmailVerificationService.generateCode()
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000) // 15 minutes
 
+    // Check if temp user already exists and delete it
+    const { error: deleteError } = await supabase
+      .from('temp_users')
+      .delete()
+      .eq('email', validatedData.email)
+
+    if (deleteError) {
+      console.error('Failed to clean up existing temp user:', deleteError)
+      // Continue anyway - not a critical error
+    }
+
     // Store temporary user data (don't create user yet - wait for verification)
     // You might want to use a proper temporary storage like Redis in production
     const tempUserData = {
-      name: validatedData.fullName,
+      name: validatedData.email.split('@')[0], // Use email prefix as temporary name
       email: validatedData.email,
       hashed_password: await bcrypt.hash(validatedData.password, 12),
-      community_code: validatedData.communityCode || null,
-      role: validatedData.role,
+      community_code: null,
+      role: 'Guest',
       verification_code: verificationCode,
       expires_at: expiresAt.toISOString()
     }

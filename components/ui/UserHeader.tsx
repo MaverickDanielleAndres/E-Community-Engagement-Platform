@@ -1,18 +1,19 @@
 // @/components/ui/UserHeader.tsx
+
 'use client'
 
 import { useState, useEffect } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useTheme } from '@/components/ThemeContext'
-import { motion } from 'framer-motion'
-import { Bell, Search, User, LogOut, Settings, Menu, ChevronDown, PlusSquare, FileText } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Bell, Search, User, LogOut, Settings, ChevronDown, PlusSquare, FileText } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 export function UserHeader() {
   const { data: session } = useSession()
   const { isDark, toggleTheme } = useTheme()
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
-  const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
   const [userImage, setUserImage] = useState<string>('')
   const [communityLogo, setCommunityLogo] = useState('')
@@ -54,20 +55,31 @@ export function UserHeader() {
     }
   }
 
-  const notifications = [
-    { id: 1, title: 'New poll available', type: 'info', time: '2 min ago' },
-    { id: 2, title: 'Your complaint has been resolved', type: 'success', time: '1 hour ago' },
-    { id: 3, title: 'Community update', type: 'info', time: '3 hours ago' }
-  ]
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
+
+  useEffect(() => {
+    if (!session?.user?.email) return
+
+    const fetchNotifications = async () => {
+      try {
+        const response = await fetch('/api/user/notifications')
+        const data = await response.json()
+        setNotifications(data.notifications || [])
+      } catch (error) {
+        console.error('Error fetching notifications:', error)
+      }
+    }
+
+    fetchNotifications()
+  }, [session?.user?.email])
 
   return (
     <motion.header
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      className={`
-        bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700
-        sticky top-0 z-20 px-4 sm:px-6 lg:px-8 py-4
-      `}
+      className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 sticky top-0 z-20 px-4 sm:px-6 lg:px-8 py-4"
     >
       <div className="flex items-center justify-between">
         {/* Left: Search and Actions */}
@@ -89,12 +101,7 @@ export function UserHeader() {
               placeholder="Search polls, complaints..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className={`
-                pl-10 pr-4 py-2 w-64 rounded-xl border border-slate-200 dark:border-slate-700
-                bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-white
-                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                placeholder-slate-500 dark:placeholder-slate-400
-              `}
+              className="pl-10 pr-4 py-2 w-64 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-slate-500 dark:placeholder-slate-400"
             />
           </form>
 
@@ -118,52 +125,99 @@ export function UserHeader() {
               className="relative p-2 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             >
               <Bell className="w-5 h-5" />
-              {notifications.length > 0 && (
+              {notifications.filter(n => !n.is_read).length > 0 && (
                 <span className="absolute -top-1 -right-1 block h-3 w-3 rounded-full bg-red-500"></span>
               )}
             </button>
 
-            {isNotificationsOpen && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 py-2 z-50"
-              >
-                <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-700">
-                  <h3 className="font-semibold text-slate-900 dark:text-white text-sm">Notifications</h3>
-                </div>
-                <div className="max-h-80 overflow-y-auto">
-                  {notifications.map((notification) => (
-                    <Link
-                      key={notification.id}
-                      href="#"
-                      className="block px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors border-b border-slate-100 dark:border-slate-700 last:border-b-0"
+            <AnimatePresence>
+              {isNotificationsOpen && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                  className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 py-2 z-50"
+                >
+                  <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                    <h3 className="font-semibold text-slate-900 dark:text-white text-sm">Notifications</h3>
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation()
+                        if (!session?.user?.email) return
+                        try {
+                          const response = await fetch('/api/admin/notifications/mark-read', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                          })
+                          if (response.ok) {
+                            setNotifications([])
+                            setIsNotificationsOpen(false)
+                          } else {
+                            console.error('Failed to mark notifications as read')
+                          }
+                        } catch (error) {
+                          console.error('Error marking notifications as read:', error)
+                        }
+                      }}
+                      className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
                     >
-                      <div className="flex items-start space-x-3">
-                        <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 ${
-                          notification.type === 'success' ? 'bg-green-500' :
-                          notification.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
-                        }`}></div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
-                            {notification.title}
-                          </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                            {notification.time}
-                          </p>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-                {notifications.length === 0 && (
-                  <div className="px-4 py-6 text-center text-slate-500 dark:text-slate-400">
-                    No notifications
+                      Clear All
+                    </button>
                   </div>
-                )}
-              </motion.div>
-            )}
+                  <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      {notifications.filter(n => !n.is_read).length} unread notifications
+                    </p>
+                  </div>
+                  <div className="max-h-80 overflow-y-auto">
+                    {notifications.length > 0 ? (
+                      notifications.map((notification, index) => (
+                        <motion.div
+                          key={notification.id}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.2, delay: index * 0.05 }}
+                          className={`p-4 border-b border-slate-200 dark:border-slate-700 last:border-b-0 ${!notification.is_read ? (isDark ? 'bg-slate-700/50' : 'bg-blue-50/50') : ''} ${isDark ? 'hover:bg-slate-700' : 'hover:bg-slate-50'} transition-colors duration-150`}
+                        >
+                          <div className="flex items-start space-x-3">
+                            <span className="text-lg">ℹ️</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-slate-900 dark:text-white text-sm">
+                                {notification.title}
+                              </p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                {notification.message}
+                              </p>
+                              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                                {new Date(notification.created_at).toLocaleString()}
+                              </p>
+                            </div>
+                            {!notification.is_read && (
+                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            )}
+                          </div>
+                        </motion.div>
+                      ))
+                    ) : (
+                      <div className="px-4 py-6 text-center text-slate-500 dark:text-slate-400">
+                        No notifications
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-3 border-t border-slate-200 dark:border-slate-700">
+                    <button
+                      onClick={() => {
+                        router.push('/main/user/notifications')
+                        setIsNotificationsOpen(false)
+                      }}
+                      className="w-full text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      View all notifications
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Theme Toggle */}

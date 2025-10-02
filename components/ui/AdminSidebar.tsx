@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Bot, BarChart3, Users, MessageSquareWarning,
   Smile, PlusSquare, ScrollText, Bell, Settings,
-  ChevronLeft, ChevronRight, Target
+  ChevronLeft, ChevronRight, Target, ShieldCheck
 } from 'lucide-react'
 
 interface NavItem {
@@ -64,6 +64,8 @@ export function AdminSidebar() {
   useEffect(() => {
     if (!session?.user?.email) return
 
+    let intervalId: NodeJS.Timeout
+
     const fetchCounts = async () => {
       try {
         // Fetch complaints count (total pending/unresolved)
@@ -86,6 +88,13 @@ export function AdminSidebar() {
     }
 
     fetchCounts()
+
+    // Poll every 30 seconds for updates
+    intervalId = setInterval(fetchCounts, 30000)
+
+    return () => {
+      clearInterval(intervalId)
+    }
   }, [session?.user?.email])
 
   const navigationSections: NavSection[] = [
@@ -101,6 +110,7 @@ export function AdminSidebar() {
       title: "Management",
       items: [
         { label: "Members", href: "/main/admin/members", icon: Users },
+        { label: "Requests", href: "/admin/requests", icon: ShieldCheck },
         { label: "Complaints", href: "/main/admin/complaints", icon: MessageSquareWarning, badge: complaintCount },
         { label: "Feedback", href: "/main/admin/feedback", icon: Smile },
         { label: "Polls", href: "/main/admin/polls", icon: PlusSquare }

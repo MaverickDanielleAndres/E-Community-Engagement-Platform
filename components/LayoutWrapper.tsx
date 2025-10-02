@@ -14,15 +14,20 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
 
   const isAuthPage = pathname.startsWith('/auth/')
   const isMainPage = pathname.startsWith('/main/admin') || pathname.startsWith('/main/user') || pathname.startsWith('/main/guest')
+  const isLanding = pathname === '/'
+  const isIdVerification = pathname === '/id-verification'
 
-  // Hide header/footer on auth pages and main pages (admin, user, guest)
-  const showHeaderFooter = !(isAuthPage || isMainPage)
+  // Show header only on landing page
+  const showHeader = isLanding
+
+  // Show footer only on landing page
+  const showFooter = isLanding
 
   return (
     <>
-      {showHeaderFooter && <Header />}
+      {showHeader && <Header />}
       {children}
-      {showHeaderFooter && <Footer />}
+      {showFooter && <Footer />}
     </>
   )
 }

@@ -15,7 +15,8 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { useTheme } from '@/components/ThemeContext'
 import { Toast } from '@/components/Toast'
-import { KPICard, EmptyState } from '@/components/mainapp/components'
+import { KPICard } from '@/components/mainapp/components'
+import { EmptyState } from '@/components/ui/EmptyState'
 
 interface DashboardStats {
   totalMembers: number

@@ -125,11 +125,11 @@ export default function VerificationPage() {
       console.log('Verification response:', result)
 
       if (response.ok && result.success) {
-        setToast({ message: result.message, type: 'success' })
+        setToast({ message: 'Email verified successfully! Now complete your ID verification.', type: 'success' })
         
-        // Redirect to login after success
+        // Redirect to ID verification after success
         setTimeout(() => {
-          router.push('/auth/login?message=' + encodeURIComponent('Account created successfully! Please sign in.'))
+          router.push(`/id-verification?email=${encodeURIComponent(email)}`)
         }, 2000)
       } else {
         setToast({ message: result.message || 'Verification failed', type: 'error' })

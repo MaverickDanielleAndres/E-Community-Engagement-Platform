@@ -6,7 +6,7 @@ export default function UserLayout({
   children: React.ReactNode
 }) {
   return (
-    <RoleGuard allowedRoles={['Resident', 'Admin']}>
+    <RoleGuard allowedRoles={['guest', 'resident', 'admin']}>
       {children}
     </RoleGuard>
   )

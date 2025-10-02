@@ -13,6 +13,9 @@ import {
   Search, User, LogOut, Settings, X, ArrowUpRight, ArrowDownRight
 } from 'lucide-react'
 
+// Re-export EmptyState for convenience
+export { EmptyState }
+
 // Types
 interface User {
   id: string
@@ -84,6 +87,49 @@ interface SearchInputProps {
   onChange?: (value: string) => void
   onSearch?: (value: string) => void
   className?: string
+}
+
+// SearchInput Component
+export function SearchInput({
+  placeholder = "Search...",
+  value = "",
+  onChange,
+  onSearch,
+  className = ""
+}: SearchInputProps) {
+  const [searchValue, setSearchValue] = useState(value)
+  const { isDark } = useTheme()
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value
+    setSearchValue(newValue)
+    onChange?.(newValue)
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    onSearch?.(searchValue)
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className={`relative ${className}`}>
+      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+      <input
+        type="text"
+        value={searchValue}
+        onChange={handleChange}
+        placeholder={placeholder}
+        className={`
+          w-full pl-10 pr-4 py-2.5 rounded-xl border transition-all duration-200
+          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+          ${isDark
+            ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400'
+            : 'bg-white border-slate-300 text-slate-900 placeholder-slate-500'
+          }
+        `}
+      />
+    </form>
+  )
 }
 
 // KPICard Component
@@ -495,13 +541,47 @@ export function ConfirmDialog({
   )
 }
 
-// RoleGuard Component
 export function RoleGuard({ allowedRoles, userRole, fallback, children }: RoleGuardProps) {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
 
-  const currentRole = userRole || (session?.user as User)?.role
+  // Show loading state while session is being fetched
+  if (status === 'loading') {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      </div>
+    )
+  }
 
-  if (!currentRole || !allowedRoles.includes(currentRole)) {
+  let effectiveRole: string | undefined;
+
+  if (status !== 'authenticated') {
+    // Unauthenticated users treated as 'guest' for guest pages
+    effectiveRole = 'guest';
+  } else {
+    const currentRole = (userRole || session?.user?.role || '').toLowerCase();
+    const currentStatus = session?.user?.verification_status;
+
+    // For pending/unverified/rejected users, treat as 'guest' for access control
+    // If status is 'approved' or undefined/active, use actual role
+    effectiveRole = (['pending', 'unverified', 'rejected'].includes(currentStatus || '')) ? 'guest' : currentRole;
+  }
+
+  // Normalize effectiveRole to lowercase
+  const normalizedEffectiveRole = effectiveRole?.toLowerCase() || 'guest';
+
+  // Normalize allowedRoles to lowercase for comparison
+  const normalizedAllowedRoles = allowedRoles.map(role => role.toLowerCase());
+
+  console.log('RoleGuard Debug:', {
+    allowedRoles: normalizedAllowedRoles,
+    effectiveRole: normalizedEffectiveRole,
+    sessionUser: session?.user,
+    status
+  });
+
+  if (!normalizedEffectiveRole || !normalizedAllowedRoles.includes(normalizedEffectiveRole)) {
+    console.log('RoleGuard: Access denied for effectiveRole', normalizedEffectiveRole, 'allowed:', normalizedAllowedRoles);
     if (fallback) return <>{fallback}</>
 
     return (
@@ -513,50 +593,9 @@ export function RoleGuard({ allowedRoles, userRole, fallback, children }: RoleGu
     )
   }
 
+  console.log('RoleGuard: Access granted for effectiveRole', normalizedEffectiveRole);
   return <>{children}</>
 }
 
-// SearchInput Component
-export function SearchInput({
-  placeholder = "Search...",
-  value = "",
-  onChange,
-  onSearch,
-  className = ""
-}: SearchInputProps) {
-  const [searchValue, setSearchValue] = useState(value)
-  const { isDark } = useTheme()
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value
-    setSearchValue(newValue)
-    onChange?.(newValue)
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    onSearch?.(searchValue)
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className={`relative ${className}`}>
-      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-      <input
-        type="text"
-        value={searchValue}
-        onChange={handleChange}
-        placeholder={placeholder}
-        className={`
-          w-full pl-10 pr-4 py-2.5 rounded-xl border transition-all duration-200
-          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-          ${isDark
-            ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400'
-            : 'bg-white border-slate-300 text-slate-900 placeholder-slate-500'
-          }
-        `}
-      />
-    </form>
-  )
-}
-export { EmptyState }
 

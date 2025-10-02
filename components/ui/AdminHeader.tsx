@@ -209,10 +209,36 @@ export function AdminHeader() {
                     ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}
                   `}
                 >
-                  <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+                  <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
                       Notifications
                     </h3>
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation()
+                        if (!session?.user?.email) return
+                        try {
+                          const response = await fetch('/api/admin/notifications/mark-read', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                          })
+                          if (response.ok) {
+                            // Clear the notifications list locally
+                            setNotifications([])
+                            setShowNotifications(false)
+                          } else {
+                            console.error('Failed to mark notifications as read')
+                          }
+                        } catch (error) {
+                          console.error('Error marking notifications as read:', error)
+                        }
+                      }}
+                      className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                  <div className="p-4 border-b border-slate-200 dark:border-slate-700">
                     <p className="text-sm text-slate-500 dark:text-slate-400">
                       {unreadCount} unread notifications
                     </p>
@@ -409,8 +435,8 @@ export function AdminHeader() {
         <div
           className="fixed inset-0 z-30"
           onClick={() => {
-            setShowNotifications(false)
-            setShowUserMenu(false)
+            if (showNotifications) setShowNotifications(false)
+            if (showUserMenu) setShowUserMenu(false)
           }}
         />
       )}

@@ -109,6 +109,8 @@ export const authOptions: NextAuthOptions = {
       return true
     },
     async jwt({ token, user, account, trigger }) {
+      console.log('JWT callback triggered:', { token, user, trigger })
+
       // Initial sign in
       if (user) {
         token.id = user.id
@@ -130,7 +132,7 @@ export const authOptions: NextAuthOptions = {
         token.forceRefresh = true
       }
 
-      // Fetch/update user data from DB (role, name only - image excluded to prevent JWT bloat)
+      // Fetch/update user data from DB (role, name, status - image excluded to prevent JWT bloat)
       if (token.id) {
         try {
           // Check community role first
@@ -141,6 +143,7 @@ export const authOptions: NextAuthOptions = {
             .single()
 
           if (communityRole) {
+            console.log('Community role found:', communityRole.role)
             token.role = communityRole.role
           } else {
             // Fallback to user role
@@ -150,22 +153,25 @@ export const authOptions: NextAuthOptions = {
               .eq('id', token.id)
               .single()
 
+            console.log('User role fallback:', userRole?.role)
             token.role = userRole?.role || 'Guest'
           }
 
-          // Fetch user name only (image excluded from JWT)
+          // Fetch user name and status
           const { data: userData } = await supabase
             .from('users')
-            .select('name')
+            .select('name, status')
             .eq('id', token.id)
             .single()
 
           if (userData) {
             token.name = userData.name
+            token.status = userData.status || 'active'
           }
         } catch (error) {
           console.error('Error fetching user data:', error)
           token.role = 'Guest'
+          token.status = 'active'
         }
       }
 
@@ -181,15 +187,16 @@ export const authOptions: NextAuthOptions = {
 
           token.role = communityRole ? communityRole.role : token.role
 
-          // Refresh name only (image excluded from JWT)
+          // Refresh name and status
           const { data: userData } = await supabase
             .from('users')
-            .select('name')
+            .select('name, status')
             .eq('id', token.id)
             .single()
 
           if (userData) {
             token.name = userData.name
+            token.status = userData.status || 'active'
           }
         } catch (error) {
           console.error('Error refreshing user data:', error)
@@ -202,6 +209,7 @@ export const authOptions: NextAuthOptions = {
       if (token) {
         session.user.id = token.id as string
         session.user.role = token.role as string
+        session.user.verification_status = token.status as 'unverified' | 'pending' | 'approved' | 'rejected' | undefined
         // Image is not stored in JWT to avoid size limits - fetch separately when needed
         session.user.name = token.name as string | undefined
         // Ensure no large data is stored in session

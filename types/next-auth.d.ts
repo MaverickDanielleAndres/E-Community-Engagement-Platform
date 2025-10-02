@@ -9,6 +9,7 @@ declare module 'next-auth' {
       email?: string | null
       // image is not stored in session to avoid JWT size limits - fetch from API separately
       role?: string
+      verification_status?: 'unverified' | 'pending' | 'approved' | 'rejected'
       community?: {
         name: string
         code: string
@@ -30,6 +31,7 @@ declare module 'next-auth/jwt' {
   interface JWT {
     id?: string
     role?: string
+    verification_status?: 'unverified' | 'pending' | 'approved' | 'rejected'
     community?: {
       name: string
       code: string

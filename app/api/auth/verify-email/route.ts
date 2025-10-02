@@ -125,7 +125,8 @@ export async function POST(request: NextRequest) {
           name: tempUser.name,
           email: email,
           email_verified: new Date().toISOString(),
-          hashed_password: tempUser.hashed_password
+          hashed_password: tempUser.hashed_password,
+          status: 'unverified'
         }
       ])
       .select('id')
@@ -141,25 +142,8 @@ export async function POST(request: NextRequest) {
     
     console.log('User created successfully:', newUser.id)
     
-    // Add user to community if communityId exists
-    if (communityId) {
-      const { error: memberError } = await supabase
-        .from('community_members')
-        .insert([
-          {
-            community_id: communityId,
-            user_id: newUser.id,
-            role: tempUser.role || 'Resident'
-          }
-        ])
-      
-      if (memberError) {
-        console.error('Community member creation error:', memberError)
-        // Don't fail the entire process, just log the error
-      } else {
-        console.log('User added to community successfully')
-      }
-    }
+    // Community addition will be handled later after full verification
+    // Skip for now as per flow
     
     // Clean up temp user
     await supabase
@@ -171,7 +155,8 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({
       success: true,
-      message: 'Email verified successfully! Your account has been created.'
+      message: 'Email verified successfully! Your account has been created.',
+      user_id: newUser.id
     })
     
   } catch (error) {

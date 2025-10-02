@@ -495,13 +495,36 @@ export function ConfirmDialog({
   )
 }
 
-// RoleGuard Component
 export function RoleGuard({ allowedRoles, userRole, fallback, children }: RoleGuardProps) {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
 
-  const currentRole = userRole || (session?.user as User)?.role
+  // Show loading state while session is being fetched
+  if (status === 'loading') {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      </div>
+    )
+  }
 
-  if (!currentRole || !allowedRoles.includes(currentRole)) {
+  const currentRole = userRole || session?.user?.role
+  const currentStatus = session?.user?.verification_status
+
+  // For pending/unverified/rejected users, treat as 'Guest' for access control
+  // If status is 'approved' or undefined/active, use actual role
+  const effectiveRole = (['pending', 'unverified', 'rejected'].includes(currentStatus || '')) ? 'Guest' : currentRole
+
+  console.log('RoleGuard Debug:', {
+    allowedRoles,
+    currentRole,
+    currentStatus,
+    effectiveRole,
+    sessionUser: session?.user,
+    status
+  });
+
+  if (!effectiveRole || !allowedRoles.includes(effectiveRole)) {
+    console.log('RoleGuard: Access denied for effectiveRole', effectiveRole, 'allowed:', allowedRoles);
     if (fallback) return <>{fallback}</>
 
     return (
@@ -513,10 +536,10 @@ export function RoleGuard({ allowedRoles, userRole, fallback, children }: RoleGu
     )
   }
 
+  console.log('RoleGuard: Access granted for effectiveRole', effectiveRole);
   return <>{children}</>
 }
 
-// SearchInput Component
 export function SearchInput({
   placeholder = "Search...",
   value = "",
@@ -558,3 +581,5 @@ export function SearchInput({
     </form>
   )
 }
+
+export { EmptyState }

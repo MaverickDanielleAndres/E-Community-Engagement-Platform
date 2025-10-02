@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
         name,
         email,
         role,
+        status,
         image,
         notifications,
         privacy,
@@ -190,6 +191,7 @@ export async function GET(request: NextRequest) {
         name: user.name,
         email: user.email,
         role: userRole, // This is the key fix - using the determined role
+        verification_status: user.status || 'active',
         community: communityName || 'No Community'
       },
       settings: {

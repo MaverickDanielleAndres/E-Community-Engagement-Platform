@@ -29,8 +29,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User community not found' }, { status: 404 })
     }
 
-    const communityId = (memberData as any).community_id
-    const community = (memberData as any).communities
+    // Type assertion for the joined data
+    const typedMemberData = memberData as {
+      community_id: string
+      communities: {
+        name: string
+        created_at: string
+      } | null
+    }
+
+    const communityId = typedMemberData.community_id
+    const community = typedMemberData.communities
 
     // Get community member count
     const { count, error: countError } = await supabase

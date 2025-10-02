@@ -34,24 +34,11 @@ const loginSchema = z.object({
 })
 
 const signupSchema = z.object({
-  fullName: z.string().min(2, 'Full name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email address'),
   password: z.string()
     .min(8, 'Password must be at least 8 characters')
     .regex(/(?=.*[0-9])/, 'Password must contain at least one number')
-    .regex(/(?=.*[!@#$%^&*])/, 'Password must contain at least one symbol'),
-  communityCode: z.string().optional(),
-  role: z.enum(['Resident', 'Admin', 'Guest']),
-  terms: z.boolean().refine(val => val === true, 'You must accept the terms and conditions')
-}).superRefine((data, ctx) => {
-  // Community code is required only for Residents
-  if (data.role === 'Resident' && (!data.communityCode || data.communityCode.trim() === '')) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Community code is required for residents',
-      path: ['communityCode']
-    })
-  }
+    .regex(/(?=.*[!@#$%^&*])/, 'Password must contain at least one symbol')
 })
 
 type LoginFormData = z.infer<typeof loginSchema>
@@ -67,7 +54,6 @@ export default function AuthForm({ type }: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null)
-  const [step, setStep] = useState(1)
   const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -95,14 +81,10 @@ export default function AuthForm({ type }: AuthFormProps) {
     watch,
     trigger
   } = useForm<AuthFormData>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      role: 'Resident'
-    }
+    resolver: zodResolver(schema)
   })
 
   const watchedPassword = watch('password')
-  const watchedRole = watch('role')
 
   // Password strength calculation
   const getPasswordStrength = (password: string) => {
@@ -156,30 +138,39 @@ export default function AuthForm({ type }: AuthFormProps) {
           console.log('Login successful, getting session...')
           setToast({ message: 'Successfully signed in! Redirecting...', type: 'success' })
           
-          // Wait for session to be established, then redirect based on role
+          // Wait for session to be established, then redirect based on role and status
           setTimeout(async () => {
             try {
-              // Fetch user role from API instead of session
+              // Fetch user role and status from API instead of session
               const response = await fetch('/api/me/summary')
-              const data = await response.json()
-              const role = data.user?.role?.toLowerCase() || ''
-              
+              const summary = await response.json()
+              const role = summary.user?.role?.toLowerCase() || ''
+              const status = summary.user?.status?.toLowerCase() || 'active'
+
               let redirectPath = ''
-              switch (role) {
-                case 'admin':
-                  redirectPath = '/main/admin'
-                  break
-                case 'resident':
-                  redirectPath = '/main/user'
-                  break
-                case 'guest':
-                  redirectPath = '/main/guest'
-                  break
-                default:
-                  redirectPath = '/main/guest'
+              if (status === 'pending') {
+                redirectPath = '/main/guest/waiting'
+              } else if (status === 'unverified') {
+                redirectPath = '/id-verification'
+              } else if (status === 'rejected') {
+                redirectPath = '/auth/login?error=rejected'
+              } else {
+                switch (role) {
+                  case 'admin':
+                    redirectPath = '/main/admin'
+                    break
+                  case 'resident':
+                    redirectPath = '/main/user'
+                    break
+                  case 'guest':
+                    redirectPath = '/main/guest'
+                    break
+                  default:
+                    redirectPath = '/main/guest'
+                }
               }
-              
-              console.log('Redirecting to:', redirectPath, 'for role:', role)
+
+              console.log('Redirecting to:', redirectPath, 'for role:', role, 'status:', status)
               window.location.href = redirectPath
             } catch (error) {
               console.error('Role fetch failed, using fallback redirect:', error)
@@ -204,7 +195,9 @@ export default function AuthForm({ type }: AuthFormProps) {
         const response = await fetch('/api/auth/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
+          body: JSON.stringify({
+            ...data
+          }),
         })
 
         const result = await response.json()
@@ -244,12 +237,6 @@ export default function AuthForm({ type }: AuthFormProps) {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const nextStep = async () => {
-    const fieldsToValidate = step === 1 ? ['email', 'password'] : ['fullName', 'communityCode', 'role', 'terms']
-    const isValid = await trigger(fieldsToValidate as any)
-    if (isValid) setStep(2)
   }
 
   const closeToast = () => {
@@ -310,23 +297,7 @@ export default function AuthForm({ type }: AuthFormProps) {
               }
             </p>
 
-            {!isLogin && (
-              <div className="flex items-center justify-center mt-4 space-x-4">
-                <div className={`flex items-center space-x-2 ${step >= 1 ? (isDark ? 'text-white' : 'text-black') : (isDark ? 'text-white/40' : 'text-black/40')}`}>
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${step >= 1 ? (isDark ? 'bg-slate-600 text-white dark:bg-slate-100 dark:text-slate-900' : 'bg-slate-600 text-white') : (isDark ? 'bg-slate-700 text-white/60 dark:bg-slate-700 dark:text-slate-400' : 'bg-slate-300 text-slate-600')}`}>
-                    {step > 1 ? <CheckCircleIcon className="w-4 h-4" /> : '1'}
-                  </div>
-                  <span className="text-sm">Account</span>
-                </div>
-                <div className={`w-8 h-0.5 ${step > 1 ? (isDark ? 'bg-white' : 'bg-black') : (isDark ? 'bg-white/20' : 'bg-black/20')}`}></div>
-                <div className={`flex items-center space-x-2 ${step >= 2 ? (isDark ? 'text-white' : 'text-black') : (isDark ? 'text-white/40' : 'text-black/40')}`}>
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${step >= 2 ? (isDark ? 'bg-slate-600 text-white dark:bg-slate-100 dark:text-slate-900' : 'bg-slate-600 text-white') : (isDark ? 'bg-slate-700 text-white/60 dark:bg-slate-700 dark:text-slate-400' : 'bg-slate-300 text-slate-600')}`}>
-                    2
-                  </div>
-                  <span className="text-sm">Profile</span>
-                </div>
-              </div>
-            )}
+
           </div>
 
           {/* OAuth Buttons - Only Google */}
@@ -351,171 +322,86 @@ export default function AuthForm({ type }: AuthFormProps) {
 
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <AnimatePresence mode="wait">
-              {isLogin || step === 1 ? (
-                <motion.div
-                  key="step1"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                  className="space-y-6"
-                >
+            {isLogin ? (
+              <>
+                <Input
+                  label="Email Address"
+                  type="email"
+                  {...register('email')}
+                  error={errors.email?.message?.toString()}
+                  placeholder="you@example.com"
+                />
+
+                <div className="relative">
                   <Input
-                    label="Email Address"
-                    type="email"
-                    {...register('email')}
-                    error={errors.email?.message?.toString()}
-                    placeholder="you@example.com"
+                    label="Password"
+                    type={showPassword ? 'text' : 'password'}
+                    {...register('password')}
+                    error={errors.password?.message?.toString()}
+                    placeholder="••••••••"
                   />
+                </div>
 
-                  <div className="relative">
-                    <Input
-                      label="Password"
-                      type={showPassword ? 'text' : 'password'}
-                      {...register('password')}
-                      error={errors.password?.message?.toString()}
-                      placeholder="••••••••"
-                    />
-                    
-                    {!isLogin && passwordStrength && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="mt-2"
-                      >
-                        <div className="flex items-center justify-between text-xs mb-1">
-                          <span className={isDark ? 'text-white/60' : 'text-black/60'}>Password strength</span>
-                          <span className={`font-medium ${passwordStrength.color === 'red' ? (isDark ? 'text-red-400' : 'text-red-600') : passwordStrength.color === 'yellow' ? (isDark ? 'text-yellow-400' : 'text-yellow-600') : passwordStrength.color === 'blue' ? (isDark ? 'text-blue-400' : 'text-blue-600') : (isDark ? 'text-green-400' : 'text-green-600')}`}>
-                            {passwordStrength.label}
-                          </span>
-                        </div>
-                        <div className={`w-full ${isDark ? 'bg-slate-700' : 'bg-slate-200'} rounded-full h-1`}>
-                          <div
-                            className={`h-1 rounded-full ${passwordStrength.color === 'red' ? 'bg-red-500' : passwordStrength.color === 'yellow' ? 'bg-yellow-500' : passwordStrength.color === 'blue' ? 'bg-blue-500' : 'bg-green-500'} transition-all duration-300`}
-                            style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
-                          ></div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </div>
-
-                  {isLogin && (
-                    <div className="flex items-center justify-between">
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          {...register('remember')}
-                          className={`w-4 h-4 ${isDark ? 'text-slate-600 bg-slate-800 border-slate-700' : 'text-slate-600 bg-white border-slate-300'} rounded focus:ring-slate-500 focus:ring-2 dark:bg-slate-800 dark:border-slate-700`}
-                        />
-                        <span className={`ml-2 text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>Remember me</span>
-                      </label>
-                      <Link
-                        href="/forgot-password"
-                        className={`text-sm ${isDark ? 'text-white hover:text-white/80' : 'text-black hover:text-black/80'}`}
-                      >
-                        Forgot password?
-                      </Link>
-                    </div>
-                  )}
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="step2"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                  className="space-y-6"
-                >
-                  <Input
-                    label="Full Name"
-                    {...register('fullName')}
-                    error={errors.fullName?.message?.toString()}
-                    placeholder="John Doe"
-                  />
-
-                  <div>
-                    <label className={`block text-sm font-medium ${isDark ? 'text-white' : 'text-black'} mb-2`}>
-                      Role
-                    </label>
-                    <select
-                      {...register('role')}
-                      className={`w-full px-4 py-3 ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-300 text-black'} border rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all duration-200`}
-                    >
-                      <option value="Resident">Resident</option>
-                      <option value="Admin">Admin</option>
-                      <option value="Guest">Guest</option>
-                    </select>
-                    {errors.role && (
-                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                        {errors.role.message?.toString()}
-                      </p>
-                    )}
-                  </div>
-
-                  {watchedRole === 'Resident' && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <Input
-                        label="Community Code"
-                        {...register('communityCode')}
-                        error={errors.communityCode?.message}
-                        placeholder="PALATIW-001"
-                        helperText="Required for residents - ask your community admin for this code"
-                      />
-                    </motion.div>
-                  )}
-
-                  {watchedRole !== 'Resident' && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <Input
-                        label="Community Code (Optional)"
-                        {...register('communityCode')}
-                        error={errors.communityCode?.message}
-                        placeholder="PALATIW-001"
-                        helperText="Optional for admins and guests"
-                      />
-                    </motion.div>
-                  )}
-
-                  <div className="flex items-start">
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center">
                     <input
                       type="checkbox"
-                      {...register('terms')}
-                      className={`w-4 h-4 mt-1 ${isDark ? 'text-slate-600 bg-slate-800 border-slate-700' : 'text-slate-600 bg-white border-slate-300'} rounded focus:ring-slate-500 focus:ring-2 dark:bg-slate-800 dark:border-slate-700`}
+                      {...register('remember')}
+                      className={`w-4 h-4 ${isDark ? 'text-slate-600 bg-slate-800 border-slate-700' : 'text-slate-600 bg-white border-slate-300'} rounded focus:ring-slate-500 focus:ring-2 dark:bg-slate-800 dark:border-slate-700`}
                     />
-                    <div className="ml-3">
-                      <p className={`text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-                        I agree to the{' '}
-                        <Link href="/terms" className={isDark ? 'text-white hover:text-white/80' : 'text-black hover:text-black/80'}>
-                          Terms of Service
-                        </Link>{' '}
-                        and{' '}
-                        <Link href="/privacy" className={isDark ? 'text-white hover:text-white/80' : 'text-black hover:text-black/80'}>
-                          Privacy Policy
-                        </Link>
-                      </p>
-                      {errors.terms && (
-                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                          {errors.terms.message?.toString()}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                    <span className={`ml-2 text-sm ${isDark ? 'text-white/60' : 'text-black/60'}`}>Remember me</span>
+                  </label>
+                  <Link
+                    href="/forgot-password"
+                    className={`text-sm ${isDark ? 'text-white hover:text-white/80' : 'text-black hover:text-black/80'}`}
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+              </>
+            ) : (
+              <>
+                <Input
+                  label="Email Address"
+                  type="email"
+                  {...register('email')}
+                  error={errors.email?.message?.toString()}
+                  placeholder="you@example.com"
+                />
+
+                <div className="relative">
+                  <Input
+                    label="Password"
+                    type={showPassword ? 'text' : 'password'}
+                    {...register('password')}
+                    error={errors.password?.message?.toString()}
+                    placeholder="••••••••"
+                  />
+
+                  {passwordStrength && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="mt-2"
+                    >
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className={isDark ? 'text-white/60' : 'text-black/60'}>Password strength</span>
+                        <span className={`font-medium ${passwordStrength.color === 'red' ? (isDark ? 'text-red-400' : 'text-red-600') : passwordStrength.color === 'yellow' ? (isDark ? 'text-yellow-400' : 'text-yellow-600') : passwordStrength.color === 'blue' ? (isDark ? 'text-blue-400' : 'text-blue-600') : (isDark ? 'text-green-400' : 'text-green-600')}`}>
+                          {passwordStrength.label}
+                        </span>
+                      </div>
+                      <div className={`w-full ${isDark ? 'bg-slate-700' : 'bg-slate-200'} rounded-full h-1`}>
+                        <div
+                          className={`h-1 rounded-full ${passwordStrength.color === 'red' ? 'bg-red-500' : passwordStrength.color === 'yellow' ? 'bg-yellow-500' : passwordStrength.color === 'blue' ? 'bg-blue-500' : 'bg-green-500'} transition-all duration-300`}
+                          style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
+                        ></div>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+              </>
+            )}
 
             {error && (
               <motion.div
@@ -530,41 +416,17 @@ export default function AuthForm({ type }: AuthFormProps) {
             )}
 
             <div className="space-y-4">
-              {isLogin || step === 2 ? (
-                <>
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    className="w-full"
-                    isLoading={isLoading}
-                  >
-                    {isLoading 
-                      ? (isLogin ? 'Signing in...' : 'Creating account...') 
-                      : (isLogin ? 'Sign In' : 'Create Account')
-                    }
-                  </Button>
-                  
-                  {!isLogin && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="w-full"
-                      onClick={() => setStep(1)}
-                    >
-                      Back to previous step
-                    </Button>
-                  )}
-                </>
-              ) : (
-                <Button
-                  type="button"
-                  variant="primary"
-                  className="w-full"
-                  onClick={nextStep}
-                >
-                  Continue
-                </Button>
-              )}
+              <Button
+                type="submit"
+                variant="primary"
+                className="w-full"
+                isLoading={isLoading}
+              >
+                {isLoading 
+                  ? (isLogin ? 'Signing in...' : 'Creating account...') 
+                  : (isLogin ? 'Sign In' : 'Create Account')
+                }
+              </Button>
             </div>
 
             <div className="text-center">
@@ -623,7 +485,7 @@ export default function AuthForm({ type }: AuthFormProps) {
                   { icon: CheckCircleIcon, text: 'Secure & Private' },
                   { icon: UserIcon, text: 'Easy to Use' },
                   { icon: EnvelopeIcon, text: '24/7 Support' }
-                ].map((feature, index) => (
+                ].map((feature: { icon: React.ComponentType<{ className?: string }>, text: string }, index) => (
                   <motion.div
                     key={feature.text}
                     initial={{ opacity: 0, x: 20 }}

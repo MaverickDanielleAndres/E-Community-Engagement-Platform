@@ -1,12 +1,9 @@
 // @/app/layout.tsx
 import './globals.css'
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import { CustomThemeProvider } from '@/components/ThemeContext'
 import { Providers } from '@/components/Providers'
 import { LayoutWrapper } from '@/components/LayoutWrapper'
-
-const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://e-community.vercel.app'),
@@ -45,7 +42,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body>
         <CustomThemeProvider>
           <Providers>
             <LayoutWrapper>

@@ -12,6 +12,7 @@ interface DataTableColumn<T> {
   render?: (value: any, row: T, index: number) => React.ReactNode
   sortable?: boolean
   width?: string
+  className?: string
 }
 
 interface DataTableProps<T extends Record<string, any>> {
@@ -189,12 +190,12 @@ export function DataTable<T extends Record<string, any>>({
                   `}
                 >
                   {columns.map((column) => (
-                    <td 
-                      key={String(column.key)} 
-                      className="px-6 py-4 text-sm"
+                    <td
+                      key={String(column.key)}
+                      className={`px-6 py-4 text-sm ${column.className || ''}`}
                     >
-                      {column.render 
-                        ? column.render(row[column.key], row, index) 
+                      {column.render
+                        ? column.render(row[column.key], row, index)
                         : String(row[column.key] || '')
                       }
                     </td>

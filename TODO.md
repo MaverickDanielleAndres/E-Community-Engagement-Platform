@@ -1,41 +1,38 @@
-# TODO: Implement Admin Community Logo Upload
+# Admin Notifications Page Enhancement - TODO
 
-## Steps from Approved Plan
+## Completed Tasks
+- [x] Add delete functionality for individual notifications
+- [x] Add clear all notifications functionality
+- [x] Update columns to include actions column with delete button
+- [x] Add confirmation dialogs for delete and clear all actions
+- [x] Add toast notifications for success/error feedback
+- [x] Update UI layout with clear all button in header
+- [x] Fix TypeScript errors and type definitions
+- [x] Add DELETE method to API endpoint for delete and clear all operations
 
-### 1. Update API Route (app/api/admin/settings/route.ts)
-- [ ] Add community_id to the settings object returned in GET response for frontend use in filename generation.
-- [ ] In PUT method: Destructure and update description in the database update payload.
-- [ ] In PATCH method: Change the storage bucket from 'public-images' to 'community-image' for logo uploads.
+## Pending Tasks
+- [ ] Test the delete functionality with API endpoint
+- [ ] Test the clear all functionality with API endpoint
+- [ ] Verify real-time updates work with delete operations
+- [ ] Test UI responsiveness on different screen sizes
 
-### 2. Update Frontend (app/main/admin/settings/page.tsx)
-- [ ] Import getSupabaseClient from '@/lib/supabase' and Camera icon from lucide-react.
-- [ ] In fetchSettings: Update the API response handling to include and store community_id in state.
-- [ ] Implement handleImageUpload: Use client-side Supabase storage upload to 'community-image' bucket, generate unique filename with community_id, get public URL, update settings.logo_url in state, handle errors/loading.
-- [ ] Update logo UI section: Change to circular (rounded-full, w-20 h-20), add absolute-positioned Camera icon overlay on bottom-right for upload trigger, style like the reference image (blue button with camera).
-- [ ] Update handleSave: Ensure logo_url and description are included in the PUT body JSON.
+## Notes
+- Used similar patterns from requests page for consistency
+- Added actions?: string to Notification interface to match DataTable expectations
+- Clear all button only shows when there are notifications to clear
+- All actions require confirmation dialogs for safety
+- API endpoint now supports DELETE with ?id=<id> for single delete and ?clear=true for clear all
 
-### 3. Testing and Followup
-- [ ] Run `npm run dev` and test: Login as admin, upload logo, verify UI, upload success, DB update, preview.
-- [ ] Verify in Supabase: File in 'community-image' bucket, logo_url in communities table.
-- [ ] Handle any errors (e.g., bucket policies) via SQL if needed.
+---
 
-Progress: All updates completed.
+# Fix Verification Requests 500 Error and Dialog Issue
 
-## Completed Steps
+## Completed Tasks
+- [x] Fixed backend bug in user status update destructuring (changed from { error, count } to { data, error } for Supabase update)
+- [x] Fixed frontend confirmation dialog not closing after action (made action async and close dialog after await)
+- [x] Updated both approve and reject user status update logic to use correct Supabase response structure
 
-### 1. Update API Route (app/api/admin/settings/route.ts)
-- [x] Add community_id to the settings object returned in GET response for frontend use in filename generation.
-- [x] In PUT method: Destructure and update description in the database update payload.
-- [x] In PATCH method: Change the storage bucket from 'public-images' to 'community-image' for logo uploads.
-
-### 2. Update Frontend (app/main/admin/settings/page.tsx)
-- [x] Import getSupabaseClient from '@/lib/supabase' and Camera icon from lucide-react.
-- [x] In fetchSettings: Update the API response handling to include and store community_id in state.
-- [x] Implement handleImageUpload: Use client-side Supabase storage upload to 'community-image' bucket, generate unique filename with community_id, get public URL, update settings.logo_url in state, handle errors/loading.
-- [x] Update logo UI section: Change to circular (rounded-full, w-20 h-20), add absolute-positioned Camera icon overlay on bottom-right for upload trigger, style like the reference image (blue button with camera).
-- [x] Update handleSave: Ensure logo_url and description are included in the PUT body JSON.
-
-### 3. Testing and Followup
-- [x] Run `npm run dev` and test: Login as admin, upload logo, verify UI, upload success, DB update, preview.
-- [x] Verify in Supabase: File in 'community-image' bucket, logo_url in communities table.
-- [x] Handle any errors (e.g., bucket policies) via SQL if needed.
+## Notes
+- The 500 error was caused by incorrect destructuring of Supabase update response, where count was undefined, causing the check to fail
+- Dialog issue was due to synchronous action not closing the dialog after completion
+- Now approval/rejection should work without 500 error and dialog closes immediately after confirming
