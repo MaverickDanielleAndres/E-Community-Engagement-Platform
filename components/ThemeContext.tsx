@@ -37,13 +37,16 @@ export function CustomThemeProvider({ children }: { children: React.ReactNode })
   }, [])
 
   const applyTheme = (dark: boolean) => {
+    const html = document.documentElement
+    html.classList.add('theme-transition')
     if (dark) {
-      document.documentElement.classList.add('dark')
-      document.body.style.cssText = 'background:#000000;color:#ffffff;transition:all 0.3s'
+      html.classList.add('dark')
     } else {
-      document.documentElement.classList.remove('dark')
-      document.body.style.cssText = 'background:#ffffff;color:#000000;transition:all 0.3s'
+      html.classList.remove('dark')
     }
+    window.setTimeout(() => {
+      html.classList.remove('theme-transition')
+    }, 300)
   }
 
   const toggleTheme = () => {

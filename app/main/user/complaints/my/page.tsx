@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { DataTable } from '@/components/mainapp/components'
 import { MessageSquareWarning, Calendar } from 'lucide-react'
+import { useTheme } from '@/components/ThemeContext'
 
 interface Complaint {
   id: string
@@ -14,6 +15,7 @@ interface Complaint {
 }
 
 export default function MyComplaints() {
+  const { isDark } = useTheme()
   const [complaints, setComplaints] = useState<Complaint[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -79,7 +81,7 @@ export default function MyComplaints() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-2xl font-bold text-white">
           My Complaints
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">
@@ -87,7 +89,7 @@ export default function MyComplaints() {
         </p>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div className={`rounded-xl border overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
         <DataTable
           data={complaints}
           columns={columns}

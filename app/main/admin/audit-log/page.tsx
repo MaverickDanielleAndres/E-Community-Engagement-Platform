@@ -1,9 +1,9 @@
-// @/app/main/admin/audit-log/page.tsx
 'use client'
 
 import { useState, useEffect } from 'react'
 import { DataTable, SearchInput } from '@/components/mainapp/components'
-import { ScrollText, User, Calendar, Filter } from 'lucide-react'
+import { User, Calendar, Trash } from 'lucide-react'
+import { useTheme } from '@/components/ThemeContext'
 
 interface AuditEntry {
   id: string
@@ -20,41 +20,91 @@ export default function AdminAuditLog() {
   const [auditLog, setAuditLog] = useState<AuditEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('')
+  const { isDark } = useTheme()
 
   useEffect(() => {
-    const mockAuditLog: AuditEntry[] = [
-      {
-        id: '1',
-        action_type: 'create_poll',
-        entity_type: 'poll',
-        entity_id: 'poll-123',
-        user_name: 'Admin User',
-        details: { title: 'Community Garden Proposal' },
-        created_at: new Date().toISOString(),
-        ip_address: '192.168.1.1'
-      },
-      {
-        id: '2',
-        action_type: 'update_complaint',
-        entity_type: 'complaint',
-        entity_id: 'complaint-456',
-        user_name: 'Admin User',
-        details: { status: 'resolved' },
-        created_at: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-        ip_address: '192.168.1.1'
-      }
-    ]
-    setAuditLog(mockAuditLog)
-    setLoading(false)
+    fetchAuditLog()
   }, [])
 
+  const fetchAuditLog = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/admin/audit-log')
+      if (!response.ok) {
+        throw new Error('Failed to fetch audit logs')
+      }
+      const data = await response.json()
+      setAuditLog(data.logs || [])
+    } catch (error) {
+      console.error('Failed to fetch audit logs:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const deleteLog = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this log entry?')) return
+    try {
+      const response = await fetch(`/api/admin/audit-log?id=${id}`, {
+        method: 'DELETE'
+      })
+      if (!response.ok) {
+        throw new Error('Failed to delete log')
+      }
+      await fetchAuditLog()
+    } catch (error) {
+      console.error('Failed to delete log:', error)
+    }
+  }
+
+  const deleteAllLogs = async () => {
+    if (!confirm('Are you sure you want to delete all audit logs?')) return
+    try {
+      const response = await fetch('/api/admin/audit-log', {
+        method: 'DELETE'
+      })
+      if (!response.ok) {
+        throw new Error('Failed to delete all logs')
+      }
+      await fetchAuditLog()
+    } catch (error) {
+      console.error('Failed to delete all logs:', error)
+    }
+  }
+
+  const filteredLogs = auditLog.filter(log =>
+    (log.user_name || '').toLowerCase().includes(filter.toLowerCase()) ||
+    (log.action_type || '').toLowerCase().includes(filter.toLowerCase()) ||
+    (typeof log.details === 'string' ? log.details.toLowerCase() : JSON.stringify(log.details).toLowerCase()).includes(filter.toLowerCase())
+  )
+
   const columns = [
+    {
+      key: 'created_at' as const,
+      header: 'Timestamp',
+      render: (value: string) => (
+        <div className="flex items-center text-sm text-gray-600 dark:text-white">
+          <Calendar className="w-4 h-4 mr-1" />
+          {new Date(value).toLocaleString()}
+        </div>
+      )
+    },
+    {
+      key: 'user_name' as const,
+      header: 'User',
+      render: (value: string) => (
+        <div className="flex items-center text-sm">
+          <User className={`w-4 h-4 mr-2 ${isDark ? 'text-white' : 'text-black'}`} />
+          <span className={`text-sm ${isDark ? 'text-white' : 'text-black'}`}>{value}</span>
+        </div>
+      )
+    },
     {
       key: 'action_type' as const,
       header: 'Action',
       render: (value: string) => (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-          {value.replace('_', ' ').toUpperCase()}
+          {value.replace(/_/g, ' ').toUpperCase()}
         </span>
       )
     },
@@ -63,42 +113,51 @@ export default function AdminAuditLog() {
       header: 'Entity',
       render: (value: string, row: AuditEntry) => (
         <div>
-          <div className="font-medium text-gray-900 dark:text-white">{value}</div>
-          <div className="text-sm text-gray-500 dark:text-gray-400">{row.entity_id}</div>
+          <div className={`font-medium ${isDark ? 'text-white' : 'text-black'}`}>{value}</div>
+          <div className={`text-sm ${isDark ? 'text-white' : 'text-black'}`}>{row.entity_id}</div>
         </div>
       )
     },
     {
-      key: 'user_name' as const,
-      header: 'User',
-      render: (value: string) => (
-        <div className="flex items-center">
-          <User className="w-4 h-4 mr-2 text-gray-400" />
-          <span className="text-sm text-gray-900 dark:text-white">{value}</span>
-        </div>
+      key: 'details' as const,
+      header: 'Details',
+      render: (value: any) => (
+        <div className="text-sm">{typeof value === 'string' ? value : JSON.stringify(value)}</div>
       )
     },
     {
-      key: 'created_at' as const,
-      header: 'Timestamp',
+      key: 'ip_address' as const,
+      header: 'IP Address',
       render: (value: string) => (
-        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-          <Calendar className="w-4 h-4 mr-1" />
-          {new Date(value).toLocaleString()}
-        </div>
+        <div className="text-sm">{value}</div>
+      )
+    },
+    {
+      key: 'actions' as const,
+      header: 'Actions',
+      render: (_: any, row: AuditEntry) => (
+        <button
+          onClick={() => deleteLog(row.id)}
+          className="text-red-600 hover:text-red-800 text-sm font-semibold"
+          title="Delete log entry"
+        >
+          Delete
+        </button>
       )
     }
   ]
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Audit Log
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Track all administrative actions and changes
-        </p>
+      <div className="flex justify-between items-center">
+        <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Audit Log</h1>
+        <button
+          className="flex items-center space-x-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+          onClick={deleteAllLogs}
+        >
+          <Trash className="w-5 h-5" />
+          <span>Delete All</span>
+        </button>
       </div>
 
       <div className="flex items-center space-x-4">
@@ -108,17 +167,11 @@ export default function AdminAuditLog() {
           onChange={setFilter}
           className="max-w-md"
         />
-        <select className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700">
-          <option>All Actions</option>
-          <option>create_poll</option>
-          <option>update_complaint</option>
-          <option>delete_user</option>
-        </select>
       </div>
 
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
         <DataTable
-          data={auditLog}
+          data={filteredLogs}
           columns={columns}
           loading={loading}
           emptyMessage="No audit entries found"

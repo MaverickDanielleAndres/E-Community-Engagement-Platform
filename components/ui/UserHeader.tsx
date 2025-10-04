@@ -1,5 +1,4 @@
 // @/components/ui/UserHeader.tsx
-
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -9,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, Search, User, LogOut, Settings, ChevronDown, PlusSquare, FileText } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { Notification } from '@/types/notification'
 
 export function UserHeader() {
   const { data: session } = useSession()
@@ -26,14 +26,12 @@ export function UserHeader() {
       if (!session?.user) return
 
       try {
-        // Fetch user summary
         const userResponse = await fetch('/api/me/summary')
         if (userResponse.ok) {
           const userData = await userResponse.json()
           setUserImage(userData.settings?.image || '')
         }
 
-        // Fetch community info
         const communityResponse = await fetch('/api/user/community')
         if (communityResponse.ok) {
           const communityData = await communityResponse.json()
@@ -50,7 +48,6 @@ export function UserHeader() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) {
-      // Implement search functionality
       console.log('Searching for:', searchQuery)
     }
   }
@@ -64,7 +61,7 @@ export function UserHeader() {
 
     const fetchNotifications = async () => {
       try {
-        const response = await fetch('/api/user/notifications')
+        const response = await fetch('/api/notifications')
         const data = await response.json()
         setNotifications(data.notifications || [])
       } catch (error) {
@@ -79,7 +76,11 @@ export function UserHeader() {
     <motion.header
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 sticky top-0 z-20 px-4 sm:px-6 lg:px-8 py-4"
+      className={`backdrop-blur-md border-b sticky top-0 z-20 px-4 sm:px-6 lg:px-8 py-4 ${
+        isDark 
+          ? 'bg-slate-900 border-slate-700' 
+          : 'bg-white border-slate-200'
+      }`}
     >
       <div className="flex items-center justify-between">
         {/* Left: Search and Actions */}
@@ -95,22 +96,36 @@ export function UserHeader() {
 
           {/* Search */}
           <form onSubmit={handleSearch} className="relative hidden md:block">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${
+              isDark ? 'text-slate-400' : 'text-slate-400'
+            }`} />
             <input
               type="text"
               placeholder="Search polls, complaints..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2 w-64 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-slate-500 dark:placeholder-slate-400"
+              className={`pl-10 pr-4 py-2 w-64 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                isDark
+                  ? 'border-slate-700 bg-slate-800/50 text-white placeholder-slate-400'
+                  : 'border-slate-200 bg-white/50 text-slate-900 placeholder-slate-500'
+              }`}
             />
           </form>
 
           {/* Quick Actions */}
           <div className="hidden md:flex items-center space-x-2">
-            <button className="p-2 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+            <button className={`p-2 transition-colors ${
+              isDark 
+                ? 'text-slate-300 hover:text-blue-400' 
+                : 'text-slate-600 hover:text-blue-600'
+            }`}>
               <PlusSquare className="w-5 h-5" />
             </button>
-            <button className="p-2 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+            <button className={`p-2 transition-colors ${
+              isDark 
+                ? 'text-slate-300 hover:text-blue-400' 
+                : 'text-slate-600 hover:text-blue-600'
+            }`}>
               <FileText className="w-5 h-5" />
             </button>
           </div>
@@ -122,7 +137,11 @@ export function UserHeader() {
           <div className="relative">
             <button
               onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-              className="relative p-2 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              className={`relative p-2 transition-colors ${
+                isDark 
+                  ? 'text-slate-300 hover:text-blue-400' 
+                  : 'text-slate-600 hover:text-blue-600'
+              }`}
             >
               <Bell className="w-5 h-5" />
               {notifications.filter(n => !n.is_read).length > 0 && (
@@ -136,10 +155,18 @@ export function UserHeader() {
                   initial={{ opacity: 0, scale: 0.95, y: 10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                  className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 py-2 z-50"
+                  className={`absolute right-0 mt-2 w-80 rounded-xl shadow-lg border py-2 z-50 ${
+                    isDark 
+                      ? 'bg-slate-800 border-slate-700' 
+                      : 'bg-white border-slate-200'
+                  }`}
                 >
-                  <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                    <h3 className="font-semibold text-slate-900 dark:text-white text-sm">Notifications</h3>
+                  <div className={`px-4 py-2 border-b flex items-center justify-between ${
+                    isDark ? 'border-slate-700' : 'border-slate-200'
+                  }`}>
+                    <h3 className={`font-semibold text-sm ${
+                      isDark ? 'text-white' : 'text-slate-900'
+                    }`}>Notifications</h3>
                     <button
                       onClick={async (e) => {
                         e.stopPropagation()
@@ -152,8 +179,6 @@ export function UserHeader() {
                           if (response.ok) {
                             setNotifications([])
                             setIsNotificationsOpen(false)
-                          } else {
-                            console.error('Failed to mark notifications as read')
                           }
                         } catch (error) {
                           console.error('Error marking notifications as read:', error)
@@ -164,8 +189,12 @@ export function UserHeader() {
                       Clear All
                     </button>
                   </div>
-                  <div className="p-4 border-b border-slate-200 dark:border-slate-700">
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                  <div className={`p-4 border-b ${
+                    isDark ? 'border-slate-700' : 'border-slate-200'
+                  }`}>
+                    <p className={`text-sm ${
+                      isDark ? 'text-slate-400' : 'text-slate-500'
+                    }`}>
                       {notifications.filter(n => !n.is_read).length} unread notifications
                     </p>
                   </div>
@@ -177,18 +206,32 @@ export function UserHeader() {
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ duration: 0.2, delay: index * 0.05 }}
-                          className={`p-4 border-b border-slate-200 dark:border-slate-700 last:border-b-0 ${!notification.is_read ? (isDark ? 'bg-slate-700/50' : 'bg-blue-50/50') : ''} ${isDark ? 'hover:bg-slate-700' : 'hover:bg-slate-50'} transition-colors duration-150`}
+                          className={`p-4 border-b last:border-b-0 ${
+                            !notification.is_read 
+                              ? isDark ? 'bg-slate-700/50' : 'bg-blue-50/50'
+                              : ''
+                          } ${
+                            isDark 
+                              ? 'hover:bg-slate-700 border-slate-700' 
+                              : 'hover:bg-slate-50 border-slate-200'
+                          } transition-colors duration-150`}
                         >
                           <div className="flex items-start space-x-3">
                             <span className="text-lg">ℹ️</span>
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium text-slate-900 dark:text-white text-sm">
+                              <p className={`font-medium text-sm ${
+                                isDark ? 'text-white' : 'text-slate-900'
+                              }`}>
                                 {notification.title}
                               </p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                              <p className={`text-xs mt-1 ${
+                                isDark ? 'text-slate-400' : 'text-slate-500'
+                              }`}>
                                 {notification.message}
                               </p>
-                              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                              <p className={`text-xs mt-1 ${
+                                isDark ? 'text-slate-500' : 'text-slate-400'
+                              }`}>
                                 {new Date(notification.created_at).toLocaleString()}
                               </p>
                             </div>
@@ -199,12 +242,16 @@ export function UserHeader() {
                         </motion.div>
                       ))
                     ) : (
-                      <div className="px-4 py-6 text-center text-slate-500 dark:text-slate-400">
+                      <div className={`px-4 py-6 text-center ${
+                        isDark ? 'text-slate-400' : 'text-slate-500'
+                      }`}>
                         No notifications
                       </div>
                     )}
                   </div>
-                  <div className="p-3 border-t border-slate-200 dark:border-slate-700">
+                  <div className={`p-3 border-t ${
+                    isDark ? 'border-slate-700' : 'border-slate-200'
+                  }`}>
                     <button
                       onClick={() => {
                         router.push('/main/user/notifications')
@@ -223,7 +270,11 @@ export function UserHeader() {
           {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
-            className="p-2 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded-lg"
+            className={`p-2 transition-colors rounded-lg ${
+              isDark
+                ? 'hover:bg-slate-800 text-slate-300 hover:text-white'
+                : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
+            }`}
             title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
           >
             {isDark ? (
@@ -241,7 +292,11 @@ export function UserHeader() {
           <div className="relative">
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="flex items-center space-x-2 p-2 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded-lg"
+              className={`flex items-center space-x-2 p-2 transition-colors rounded-lg ${
+                isDark
+                  ? 'text-slate-300 hover:text-blue-400'
+                  : 'text-slate-600 hover:text-blue-600'
+              }`}
             >
               <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
                 {userImage ? (
@@ -255,7 +310,9 @@ export function UserHeader() {
                 )}
               </div>
               {!isProfileOpen && (
-                <span className="hidden sm:inline text-sm font-medium text-slate-900 dark:text-white">
+                <span className={`hidden sm:inline text-sm font-medium ${
+                  isDark ? 'text-white' : 'text-slate-900'
+                }`}>
                   {user?.name || user?.email?.split('@')[0] || 'User'}
                 </span>
               )}
@@ -267,23 +324,37 @@ export function UserHeader() {
                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-50"
+                className={`absolute right-0 mt-2 w-48 rounded-xl shadow-lg border py-1 z-50 ${
+                  isDark 
+                    ? 'bg-slate-800 border-slate-700' 
+                    : 'bg-white border-slate-200'
+                }`}
               >
                 <Link
                   href="/main/user/settings"
-                  className="flex items-center px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
+                  className={`flex items-center px-4 py-2 text-sm transition-colors ${
+                    isDark
+                      ? 'text-slate-300 hover:bg-slate-700/50'
+                      : 'text-slate-700 hover:bg-slate-100'
+                  }`}
                   onClick={() => setIsProfileOpen(false)}
                 >
                   <Settings className="w-4 h-4 mr-3" />
                   Profile Settings
                 </Link>
-                <hr className="my-1 border-slate-200 dark:border-slate-700" />
+                <hr className={`my-1 ${
+                  isDark ? 'border-slate-700' : 'border-slate-200'
+                }`} />
                 <button
                   onClick={async () => {
                     setIsProfileOpen(false)
                     await signOut({ callbackUrl: '/' })
                   }}
-                  className="w-full flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  className={`w-full flex items-center px-4 py-2 text-sm transition-colors ${
+                    isDark
+                      ? 'text-red-400 hover:bg-red-900/20'
+                      : 'text-red-600 hover:bg-red-50'
+                  }`}
                 >
                   <LogOut className="w-4 h-4 mr-3" />
                   Sign Out

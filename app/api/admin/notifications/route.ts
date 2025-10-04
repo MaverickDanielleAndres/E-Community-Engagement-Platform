@@ -17,14 +17,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: user } = await supabase
+    const { data: user, error: userError } = await supabase
       .from('users')
       .select('id')
       .eq('email', session.user.email)
       .single()
 
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    if (userError || !user) {
+      console.warn('User not found in database, returning empty notifications:', session.user.email)
+      // Return empty notifications array instead of error for authenticated users
+      return NextResponse.json({ notifications: [] })
     }
 
     const { data: notifications, error } = await supabase
@@ -54,13 +56,14 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: user } = await supabase
+    const { data: user, error: userError } = await supabase
       .from('users')
       .select('id')
       .eq('email', session.user.email)
       .single()
 
-    if (!user) {
+    if (userError || !user) {
+      console.warn('User not found in database:', session.user.email)
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
@@ -97,19 +100,26 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: user } = await supabase
+    const { data: user, error: userError } = await supabase
       .from('users')
       .select('id')
       .eq('email', session.user.email)
       .single()
 
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-
     const url = new URL(request.url)
     const id = url.searchParams.get('id')
     const clear = url.searchParams.get('clear')
+
+    if (userError || !user) {
+      console.warn('User not found in database:', session.user.email)
+      // For clear all operation, if user doesn't exist, consider it successful (no notifications to clear)
+      if (clear === 'true') {
+        console.log('User not found, but clear all requested - returning success (no notifications to clear)')
+        return NextResponse.json({ message: 'All notifications cleared successfully' })
+      }
+      // For individual delete, return error
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
 
     if (clear === 'true') {
       // Clear all notifications
@@ -122,6 +132,9 @@ export async function DELETE(request: NextRequest) {
         console.error('Database error:', error)
         return NextResponse.json({ error: 'Failed to clear notifications' }, { status: 500 })
       }
+
+      // Log the deletion for debugging
+      console.log(`Cleared all notifications for user_id: ${user.id}`)
 
       return NextResponse.json({ message: 'All notifications cleared successfully' })
     } else if (id) {
@@ -136,6 +149,9 @@ export async function DELETE(request: NextRequest) {
         console.error('Database error:', error)
         return NextResponse.json({ error: 'Failed to delete notification' }, { status: 500 })
       }
+
+      // Log the deletion for debugging
+      console.log(`Deleted notification ${id} for user_id: ${user.id}`)
 
       return NextResponse.json({ message: 'Notification deleted successfully' })
     } else {

@@ -148,10 +148,10 @@ export default function AdminSettings() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
             Community Settings
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className={isDark ? 'text-slate-400' : 'text-slate-600'}>
             Configure your community preferences and features
           </p>
         </div>
@@ -176,14 +176,14 @@ export default function AdminSettings() {
       <div className={`p-6 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
         <div className="flex items-center mb-4">
           <Settings className="w-5 h-5 text-blue-500 mr-2" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
             Basic Information
           </h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-gray-700'}`}>
               Community Name
             </label>
             <input
@@ -201,7 +201,7 @@ export default function AdminSettings() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-gray-700'}`}>
               Community Code
             </label>
             <input
@@ -219,7 +219,7 @@ export default function AdminSettings() {
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-gray-700'}`}>
               Description
             </label>
             <textarea
@@ -237,7 +237,7 @@ export default function AdminSettings() {
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-gray-700'}`}>
               Community Logo
             </label>
             <div className="relative w-20 h-20 rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden">
@@ -279,7 +279,7 @@ export default function AdminSettings() {
       <div className={`p-6 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
         <div className="flex items-center mb-4">
           <Shield className="w-5 h-5 text-green-500 mr-2" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
             Access Control
           </h2>
         </div>
@@ -287,8 +287,8 @@ export default function AdminSettings() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-medium text-gray-900 dark:text-white">Allow Guest Access</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Let guests view public content without joining</p>
+              <h3 className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Allow Guest Access</h3>
+              <p className={isDark ? 'text-gray-300' : 'text-gray-500'}>Let guests view public content without joining</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
@@ -303,8 +303,8 @@ export default function AdminSettings() {
 
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-medium text-gray-900 dark:text-white">Require Approval</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">New members need admin approval to join</p>
+              <h3 className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Require Approval</h3>
+              <p className={isDark ? 'text-gray-300' : 'text-gray-500'}>New members need admin approval to join</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
@@ -319,8 +319,8 @@ export default function AdminSettings() {
 
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-medium text-gray-900 dark:text-white">Auto-Archive Polls</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Automatically archive polls after deadline</p>
+              <h3 className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Auto-Archive Polls</h3>
+              <p className={isDark ? 'text-gray-300' : 'text-gray-500'}>Automatically archive polls after deadline</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
@@ -339,7 +339,7 @@ export default function AdminSettings() {
       <div className={`p-6 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
         <div className="flex items-center mb-4">
           <Bell className="w-5 h-5 text-yellow-500 mr-2" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
             Notification Settings
           </h2>
         </div>
@@ -348,10 +348,10 @@ export default function AdminSettings() {
           {Object.entries(settings.notification_settings).map(([key, value]) => (
             <div key={key} className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-medium text-gray-900 dark:text-white capitalize">
+                <h3 className={`text-sm font-medium capitalize ${isDark ? 'text-white' : 'text-gray-900'}`}>
                   {key.replace('_', ' ')}
                 </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className={isDark ? 'text-gray-300' : 'text-gray-500'}>
                   {key === 'email_notifications' && 'Send notifications via email'}
                   {key === 'push_notifications' && 'Browser push notifications'}
                   {key === 'daily_digest' && 'Daily summary of community activity'}
@@ -382,7 +382,7 @@ export default function AdminSettings() {
       <div className={`p-6 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
         <div className="flex items-center mb-4">
           <Bot className="w-5 h-5 text-purple-500 mr-2" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
             AI Features
           </h2>
         </div>
@@ -391,10 +391,10 @@ export default function AdminSettings() {
           {Object.entries(settings.ai_settings).map(([key, value]) => (
             <div key={key} className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-medium text-gray-900 dark:text-white capitalize">
+                <h3 className={`text-sm font-medium capitalize ${isDark ? 'text-white' : 'text-gray-900'}`}>
                   {key.replace('_', ' ')}
                 </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className={isDark ? 'text-gray-300' : 'text-gray-500'}>
                   {key === 'sentiment_analysis' && 'Analyze sentiment in feedback and complaints'}
                   {key === 'anomaly_detection' && 'Detect unusual patterns in community activity'}
                   {key === 'auto_categorization' && 'Automatically categorize complaints and feedback'}

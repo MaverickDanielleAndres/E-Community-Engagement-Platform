@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { DataTable } from '@/components/mainapp/components'
 import { Star, Calendar } from 'lucide-react'
+import { useTheme } from '@/components/ThemeContext'
 
 interface Feedback {
   id: string
@@ -15,6 +16,7 @@ interface Feedback {
 }
 
 export default function MyFeedback() {
+  const { isDark } = useTheme()
   const [feedback, setFeedback] = useState<Feedback[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -126,11 +128,11 @@ export default function MyFeedback() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">My Feedback</h1>
+        <h1 className="text-2xl font-bold text-white">My Feedback</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">View your submitted feedback history</p>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div className={`rounded-xl border overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
         <DataTable
           data={feedback}
           columns={columns}

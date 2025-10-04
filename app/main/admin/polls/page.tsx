@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { DataTable, EmptyState, ConfirmDialog } from '@/components/mainapp/components'
 import { Toast } from '@/components/Toast'
 import { PlusSquare, Eye, Edit, Trash2, Calendar, Users } from 'lucide-react'
+import { useTheme } from '@/components/ThemeContext'
 
 interface Poll {
   id: string
@@ -25,6 +26,7 @@ export default function AdminPolls() {
     title: ''
   })
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
+  const { isDark } = useTheme()
 
   useEffect(() => {
     const fetchPolls = async () => {
@@ -103,9 +105,9 @@ export default function AdminPolls() {
       header: 'Title',
       render: (value: string, row: Poll) => (
         <div>
-          <div className="font-medium text-gray-900 dark:text-white">{value}</div>
+          <div className={`font-medium ${isDark ? 'text-white' : 'text-black'}`}>{value}</div>
           {row.description && (
-            <div className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
+            <div className={`text-sm ${isDark ? 'text-white' : 'text-black'} truncate max-w-xs`}>
               {row.description}
             </div>
           )}
@@ -125,7 +127,7 @@ export default function AdminPolls() {
       key: 'vote_count' as const,
       header: 'Votes',
       render: (value: number) => (
-        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+        <div className={`flex items-center text-sm ${isDark ? 'text-white' : 'text-black'}`}>
           <Users className="w-4 h-4 mr-1" />
           {value}
         </div>
@@ -135,7 +137,7 @@ export default function AdminPolls() {
       key: 'deadline' as const,
       header: 'Deadline',
       render: (value: string) => (
-        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+        <div className={`flex items-center text-sm ${isDark ? 'text-white' : 'text-black'}`}>
           <Calendar className="w-4 h-4 mr-1" />
           {value ? new Date(value).toLocaleDateString() : 'No deadline'}
         </div>
@@ -144,7 +146,11 @@ export default function AdminPolls() {
     {
       key: 'created_at' as const,
       header: 'Created',
-      render: (value: string) => new Date(value).toLocaleDateString()
+      render: (value: string) => (
+        <span className={`${isDark ? 'text-white' : 'text-black'}`}>
+          {new Date(value).toLocaleDateString()}
+        </span>
+      )
     },
     {
       key: 'id' as const,
@@ -173,10 +179,10 @@ export default function AdminPolls() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className={`text-2xl font-bold text-gray-900 ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Manage Polls
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className={isDark ? 'text-slate-400' : 'text-slate-600'}>
             Create and manage community polls
           </p>
         </div>
@@ -190,7 +196,7 @@ export default function AdminPolls() {
       </div>
 
       {/* Polls Table */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
         {polls.length === 0 && !loading ? (
           <EmptyState
             title="No polls yet"

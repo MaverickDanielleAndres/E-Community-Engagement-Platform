@@ -9,6 +9,7 @@ import { useSession } from 'next-auth/react'
 import { Button } from '@/components/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Toast } from '@/components/Toast'
+import { useTheme } from '@/components/ThemeContext'
 
 interface Notification {
   id: string
@@ -26,6 +27,7 @@ export default function AdminNotifications() {
   const [loading, setLoading] = useState(true)
   const { data: session } = useSession()
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null)
+  const { isDark } = useTheme()
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean
     title: string
@@ -55,18 +57,43 @@ export default function AdminNotifications() {
       }
     }
 
-    fetchNotifications()
+    const setupRealtimeSubscription = async () => {
+      try {
+        // For admin users, subscribe to all notifications since they need to see everything
+        console.log('Setting up real-time subscription for all notifications (admin view)')
 
-    // Subscribe to real-time updates
-    const channel = supabase
-      .channel('notifications')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, (payload) => {
-        fetchNotifications() // Refetch on any change
-      })
-      .subscribe()
+        const channel = supabase
+          .channel('admin_notifications_all')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, (payload) => {
+            console.log('Real-time notification change detected:', payload)
+            fetchNotifications()
+          })
+          .subscribe()
+
+        return channel
+      } catch (error) {
+        console.error('Error setting up real-time subscription:', error)
+        // Fallback subscription if setup fails
+        const channel = supabase
+          .channel('admin_notifications_fallback')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, (payload) => {
+            fetchNotifications()
+          })
+          .subscribe()
+        return channel
+      }
+    }
+
+    fetchNotifications()
+    setupRealtimeSubscription().then(channel => {
+      return () => {
+        if (channel) channel.unsubscribe()
+      }
+    })
 
     return () => {
-      channel.unsubscribe()
+      supabase.channel('admin_notifications_all').unsubscribe()
+      supabase.channel('admin_notifications_fallback').unsubscribe()
     }
   }, [session?.user?.email])
 
@@ -179,20 +206,28 @@ export default function AdminNotifications() {
       header: 'Notification',
       render: (value: string, row: Notification) => (
         <div>
-          <div className="font-medium">{value}</div>
-          <div className="text-sm text-gray-500">{row.message}</div>
+          <div className={`font-medium ${isDark ? 'text-white' : 'text-black'}`}>{value}</div>
+          <div className={`text-sm ${isDark ? 'text-white' : 'text-black'}`}>{row.message}</div>
         </div>
       )
     },
     {
       key: 'created_at' as keyof Notification,
       header: 'Date',
-      render: (value: string) => new Date(value).toLocaleDateString()
+      render: (value: string) => (
+        <span className={`${isDark ? 'text-white' : 'text-black'}`}>
+          {new Date(value).toLocaleDateString()}
+        </span>
+      )
     },
     {
       key: 'is_read' as keyof Notification,
       header: 'Status',
-      render: (value: boolean) => value ? 'Read' : 'Unread'
+      render: (value: boolean) => (
+        <span className={`${isDark ? 'text-white' : 'text-black'}`}>
+          {value ? 'Read' : 'Unread'}
+        </span>
+      )
     },
     {
       key: 'actions' as keyof Notification,
@@ -244,10 +279,10 @@ export default function AdminNotifications() {
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className={`text-2xl font-bold text-gray-900 ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Notifications
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className={isDark ? 'text-slate-400' : 'text-slate-600'}>
             System alerts and community updates
           </p>
         </div>
@@ -264,7 +299,7 @@ export default function AdminNotifications() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
         <DataTable
           data={notifications}
           columns={columns}

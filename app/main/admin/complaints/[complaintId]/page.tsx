@@ -62,15 +62,24 @@ export default function ComplaintDetails() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
+        credentials: 'include',
+        body: JSON.stringify({
           status: newStatus,
           notes: notes.trim() || undefined
         }),
       })
-      
-      if (response.ok) {
-        setComplaint(prev => prev ? { ...prev, status: newStatus as any } : null)
+
+      const result = await response.json()
+
+      if (response.ok && result.complaint) {
+        setComplaint(result.complaint)
         setNotes('')
+        // Set refresh flag for list page
+        localStorage.setItem('complaintsListRefresh', 'true')
+        // Set refresh flag for sidebar
+        localStorage.setItem('sidebarRefresh', 'true')
+      } else {
+        console.error('Failed to update complaint:', result.error)
       }
     } catch (error) {
       console.error('Failed to update complaint:', error)
@@ -128,10 +137,10 @@ export default function ComplaintDetails() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className={`text-2xl font-bold text-gray-900 ${isDark ? 'text-white' : 'text-slate-900'}`}>
             {complaint.title}
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className={`mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
             Complaint #{complaint.id.slice(0, 8)}
           </p>
         </div>
@@ -143,8 +152,8 @@ export default function ComplaintDetails() {
           <div className="flex items-center">
             <statusIcon.icon className={`w-5 h-5 mr-2 ${statusIcon.color}`} />
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Status</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Status</p>
+              <p className={`text-lg font-semibold capitalize ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 {complaint.status.replace('-', ' ')}
               </p>
             </div>
@@ -155,8 +164,8 @@ export default function ComplaintDetails() {
           <div className="flex items-center">
             <Tag className="w-5 h-5 mr-2 text-purple-500" />
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Category</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Category</p>
+              <p className={`text-lg font-semibold capitalize ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 {complaint.category}
               </p>
             </div>
@@ -167,8 +176,8 @@ export default function ComplaintDetails() {
           <div className="flex items-center">
             <AlertTriangle className={`w-5 h-5 mr-2 ${getSentimentColor(complaint.sentiment)}`} />
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Sentiment</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Sentiment</p>
+              <p className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 {getSentimentLabel(complaint.sentiment)}
               </p>
             </div>
@@ -179,8 +188,8 @@ export default function ComplaintDetails() {
           <div className="flex items-center">
             <Calendar className="w-5 h-5 mr-2 text-blue-500" />
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Submitted</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Submitted</p>
+              <p className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 {new Date(complaint.created_at).toLocaleDateString()}
               </p>
             </div>
@@ -190,16 +199,16 @@ export default function ComplaintDetails() {
 
       {/* Complaint Details */}
       <div className={`p-6 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <h2 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
           Complaint Details
         </h2>
-        
+
         <div className="space-y-4">
           <div>
-            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <h3 className={`text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
               Description
             </h3>
-            <p className="text-gray-900 dark:text-white leading-relaxed">
+            <p className={`leading-relaxed ${isDark ? 'text-white' : 'text-gray-900'}`}>
               {complaint.description}
             </p>
           </div>
@@ -207,8 +216,8 @@ export default function ComplaintDetails() {
           <div className="flex items-center pt-4 border-t border-slate-200 dark:border-slate-700">
             <User className="w-5 h-5 mr-2 text-gray-400" />
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Submitted by</p>
-              <p className="font-medium text-gray-900 dark:text-white">
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Submitted by</p>
+              <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 {complaint.users.name} ({complaint.users.email})
               </p>
             </div>
@@ -218,13 +227,13 @@ export default function ComplaintDetails() {
 
       {/* Status Update */}
       <div className={`p-6 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <h2 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
           Update Status
         </h2>
-        
+
         <div className="space-y-4">
           <div>
-            <label htmlFor="status" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label htmlFor="status" className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
               Status
             </label>
             <select
@@ -233,8 +242,8 @@ export default function ComplaintDetails() {
               onChange={(e) => setNewStatus(e.target.value)}
               className={`
                 w-full px-3 py-2 rounded-lg border transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500
-                ${isDark 
-                  ? 'bg-slate-700 border-slate-600 text-white' 
+                ${isDark
+                  ? 'bg-slate-700 border-slate-600 text-white'
                   : 'bg-white border-slate-300 text-gray-900'
                 }
               `}
@@ -246,7 +255,7 @@ export default function ComplaintDetails() {
           </div>
 
           <div>
-            <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label htmlFor="notes" className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
               Notes (Optional)
             </label>
             <textarea
@@ -256,8 +265,8 @@ export default function ComplaintDetails() {
               onChange={(e) => setNotes(e.target.value)}
               className={`
                 w-full px-3 py-2 rounded-lg border transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500
-                ${isDark 
-                  ? 'bg-slate-700 border-slate-600 text-white' 
+                ${isDark
+                  ? 'bg-slate-700 border-slate-600 text-white'
                   : 'bg-white border-slate-300 text-gray-900'
                 }
               `}
@@ -282,34 +291,34 @@ export default function ComplaintDetails() {
 
       {/* AI Insights */}
       <div className={`p-6 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <h2 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
           AI Analysis
         </h2>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <h3 className={`text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
               Sentiment Analysis
             </h3>
             <div className="flex items-center">
               <div className={`w-3 h-3 rounded-full mr-2 ${getSentimentColor(complaint.sentiment).replace('text-', 'bg-')}`}></div>
-              <span className="text-gray-900 dark:text-white">
+              <span className={`${isDark ? 'text-white' : 'text-gray-900'}`}>
                 {getSentimentLabel(complaint.sentiment)} ({(complaint.sentiment * 100).toFixed(1)}%)
               </span>
             </div>
           </div>
 
           <div>
-            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <h3 className={`text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
               Priority Level
             </h3>
             <div className="flex items-center">
               <div className={`w-3 h-3 rounded-full mr-2 ${
-                complaint.priority > 5 ? 'bg-red-500' : 
+                complaint.priority > 5 ? 'bg-red-500' :
                 complaint.priority > 3 ? 'bg-yellow-500' : 'bg-green-500'
               }`}></div>
-              <span className="text-gray-900 dark:text-white">
-                {complaint.priority > 5 ? 'High' : 
+              <span className={`${isDark ? 'text-white' : 'text-gray-900'}`}>
+                {complaint.priority > 5 ? 'High' :
                  complaint.priority > 3 ? 'Medium' : 'Low'} Priority
               </span>
             </div>

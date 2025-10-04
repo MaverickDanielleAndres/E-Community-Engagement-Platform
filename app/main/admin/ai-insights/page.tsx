@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import { DataTable, EmptyState, ChartCard } from '@/components/mainapp/components'
 import { Bot, AlertTriangle, TrendingUp, Brain, Target, Zap } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ScatterChart, Scatter } from 'recharts'
+import { useTheme } from '@/components/ThemeContext'
 
 interface AnomalyFlag {
   id: string
@@ -32,6 +33,7 @@ export default function AdminAIInsights() {
   const [insights, setInsights] = useState<AIInsight[]>([])
   const [loading, setLoading] = useState(true)
   const [sentimentTrend, setSentimentTrend] = useState<any[]>([])
+  const { isDark } = useTheme()
 
   useEffect(() => {
     const fetchAIData = async () => {
@@ -139,7 +141,7 @@ export default function AdminAIInsights() {
       header: 'Anomaly Type',
       render: (value: string) => (
         <div>
-          <div className="font-medium text-gray-900 dark:text-white capitalize">
+          <div className={`font-medium capitalize ${isDark ? 'text-white' : 'text-gray-900'}`}>
             {value.replace('_', ' ')}
           </div>
         </div>
@@ -150,8 +152,8 @@ export default function AdminAIInsights() {
       header: 'Entity',
       render: (value: string, row: AnomalyFlag) => (
         <div className="text-sm">
-          <div className="font-medium text-gray-900 dark:text-white capitalize">{value}</div>
-          <div className="text-gray-500 dark:text-gray-400">{row.entity_id.slice(0, 12)}...</div>
+          <div className={`font-medium capitalize ${isDark ? 'text-white' : 'text-gray-900'}`}>{value}</div>
+          <div className={`${isDark ? 'text-white' : 'text-gray-500'}`}>{row.entity_id.slice(0, 12)}...</div>
         </div>
       )
     },
@@ -188,10 +190,9 @@ export default function AdminAIInsights() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            AI Insights Dashboard
+          <h1 className={`text-2xl font-bold text-gray-900 ${isDark ? 'text-white' : 'text-slate-900'}`}>            AI Insights Dashboard
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className={isDark ? 'text-slate-400' : 'text-slate-600'}>
             AI-powered community analysis and anomaly detection
           </p>
         </div>
@@ -205,7 +206,7 @@ export default function AdminAIInsights() {
       {/* AI Insights Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {insights.map((insight, index) => (
-          <div key={index} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+          <div key={index} className={`${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-black'} rounded-xl border p-6`}>
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center">
                 {insight.type === 'engagement_pattern' && <Target className="w-5 h-5 text-blue-500 mr-2" />}
@@ -216,23 +217,23 @@ export default function AdminAIInsights() {
                 {insight.impact.toUpperCase()} IMPACT
               </span>
             </div>
-            
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+
+            <h3 className={`font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
               {insight.title}
             </h3>
-            
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+
+            <p className={`text-sm mb-4 ${isDark ? 'text-white' : 'text-gray-600'}`}>
               {insight.description}
             </p>
-            
+
             <div className="flex items-center justify-between">
-              <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+              <div className={`flex items-center text-xs ${isDark ? 'text-white' : 'text-gray-500'}`}>
                 <Brain className="w-3 h-3 mr-1" />
                 {(insight.confidence * 100).toFixed(0)}% confidence
               </div>
-              
+
               {insight.actionable && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${isDark ? 'bg-blue-900 text-white' : 'bg-blue-100 text-blue-800'}`}>
                   Actionable
                 </span>
               )}
@@ -285,19 +286,19 @@ export default function AdminAIInsights() {
       </ChartCard>
 
       {/* Anomaly Detection */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+      <div className={`rounded-xl border overflow-hidden ${isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200 text-black'}`}>
+        <div className={`px-6 py-4 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 Anomaly Detection
               </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                 AI-detected unusual patterns requiring attention
               </p>
             </div>
             <div className="flex items-center space-x-2">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isDark ? 'bg-red-900 text-red-200' : 'bg-red-100 text-red-800'}`}>
                 <AlertTriangle className="w-3 h-3 mr-1" />
                 {anomalies.filter(a => !a.resolved_at).length} Active
               </span>
@@ -317,82 +318,83 @@ export default function AdminAIInsights() {
             columns={anomalyColumns}
             loading={loading}
             emptyMessage="No anomalies detected"
+            className={`${isDark ? 'bg-slate-900 text-white' : 'bg-white text-black'}`}
           />
         )}
       </div>
 
       {/* AI Model Performance */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <div className={`${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'} rounded-xl border p-6`}>
+          <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'} mb-4`}>
             Model Performance
           </h3>
-          
+
           <div className="space-y-4">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Sentiment Analysis</span>
-                <span className="text-sm text-gray-600 dark:text-gray-400">94.2% accuracy</span>
+                <span className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Sentiment Analysis</span>
+                <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>94.2% accuracy</span>
               </div>
-              <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
+              <div className={`w-full ${isDark ? 'bg-slate-700' : 'bg-gray-200'} rounded-full h-2`}>
                 <div className="bg-green-600 h-2 rounded-full" style={{ width: '94.2%' }}></div>
               </div>
             </div>
-            
+
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Topic Classification</span>
-                <span className="text-sm text-gray-600 dark:text-gray-400">87.8% accuracy</span>
+                <span className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Topic Classification</span>
+                <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>87.8% accuracy</span>
               </div>
-              <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
+              <div className={`w-full ${isDark ? 'bg-slate-700' : 'bg-gray-200'} rounded-full h-2`}>
                 <div className="bg-blue-600 h-2 rounded-full" style={{ width: '87.8%' }}></div>
               </div>
             </div>
-            
+
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Anomaly Detection</span>
-                <span className="text-sm text-gray-600 dark:text-gray-400">91.5% accuracy</span>
+                <span className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Anomaly Detection</span>
+                <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>91.5% accuracy</span>
               </div>
-              <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
+              <div className={`w-full ${isDark ? 'bg-slate-700' : 'bg-gray-200'} rounded-full h-2`}>
                 <div className="bg-purple-600 h-2 rounded-full" style={{ width: '91.5%' }}></div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <div className={`${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'} rounded-xl border p-6`}>
+          <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'} mb-4`}>
             Quick Actions
           </h3>
-          
+
           <div className="space-y-3">
-            <button className="w-full text-left p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors duration-200">
+            <button className={`w-full text-left p-3 rounded-lg border ${isDark ? 'border-slate-700 hover:bg-slate-700' : 'border-slate-200 hover:bg-slate-50'} transition-colors duration-200`}>
               <div className="flex items-center">
                 <TrendingUp className="w-5 h-5 text-blue-500 mr-3" />
                 <div>
-                  <div className="font-medium text-gray-900 dark:text-white">Generate Engagement Report</div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">Comprehensive community analysis</div>
+                  <div className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Generate Engagement Report</div>
+                  <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Comprehensive community analysis</div>
                 </div>
               </div>
             </button>
-            
-            <button className="w-full text-left p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors duration-200">
+
+            <button className={`w-full text-left p-3 rounded-lg border ${isDark ? 'border-slate-700 hover:bg-slate-700' : 'border-slate-200 hover:bg-slate-50'} transition-colors duration-200`}>
               <div className="flex items-center">
                 <Brain className="w-5 h-5 text-green-500 mr-3" />
                 <div>
-                  <div className="font-medium text-gray-900 dark:text-white">Retrain Models</div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">Update AI with latest data</div>
+                  <div className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Retrain Models</div>
+                  <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Update AI with latest data</div>
                 </div>
               </div>
             </button>
-            
-            <button className="w-full text-left p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors duration-200">
+
+            <button className={`w-full text-left p-3 rounded-lg border ${isDark ? 'border-slate-700 hover:bg-slate-700' : 'border-slate-200 hover:bg-slate-50'} transition-colors duration-200`}>
               <div className="flex items-center">
                 <AlertTriangle className="w-5 h-5 text-orange-500 mr-3" />
                 <div>
-                  <div className="font-medium text-gray-900 dark:text-white">Configure Alerts</div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">Set up anomaly notifications</div>
+                  <div className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Configure Alerts</div>
+                  <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Set up anomaly notifications</div>
                 </div>
               </div>
             </button>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
+import { useTheme } from '@/components/ThemeContext'
 import { 
   KPIStatCard, 
   ChartCard, 
@@ -18,6 +19,7 @@ import {
   Eye,
   Calendar
 } from 'lucide-react'
+import { useTheme } from '@/components/ThemeContext'
 
 interface UserDashboardData {
   myComplaints: number

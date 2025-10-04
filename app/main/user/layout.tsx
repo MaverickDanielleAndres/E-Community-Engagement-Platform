@@ -1,16 +1,17 @@
-// @/app/main/user/layout.tsx - Updated
 'use client'
 
 import { UserSidebar } from '@/components/ui/UserSidebar'
 import { UserHeader } from '@/components/ui/UserHeader'
 import { RoleGuard } from '@/components/mainapp/components'
 import { SidebarProvider, useSidebar } from '@/components/ui/SidebarContext'
+import { useTheme } from '@/components/ThemeContext'
 
 function UserLayoutContent({ children }: { children: React.ReactNode }) {
   const { isCollapsed } = useSidebar()
+  const { isDark } = useTheme()
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className={`min-h-screen ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
       <UserSidebar />
 
       <div className={`${isCollapsed ? 'ml-[80px]' : 'ml-[320px]'} transition-all duration-300`}>

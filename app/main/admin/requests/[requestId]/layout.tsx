@@ -1,4 +1,4 @@
-import { ReactNode } from 'react'
+import AdminLayout from '@/app/main/admin/layout'
 
 interface RequestLayoutProps {
   children: ReactNode
@@ -7,9 +7,9 @@ interface RequestLayoutProps {
 
 export default function RequestLayout({ children, modals }: RequestLayoutProps) {
   return (
-    <>
+    <AdminLayout>
       {children}
       {modals}
-    </>
+    </AdminLayout>
   )
 }

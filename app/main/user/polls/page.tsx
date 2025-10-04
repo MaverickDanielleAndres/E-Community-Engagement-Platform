@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { DataTable, EmptyState } from '@/components/mainapp/components'
 import { PieChart, Eye, Calendar, Users, Clock } from 'lucide-react'
+import { useTheme } from '@/components/ThemeContext'
 
 interface Poll {
   id: string
@@ -19,6 +20,7 @@ interface Poll {
 }
 
 export default function UserPolls() {
+  const { isDark } = useTheme()
   const [polls, setPolls] = useState<Poll[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -147,7 +149,7 @@ export default function UserPolls() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-2xl font-bold text-white">
           Community Polls
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">
@@ -157,36 +159,36 @@ export default function UserPolls() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+        <div className={`rounded-xl border p-6 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
           <div className="flex items-center">
             <PieChart className="w-8 h-8 text-green-500 mr-3" />
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Active Polls</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{activePolls.length}</p>
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Active Polls</p>
+              <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{activePolls.length}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+        <div className={`rounded-xl border p-6 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
           <div className="flex items-center">
             <Users className="w-8 h-8 text-blue-500 mr-3" />
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">My Votes</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>My Votes</p>
+              <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 {polls.filter(poll => poll.user_voted).length}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+        <div className={`rounded-xl border p-6 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
           <div className="flex items-center">
             <Clock className="w-8 h-8 text-orange-500 mr-3" />
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Closing Soon</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {activePolls.filter(poll => 
-                  poll.deadline && 
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Closing Soon</p>
+              <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                {activePolls.filter(poll =>
+                  poll.deadline &&
                   new Date(poll.deadline).getTime() - new Date().getTime() < 7 * 24 * 60 * 60 * 1000
                 ).length}
               </p>
@@ -196,16 +198,16 @@ export default function UserPolls() {
       </div>
 
       {/* Active Polls */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+      <div className={`rounded-xl border overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+        <div className={`px-6 py-4 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+          <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
             Active Polls
           </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
             Polls you can currently vote on
           </p>
         </div>
-        
+
         {activePolls.length === 0 && !loading ? (
           <EmptyState
             title="No active polls"
@@ -224,16 +226,16 @@ export default function UserPolls() {
 
       {/* Closed Polls */}
       {closedPolls.length > 0 && (
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <div className={`rounded-xl border overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+          <div className={`px-6 py-4 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+            <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
               Past Polls
             </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
               View results from closed polls
             </p>
           </div>
-          
+
           <DataTable
             data={closedPolls}
             columns={columns}

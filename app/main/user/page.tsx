@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react'
 import { motion } from 'framer-motion'
 import { Users, MessageSquareWarning, Smile, Bell, Target, Calendar } from 'lucide-react'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { KPICard } from '@/components/mainapp/components'
 import { useTheme } from '@/components/ThemeContext'
 
 interface DashboardStats {
@@ -72,74 +73,83 @@ export default function UserDashboard() {
         animate={{ opacity: 1, y: 0 }}
         className="space-y-2"
       >
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+        <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
           Welcome back, {session?.user?.name || session?.user?.email?.split('@')[0] || 'Resident'}
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className={isDark ? 'text-slate-400' : 'text-gray-600'}>
           Here's what's happening in your community today
         </p>
       </motion.div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
-          <div className="flex items-center justify-between pb-3">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Active Polls</h3>
-            <Target className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-          </div>
-          <div className="text-3xl font-bold text-gray-900 dark:text-white">{stats.activePolls}</div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Participate in community decisions</p>
-        </div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6"
+      >
+        <Link href="/main/user/polls">
+          <KPICard
+            title="Active Polls"
+            value={stats.activePolls}
+            change="Participate in decisions"
+            trend="up"
+            icon={Target}
+            color="blue"
+          />
+        </Link>
 
-        <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
-          <div className="flex items-center justify-between pb-3">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Open Complaints</h3>
-            <MessageSquareWarning className="w-6 h-6 text-red-600 dark:text-red-400" />
-          </div>
-          <div className="text-3xl font-bold text-gray-900 dark:text-white">{stats.openComplaints}</div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Track your submissions</p>
-        </div>
+        <Link href="/main/user/complaints/my">
+          <KPICard
+            title="Open Complaints"
+            value={stats.openComplaints}
+            change="Track your submissions"
+            trend={stats.openComplaints > 0 ? "down" : "neutral"}
+            icon={MessageSquareWarning}
+            color="red"
+          />
+        </Link>
 
-        <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border border-green-200 dark:border-green-800 rounded-lg p-6">
-          <div className="flex items-center justify-between pb-3">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Feedback</h3>
-            <Smile className="w-6 h-6 text-green-600 dark:text-green-400" />
-          </div>
-          <div className="text-3xl font-bold text-gray-900 dark:text-white">{stats.recentFeedback}</div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Your community contributions</p>
-        </div>
+        <Link href="/main/user/feedback/my">
+          <KPICard
+            title="Recent Feedback"
+            value={stats.recentFeedback}
+            change="Your contributions"
+            trend="up"
+            icon={Smile}
+            color="green"
+          />
+        </Link>
 
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border border-purple-200 dark:border-purple-800 rounded-lg p-6">
-          <div className="flex items-center justify-between pb-3">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Unread Notifications</h3>
-            <Bell className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-          </div>
-          <div className="text-3xl font-bold text-gray-900 dark:text-white">{stats.unreadNotifications}</div>
-          {stats.unreadNotifications > 0 && (
-            <span className="mt-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
-              New updates available
-            </span>
-          )}
-        </div>
+        <Link href="/main/user/notifications">
+          <KPICard
+            title="Unread Notifications"
+            value={stats.unreadNotifications}
+            change={stats.unreadNotifications > 0 ? "New updates available" : "All caught up"}
+            trend={stats.unreadNotifications > 0 ? "up" : "neutral"}
+            icon={Bell}
+            color="purple"
+          />
+        </Link>
 
-        <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-6">
-          <div className="flex items-center justify-between pb-3">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Community Members</h3>
-            <Users className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-          </div>
-          <div className="text-3xl font-bold text-gray-900 dark:text-white">{stats.communityMembers}</div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Active in your community</p>
-        </div>
-      </div>
+        <KPICard
+          title="Community Members"
+          value={stats.communityMembers}
+          change="Active in community"
+          trend="up"
+          icon={Users}
+          color="indigo"
+        />
+      </motion.div>
 
       {/* Recent Activity */}
-      <div className="border border-slate-200 dark:border-slate-700 rounded-lg">
-        <div className="p-6 border-b border-slate-200 dark:border-slate-700">
-          <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
+      <div className={`${isDark ? 'bg-slate-800' : 'bg-white'} rounded-lg border ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+        <div className={`p-6 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+          <h3 className={`flex items-center gap-2 text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
             Recent Activity
-            <span className="px-2 py-1 text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 rounded">Last 7 days</span>
+            <span className={`px-2 py-1 text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 rounded`}>Last 7 days</span>
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Stay updated with community events</p>
+          <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>Stay updated with community events</p>
         </div>
         <div className="p-6 space-y-4">
           {recentActivity.length > 0 ? (
@@ -149,7 +159,9 @@ export default function UserDashboard() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg"
+                className={`flex items-center justify-between p-4 rounded-lg ${
+                  isDark ? 'bg-slate-700/50 hover:bg-slate-700' : 'bg-slate-50 hover:bg-slate-100'
+                }`}
               >
                 <div className="flex items-center gap-3">
                   <div className={`w-2 h-2 rounded-full ${
@@ -157,11 +169,11 @@ export default function UserDashboard() {
                     activity.type === 'complaint' ? 'bg-red-500' : 'bg-green-500'
                   }`}></div>
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">{activity.title}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{activity.date}</p>
+                    <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{activity.title}</p>
+                    <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{activity.date}</p>
                   </div>
                 </div>
-                <Calendar className="w-4 h-4 text-gray-400" />
+                <Calendar className={`w-4 h-4 ${isDark ? 'text-slate-300' : 'text-gray-400'}`} />
               </motion.div>
             ))
           ) : (
@@ -176,43 +188,55 @@ export default function UserDashboard() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="border border-slate-200 dark:border-slate-700 rounded-lg hover:shadow-lg transition-shadow cursor-pointer group p-6">
+        <div className={`border rounded-lg hover:shadow-lg transition-shadow cursor-pointer group p-6 ${
+          isDark ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-white'
+        }`}>
           <Link href="/main/user/polls" className="block">
             <div className="pb-2">
-              <h3 className="flex items-center gap-2 text-blue-600 dark:text-blue-400 group-hover:text-blue-700 dark:group-hover:text-blue-300 font-semibold">
+              <h3 className={`flex items-center gap-2 font-semibold ${
+                isDark ? 'text-blue-400 group-hover:text-blue-300' : 'text-blue-600 group-hover:text-blue-700'
+              }`}>
                 <Target className="w-6 h-6" />
                 View Active Polls
               </h3>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
               Participate in community polls and share your opinion
             </p>
           </Link>
         </div>
 
-        <div className="border border-slate-200 dark:border-slate-700 rounded-lg hover:shadow-lg transition-shadow cursor-pointer group p-6">
+        <div className={`border rounded-lg hover:shadow-lg transition-shadow cursor-pointer group p-6 ${
+          isDark ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-white'
+        }`}>
           <Link href="/main/user/complaints/submit" className="block">
             <div className="pb-2">
-              <h3 className="flex items-center gap-2 text-red-600 dark:text-red-400 group-hover:text-red-700 dark:group-hover:text-red-300 font-semibold">
+              <h3 className={`flex items-center gap-2 font-semibold ${
+                isDark ? 'text-red-400 group-hover:text-red-300' : 'text-red-600 group-hover:text-red-700'
+              }`}>
                 <MessageSquareWarning className="w-6 h-6" />
                 Submit Complaint
               </h3>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
               Report issues and get them resolved by the community team
             </p>
           </Link>
         </div>
 
-        <div className="border border-slate-200 dark:border-slate-700 rounded-lg hover:shadow-lg transition-shadow cursor-pointer group p-6">
+        <div className={`border rounded-lg hover:shadow-lg transition-shadow cursor-pointer group p-6 ${
+          isDark ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-white'
+        }`}>
           <Link href="/main/user/feedback/submit" className="block">
             <div className="pb-2">
-              <h3 className="flex items-center gap-2 text-green-600 dark:text-green-400 group-hover:text-green-700 dark:group-hover:text-green-300 font-semibold">
+              <h3 className={`flex items-center gap-2 font-semibold ${
+                isDark ? 'text-green-400 group-hover:text-green-300' : 'text-green-600 group-hover:text-green-700'
+              }`}>
                 <Smile className="w-6 h-6" />
                 Give Feedback
               </h3>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
               Help improve your community experience
             </p>
           </Link>

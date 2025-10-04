@@ -263,47 +263,7 @@ export default function AdminMembers() {
         </div>
       </motion.div>
 
-      {/* Community Code Section */}
-      {communityInfo && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-6 text-white"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-bold mb-2">Community Access Code</h2>
-              <p className="text-blue-100 mb-4">
-                Share this code with users to allow them to join your community
-              </p>
-              <div className="flex items-center space-x-3">
-                <code className="bg-white/20 px-4 py-2 rounded-lg text-lg font-mono">
-                  {communityInfo.code}
-                </code>
-                <button
-                  onClick={handleCopyCode}
-                  className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 px-3 py-2 rounded-lg transition-colors duration-200"
-                >
-                  <Copy className="w-4 h-4" />
-                  <span>Copy</span>
-                </button>
-                <button
-                  onClick={handleRegenerateCode}
-                  disabled={loading}
-                  className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 px-3 py-2 rounded-lg transition-colors duration-200 disabled:opacity-50"
-                >
-                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                  <span>Regenerate</span>
-                </button>
-              </div>
-            </div>
-            <div className="hidden sm:block">
-              <Users className="w-16 h-16 text-blue-200" />
-            </div>
-          </div>
-        </motion.div>
-      )}
+      ON
 
       {/* Stats Cards */}
       <motion.div
@@ -312,7 +272,7 @@ export default function AdminMembers() {
         transition={{ duration: 0.5, delay: 0.2 }}
         className="grid grid-cols-1 md:grid-cols-3 gap-6"
       >
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
+        <div className={`${isDark ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 shadow-lg border ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
           <div className="flex items-center justify-between">
             <div>
               <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
@@ -326,7 +286,7 @@ export default function AdminMembers() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
+        <div className={`${isDark ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 shadow-lg border ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
           <div className="flex items-center justify-between">
             <div>
               <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
@@ -340,7 +300,7 @@ export default function AdminMembers() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
+        <div className={`${isDark ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 shadow-lg border ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
           <div className="flex items-center justify-between">
             <div>
               <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
@@ -365,7 +325,7 @@ export default function AdminMembers() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.3 }}
-        className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700"
+        className={`${isDark ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 shadow-lg border ${isDark ? 'border-slate-700' : 'border-slate-200'}`}
       >
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
@@ -400,7 +360,7 @@ export default function AdminMembers() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.4 }}
-        className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden"
+        className={`${isDark ? 'bg-slate-800' : 'bg-white'} rounded-2xl shadow-lg border ${isDark ? 'border-slate-700' : 'border-slate-200'} overflow-hidden`}
       >
         <div className="p-6 border-b border-slate-200 dark:border-slate-700">
           <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>

@@ -218,19 +218,18 @@ export function AdminHeader() {
                         e.stopPropagation()
                         if (!session?.user?.email) return
                         try {
-                          const response = await fetch('/api/admin/notifications/mark-read', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                          const response = await fetch('/api/admin/notifications?clear=true', {
+                            method: 'DELETE'
                           })
                           if (response.ok) {
                             // Clear the notifications list locally
                             setNotifications([])
                             setShowNotifications(false)
                           } else {
-                            console.error('Failed to mark notifications as read')
+                            console.error('Failed to clear notifications')
                           }
                         } catch (error) {
-                          console.error('Error marking notifications as read:', error)
+                          console.error('Error clearing notifications:', error)
                         }
                       }}
                       className="text-sm text-blue-600 dark:text-blue-400 hover:underline"

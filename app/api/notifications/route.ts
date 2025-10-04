@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
       .from('notifications')
       .select('*')
       .eq('user_id', user.id)
+      .eq('is_read', false)
       .order('created_at', { ascending: false })
       .limit(50)
 

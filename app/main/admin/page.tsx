@@ -84,11 +84,11 @@ export default function AdminDashboard() {
 
   const ActivityIcon = ({ type }: { type: string }) => {
     switch (type) {
-      case 'complaint': return <MessageSquareWarning className="w-4 h-4 text-red-500" />
-      case 'poll': return <PieChart className="w-4 h-4 text-blue-500" />
-      case 'feedback': return <Smile className="w-4 h-4 text-green-500" />
-      case 'member_joined': return <Users className="w-4 h-4 text-purple-500" />
-      default: return <Activity className="w-4 h-4 text-slate-500" />
+      case 'complaint': return <MessageSquareWarning className={`w-4 h-4 ${isDark ? 'text-red-400' : 'text-red-500'}`} />
+      case 'poll': return <PieChart className={`w-4 h-4 ${isDark ? 'text-blue-400' : 'text-blue-500'}`} />
+      case 'feedback': return <Smile className={`w-4 h-4 ${isDark ? 'text-green-400' : 'text-green-500'}`} />
+      case 'member_joined': return <Users className={`w-4 h-4 ${isDark ? 'text-purple-400' : 'text-purple-500'}`} />
+      default: return <Activity className={`w-4 h-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
     }
   }
 
@@ -215,7 +215,7 @@ export default function AdminDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700"
+          className={`lg:col-span-2 ${isDark ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 shadow-lg border ${isDark ? 'border-slate-700' : 'border-slate-200'}`}
         >
           <div className="flex items-center justify-between mb-6">
             <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
@@ -270,7 +270,10 @@ export default function AdminDashboard() {
                 title="No recent activity"
                 description="Community activity will appear here"
                 icon={Activity}
-              />
+              /
+              
+              
+              >
             )}
           </div>
         </motion.div>
@@ -280,7 +283,7 @@ export default function AdminDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700"
+          className={`${isDark ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 shadow-lg border ${isDark ? 'border-slate-700' : 'border-slate-200'}`}
         >
           <h2 className={`text-xl font-bold mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Quick Actions
@@ -289,37 +292,47 @@ export default function AdminDashboard() {
           <div className="space-y-3">
             <Link
               href="/main/admin/polls/create"
-              className="flex items-center space-x-3 p-4 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-all duration-200 group"
+              className={`flex items-center space-x-3 p-4 rounded-xl transition-all duration-200 group ${
+                isDark
+                  ? 'bg-gradient-to-r from-slate-600 to-slate-800 hover:from-slate-500 hover:to-slate-700 text-white'
+                  : 'bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-black'
+              }`}
             >
               <Plus className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
               <span className="font-medium">Create Poll</span>
             </Link>
-            
+
             <Link
               href="/main/admin/ai-insights"
-              className="flex items-center space-x-3 p-4 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 transition-all duration-200 group"
+              className={`flex items-center space-x-3 p-4 rounded-xl transition-all duration-200 group ${
+                isDark
+                  ? 'bg-gradient-to-r from-slate-600 to-slate-800 hover:from-slate-500 hover:to-slate-700 text-white'
+                  : 'bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-black'
+              }`}
             >
               <Bot className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
               <span className="font-medium">AI Insights</span>
             </Link>
-            
+
             <Link
               href="/main/admin/analytics"
-              className="flex items-center space-x-3 p-4 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 transition-all duration-200 group"
+              className={`flex items-center space-x-3 p-4 rounded-xl transition-all duration-200 group ${
+                isDark
+                  ? 'bg-gradient-to-r from-slate-600 to-slate-800 hover:from-slate-500 hover:to-slate-700 text-white'
+                  : 'bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-black'
+              }`}
             >
               <TrendingUp className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
               <span className="font-medium">View Analytics</span>
             </Link>
-            
+
             <Link
               href="/main/admin/members"
-              className={`
-                flex items-center space-x-3 p-4 rounded-xl transition-colors duration-200
-                ${isDark 
-                  ? 'bg-slate-700 text-white hover:bg-slate-600' 
-                  : 'bg-slate-100 text-slate-900 hover:bg-slate-200'
-                }
-              `}
+              className={`flex items-center space-x-3 p-4 rounded-xl transition-colors duration-200 ${
+                isDark
+                  ? 'bg-gradient-to-r from-slate-600 to-slate-800 hover:from-slate-500 hover:to-slate-700 text-white'
+                  : 'bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-black'
+              }`}
             >
               <Users className="w-5 h-5" />
               <span className="font-medium">Manage Members</span>
@@ -334,7 +347,7 @@ export default function AdminDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700"
+          className={`${isDark ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 shadow-lg border ${isDark ? 'border-slate-700' : 'border-slate-200'}`}
         >
           <h2 className={`text-xl font-bold mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Member Growth
@@ -375,35 +388,39 @@ export default function AdminDashboard() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.5 }}
-        className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-6 text-white"
+        className={`rounded-2xl p-6 ${
+          isDark
+            ? 'bg-gradient-to-r from-slate-700 to-slate-900 text-white'
+            : 'bg-gradient-to-r from-gray-100 to-gray-200 text-black'
+        }`}
       >
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold mb-2">System Status</h2>
-            <p className="text-blue-100 mb-4">
+            <p className={`mb-4 ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>
               All systems operational. Community engagement is {stats?.totalMembers && stats.totalMembers > 10 ? 'strong' : 'growing'} with real-time insights available.
             </p>
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-2">
-                <CheckCircle className="w-4 h-4" />
+                <CheckCircle className={`w-4 h-4 ${isDark ? 'text-slate-400' : 'text-gray-500'}`} />
                 <span className="text-sm">Database</span>
               </div>
               <div className="flex items-center space-x-2">
-                <CheckCircle className="w-4 h-4" />
+                <CheckCircle className={`w-4 h-4 ${isDark ? 'text-slate-400' : 'text-gray-500'}`} />
                 <span className="text-sm">API</span>
               </div>
               <div className="flex items-center space-x-2">
-                <CheckCircle className="w-4 h-4" />
+                <CheckCircle className={`w-4 h-4 ${isDark ? 'text-slate-400' : 'text-gray-500'}`} />
                 <span className="text-sm">AI Services</span>
               </div>
               <div className="flex items-center space-x-2">
-                <CheckCircle className="w-4 h-4" />
+                <CheckCircle className={`w-4 h-4 ${isDark ? 'text-slate-400' : 'text-gray-500'}`} />
                 <span className="text-sm">Notifications</span>
               </div>
             </div>
           </div>
           <div className="hidden sm:block">
-            <Target className="w-16 h-16 text-blue-200" />
+            <Target className={`w-16 h-16 ${isDark ? 'text-slate-400' : 'text-gray-500'}`} />
           </div>
         </div>
       </motion.div>

@@ -281,10 +281,10 @@ export function DataTable<T extends Record<string, any>>({
   }
 
   return (
-    <div className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'} ${className}`}>
+    <div className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'} ${className}`}>
       {/* Search and Filter Bar */}
       {(searchable || filterable) && (
-        <div className={`p-4 border-b ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-slate-50/50'}`}>
+        <div className={`p-4 border-b ${isDark ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-slate-50/50 text-slate-900'}`}>
           <div className="flex items-center space-x-4">
             {searchable && (
               <SearchInput
@@ -302,7 +302,7 @@ export function DataTable<T extends Record<string, any>>({
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className={`border-b ${isDark ? 'border-slate-700 bg-slate-900/50' : 'border-slate-200 bg-slate-50/50'}`}>
+            <tr className={`border-b ${isDark ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-slate-50/50 text-slate-900'}`}>
               {columns.map((column) => (
                 <th
                   key={String(column.key)}
@@ -310,7 +310,7 @@ export function DataTable<T extends Record<string, any>>({
                   className={`
                     px-6 py-4 text-left text-sm font-semibold transition-colors duration-200
                     ${column.sortable !== false ? 'cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700' : ''}
-                    ${isDark ? 'text-slate-200' : 'text-slate-700'}
+                    ${isDark ? 'text-white' : 'text-slate-700'}
                     ${column.width || ''}
                   `}
                 >
@@ -319,7 +319,7 @@ export function DataTable<T extends Record<string, any>>({
               ))}
             </tr>
           </thead>
-          <tbody className={`divide-y ${isDark ? 'divide-slate-700' : 'divide-slate-200'}`}>
+          <tbody className={`divide-y ${isDark ? 'divide-slate-700 bg-slate-900 text-white' : 'divide-slate-200 bg-white text-slate-900'}`}>
             <AnimatePresence>
               {paginatedData.map((row, index) => (
                 <motion.tr
@@ -331,7 +331,7 @@ export function DataTable<T extends Record<string, any>>({
                   className={`
                     transition-colors duration-200
                     ${isDark
-                      ? 'hover:bg-slate-700/50 text-slate-200'
+                      ? 'hover:bg-slate-700/50 text-white'
                       : 'hover:bg-slate-50 text-slate-900'
                     }
                   `}
@@ -339,7 +339,7 @@ export function DataTable<T extends Record<string, any>>({
                   {columns.map((column) => (
                     <td
                       key={String(column.key)}
-                      className="px-6 py-4 text-sm"
+                      className={`px-6 py-4 text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}
                     >
                       {column.render
                         ? column.render(row[column.key], row, index)
@@ -356,7 +356,7 @@ export function DataTable<T extends Record<string, any>>({
 
       {/* Pagination */}
       {pagination && totalPages > 1 && (
-        <div className={`p-4 border-t ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-slate-50/50'}`}>
+        <div className={`p-4 border-t ${isDark ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-slate-50/50 text-slate-900'}`}>
           <div className="flex items-center justify-between">
             <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
               Showing {startIndex + 1} to {Math.min(endIndex, sortedData.length)} of {sortedData.length} results

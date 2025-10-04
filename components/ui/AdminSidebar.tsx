@@ -97,6 +97,43 @@ export function AdminSidebar() {
     }
   }, [session?.user?.email])
 
+  // Listen for sidebar refresh flag
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'sidebarRefresh' && e.newValue === 'true') {
+        // Clear the flag
+        localStorage.removeItem('sidebarRefresh')
+        // Refresh counts immediately
+        if (session?.user?.email) {
+          const fetchCounts = async () => {
+            try {
+              // Fetch complaints count (total pending/unresolved)
+              const complaintsResponse = await fetch('/api/complaints?status=pending')
+              if (complaintsResponse.ok) {
+                const complaintsData = await complaintsResponse.json()
+                setComplaintCount(complaintsData.complaints?.length || 0)
+              }
+
+              // Fetch notifications count (unread)
+              const notificationsResponse = await fetch('/api/admin/notifications')
+              if (notificationsResponse.ok) {
+                const notificationsData = await notificationsResponse.json()
+                const unread = notificationsData.notifications?.filter((n: any) => !n.is_read).length || 0
+                setNotificationCount(unread)
+              }
+            } catch (error) {
+              console.error('Error fetching counts:', error)
+            }
+          }
+          fetchCounts()
+        }
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
+  }, [session?.user?.email])
+
   const navigationSections: NavSection[] = [
     {
       title: "Overview",
@@ -110,7 +147,7 @@ export function AdminSidebar() {
       title: "Management",
       items: [
         { label: "Members", href: "/main/admin/members", icon: Users },
-        { label: "Requests", href: "/admin/requests", icon: ShieldCheck },
+        { label: "Requests", href: "/main/admin/requests", icon: ShieldCheck },
         { label: "Complaints", href: "/main/admin/complaints", icon: MessageSquareWarning, badge: complaintCount },
         { label: "Feedback", href: "/main/admin/feedback", icon: Smile },
         { label: "Polls", href: "/main/admin/polls", icon: PlusSquare }

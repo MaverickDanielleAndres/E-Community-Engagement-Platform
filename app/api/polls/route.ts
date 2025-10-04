@@ -185,6 +185,7 @@ export async function POST(request: NextRequest) {
         details: { title, questions_count: questions.length }
       })
 
+
     return NextResponse.json({ poll, message: 'Poll created successfully' })
   } catch (error) {
     console.error('Server error:', error)

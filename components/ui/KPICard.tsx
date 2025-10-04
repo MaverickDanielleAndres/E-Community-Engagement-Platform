@@ -15,17 +15,17 @@ interface KPICardProps {
   onClick?: () => void
 }
 
-export function KPICard({ 
-  title, 
-  value, 
-  change, 
-  trend, 
-  icon: Icon, 
+export function KPICard({
+  title,
+  value,
+  change,
+  trend,
+  icon: Icon,
   color = 'blue',
-  onClick 
+  onClick
 }: KPICardProps) {
   const { isDark } = useTheme()
-  
+
   const colorClasses = {
     blue: 'from-blue-500 to-blue-600',
     green: 'from-green-500 to-green-600',
@@ -51,10 +51,7 @@ export function KPICard({
       className={`
         relative overflow-hidden rounded-2xl p-6 shadow-lg border group transition-all duration-300
         ${onClick ? 'cursor-pointer' : ''}
-        ${isDark 
-          ? 'bg-slate-800 border-slate-700 hover:shadow-2xl hover:shadow-blue-500/10' 
-          : 'bg-white border-slate-200 hover:shadow-2xl hover:shadow-blue-500/10'
-        }
+        ${isDark ? 'bg-slate-800 border-slate-700 hover:shadow-2xl hover:shadow-blue-500/10 text-white' : 'bg-white border-slate-200 hover:shadow-2xl hover:shadow-blue-500/10 text-black'}
       `}
     >
       {/* Background Gradient */}
@@ -66,7 +63,7 @@ export function KPICard({
       {/* Content */}
       <div className="relative z-10 flex items-center justify-between">
         <div className="flex-1">
-          <p className={`text-sm font-medium mb-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+          <p className={`text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-slate-600'}`}>
             {title}
           </p>
           <p className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
@@ -75,9 +72,9 @@ export function KPICard({
           {change && (
             <div className="flex items-center mt-3">
               {TrendIcon && (
-                <TrendIcon className={`w-4 h-4 mr-1 ${trend ? trendColors[trend] : 'text-slate-400'}`} />
+                <TrendIcon className={`w-4 h-4 mr-1 ${isDark ? 'text-white' : (trend ? trendColors[trend] : 'text-slate-400')}`} />
               )}
-              <span className={`text-sm font-medium ${trend ? trendColors[trend] : 'text-slate-500'}`}>
+              <span className={`text-sm font-medium ${isDark ? 'text-white' : (trend ? trendColors[trend] : 'text-slate-500')}`}>
                 {change}
               </span>
             </div>

@@ -5,12 +5,14 @@ import { AdminSidebar } from '@/components/ui/AdminSidebar'
 import { AdminHeader } from '@/components/ui/AdminHeader'
 import { RoleGuard } from '@/components/mainapp/components'
 import { SidebarProvider, useSidebar } from '@/components/ui/SidebarContext'
+import { useTheme } from '@/components/ThemeContext'
 
 function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const { isCollapsed } = useSidebar()
+  const { isDark } = useTheme()
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className={`min-h-screen ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
       <AdminSidebar />
 
       <div className={`${isCollapsed ? 'ml-[80px]' : 'ml-[320px]'} transition-all duration-300`}>

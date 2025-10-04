@@ -1,11 +1,10 @@
-
 // @/app/main/admin/complaints/page.tsx - Updated with full functionality
 'use client'
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { DataTable, EmptyState, SearchInput } from '@/components/mainapp/components'
-import { MessageSquareWarning, Eye, Calendar, User, AlertCircle } from 'lucide-react'
+import { MessageSquareWarning, Eye, Calendar, User, AlertCircle, Trash2, RefreshCw } from 'lucide-react'
 import { useTheme } from '@/components/ThemeContext'
 import { Toast } from '@/components/Toast'
 
@@ -32,13 +31,35 @@ export default function AdminComplaints() {
   })
   const { isDark } = useTheme()
 
+  const refreshComplaints = async () => {
+    setLoading(true)
+    try {
+      let url = '/api/complaints?'
+      if (filters.status) url += `status=${filters.status}&`
+      if (filters.category) url += `category=${filters.category}&`
+
+      const response = await fetch(url)
+      if (response.ok) {
+        const data = await response.json()
+        setComplaints(data.complaints || [])
+      } else {
+        setToast({ message: 'Failed to refresh complaints', type: 'error' })
+      }
+    } catch (error) {
+      console.error('Failed to refresh complaints:', error)
+      setToast({ message: 'Failed to refresh complaints', type: 'error' })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
     const fetchComplaints = async () => {
       try {
         let url = '/api/complaints?'
         if (filters.status) url += `status=${filters.status}&`
         if (filters.category) url += `category=${filters.category}&`
-        
+
         const response = await fetch(url)
         if (response.ok) {
           const data = await response.json()
@@ -57,29 +78,38 @@ export default function AdminComplaints() {
     fetchComplaints()
   }, [filters.status, filters.category])
 
+  // Check for refresh flag from detail page
+  useEffect(() => {
+    const refreshFlag = localStorage.getItem('complaintsListRefresh')
+    if (refreshFlag === 'true') {
+      localStorage.removeItem('complaintsListRefresh')
+      refreshComplaints()
+    }
+  }, [])
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+        return isDark ? 'bg-yellow-900 text-yellow-200' : 'bg-yellow-100 text-yellow-800'
       case 'in-progress':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+        return isDark ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-800'
       case 'resolved':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+        return isDark ? 'bg-green-900 text-green-200' : 'bg-green-100 text-green-800'
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+        return isDark ? 'bg-gray-900 text-gray-200' : 'bg-gray-100 text-gray-800'
     }
   }
 
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'maintenance':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+        return isDark ? 'bg-orange-900 text-orange-200' : 'bg-orange-100 text-orange-800'
       case 'governance':
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+        return isDark ? 'bg-purple-900 text-purple-200' : 'bg-purple-100 text-purple-800'
       case 'other':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+        return isDark ? 'bg-gray-900 text-gray-200' : 'bg-gray-100 text-gray-800'
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+        return isDark ? 'bg-gray-900 text-gray-200' : 'bg-gray-100 text-gray-800'
     }
   }
 
@@ -89,14 +119,36 @@ export default function AdminComplaints() {
     return { icon: AlertCircle, color: 'text-yellow-500', label: 'Neutral' }
   }
 
+  const handleDeleteComplaint = async (complaintId: string) => {
+    if (!confirm('Are you sure you want to delete this resolved complaint? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/complaints/${complaintId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        setComplaints(complaints.filter(c => c.id !== complaintId))
+        setToast({ message: 'Complaint deleted successfully', type: 'success' })
+      } else {
+        setToast({ message: 'Failed to delete complaint', type: 'error' })
+      }
+    } catch (error) {
+      console.error('Failed to delete complaint:', error)
+      setToast({ message: 'Failed to delete complaint', type: 'error' })
+    }
+  }
+
   const columns = [
     {
       key: 'title' as const,
       header: 'Complaint',
       render: (value: string, row: Complaint) => (
         <div>
-          <div className="font-medium text-gray-900 dark:text-white">{value}</div>
-          <div className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
+          <div className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{value}</div>
+          <div className={`text-sm truncate max-w-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
             {row.description}
           </div>
         </div>
@@ -109,8 +161,8 @@ export default function AdminComplaints() {
         <div className="flex items-center text-sm">
           <User className="w-4 h-4 mr-2 text-gray-400" />
           <div>
-            <div className="text-gray-900 dark:text-white">{value?.name}</div>
-            <div className="text-gray-500 dark:text-gray-400">{value?.email}</div>
+            <div className={isDark ? 'text-white' : 'text-gray-900'}>{value?.name}</div>
+            <div className={isDark ? 'text-gray-400' : 'text-gray-500'}>{value?.email}</div>
           </div>
         </div>
       )
@@ -141,7 +193,7 @@ export default function AdminComplaints() {
         return (
           <div className="flex items-center">
             <sentiment.icon className={`w-4 h-4 mr-1 ${sentiment.color}`} />
-            <span className="text-sm text-gray-600 dark:text-gray-400">
+            <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
               {sentiment.label}
             </span>
           </div>
@@ -152,7 +204,7 @@ export default function AdminComplaints() {
       key: 'created_at' as const,
       header: 'Created',
       render: (value: string) => (
-        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+        <div className={`flex items-center text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
           <Calendar className="w-4 h-4 mr-1" />
           {new Date(value).toLocaleDateString()}
         </div>
@@ -161,13 +213,24 @@ export default function AdminComplaints() {
     {
       key: 'id' as const,
       header: 'Actions',
-      render: (value: string) => (
-        <Link
-          href={`/main/admin/complaints/${value}`}
-          className="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
-        >
-          <Eye className="w-4 h-4" />
-        </Link>
+      render: (value: string, row: Complaint) => (
+        <div className="flex items-center space-x-2">
+          <Link
+            href={`/main/admin/complaints/${value}`}
+            className="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+          >
+            <Eye className="w-4 h-4" />
+          </Link>
+          {row.status === 'resolved' && (
+            <button
+              onClick={() => handleDeleteComplaint(value)}
+              className="p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200"
+              title="Delete resolved complaint"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       )
     }
   ]
@@ -192,10 +255,10 @@ export default function AdminComplaints() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Manage Complaints
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className={isDark ? 'text-slate-400' : 'text-slate-600'}>
             Review and respond to community complaints
           </p>
         </div>
@@ -208,7 +271,7 @@ export default function AdminComplaints() {
           value={filters.search}
           onChange={(value) => setFilters({ ...filters, search: value })}
         />
-        
+
         <select
           value={filters.status}
           onChange={(e) => setFilters({ ...filters, status: e.target.value })}
@@ -221,7 +284,7 @@ export default function AdminComplaints() {
           <option value="in-progress">In Progress</option>
           <option value="resolved">Resolved</option>
         </select>
-        
+
         <select
           value={filters.category}
           onChange={(e) => setFilters({ ...filters, category: e.target.value })}
@@ -238,37 +301,37 @@ export default function AdminComplaints() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg">
-          <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+        <div className={`p-4 rounded-lg ${isDark ? 'bg-yellow-900/20' : 'bg-yellow-50'}`}>
+          <div className={`text-2xl font-bold ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`}>
             {complaints.filter(c => c.status === 'pending').length}
           </div>
-          <div className="text-sm text-yellow-700 dark:text-yellow-300">Pending</div>
+          <div className={`text-sm ${isDark ? 'text-yellow-300' : 'text-yellow-700'}`}>Pending</div>
         </div>
-        
-        <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+
+        <div className={`p-4 rounded-lg ${isDark ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
+          <div className={`text-2xl font-bold ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
             {complaints.filter(c => c.status === 'in-progress').length}
           </div>
-          <div className="text-sm text-blue-700 dark:text-blue-300">In Progress</div>
+          <div className={`text-sm ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>In Progress</div>
         </div>
-        
-        <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-          <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+
+        <div className={`p-4 rounded-lg ${isDark ? 'bg-green-900/20' : 'bg-green-50'}`}>
+          <div className={`text-2xl font-bold ${isDark ? 'text-green-400' : 'text-green-600'}`}>
             {complaints.filter(c => c.status === 'resolved').length}
           </div>
-          <div className="text-sm text-green-700 dark:text-green-300">Resolved</div>
+          <div className={`text-sm ${isDark ? 'text-green-300' : 'text-green-700'}`}>Resolved</div>
         </div>
-        
-        <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
-          <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+
+        <div className={`p-4 rounded-lg ${isDark ? 'bg-red-900/20' : 'bg-red-50'}`}>
+          <div className={`text-2xl font-bold ${isDark ? 'text-red-400' : 'text-red-600'}`}>
             {complaints.filter(c => c.sentiment < -0.3).length}
           </div>
-          <div className="text-sm text-red-700 dark:text-red-300">High Priority</div>
+          <div className={`text-sm ${isDark ? 'text-red-300' : 'text-red-700'}`}>High Priority</div>
         </div>
       </div>
 
       {/* Complaints Table */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div className={`${isDark ? 'bg-slate-800' : 'bg-white'} rounded-xl border ${isDark ? 'border-slate-700' : 'border-slate-200'} overflow-hidden`}>
         {filteredComplaints.length === 0 && !loading ? (
           <EmptyState
             title="No complaints found"

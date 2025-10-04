@@ -8,6 +8,7 @@ import { Toast } from '@/components/Toast'
 import { Button } from '@/components/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { useTheme } from '@/components/ThemeContext'
 import {
   ArrowLeftIcon,
   CheckIcon,
@@ -39,6 +40,7 @@ export default function ViewRequestPage() {
   const params = useParams()
   const router = useRouter()
   const requestId = params.requestId as string
+  const { isDark } = useTheme()
 
   const [request, setRequest] = useState<VerificationRequest | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -171,7 +173,7 @@ export default function ViewRequestPage() {
   if (!request) {
     return (
       <div className="text-center py-12">
-        <p className="text-slate-500 dark:text-slate-400">Request not found</p>
+        <p className={isDark ? 'text-white' : 'text-black'}>Request not found</p>
       </div>
     )
   }
@@ -242,10 +244,10 @@ export default function ViewRequestPage() {
             <span className="hidden sm:inline">Back to Requests</span>
           </Button>
           <div>
-            <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-slate-100">
+            <h1 className={`text-xl md:text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
               Verification Request
             </h1>
-            <p className="text-sm md:text-base text-slate-600 dark:text-slate-400">
+            <p className={`text-sm md:text-base ${isDark ? 'text-white' : 'text-black'}`}>
               Review request details and ID documents
             </p>
           </div>
@@ -301,7 +303,7 @@ export default function ViewRequestPage() {
           className="lg:col-span-1"
         >
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-8 border border-slate-200 dark:border-slate-700 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-2">
+            <h2 className={`text-lg font-semibold mb-6 flex items-center gap-2 ${isDark ? 'text-white' : 'text-black'}`}>
               <UserIcon className="w-5 h-5" />
               Personal Information
             </h2>
@@ -365,7 +367,7 @@ export default function ViewRequestPage() {
           className="lg:col-span-2"
         >
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-8 border border-slate-200 dark:border-slate-700 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-2">
+            <h2 className={`text-lg font-semibold mb-6 flex items-center gap-2 ${isDark ? 'text-white' : 'text-black'}`}>
               <EyeIcon className="w-5 h-5" />
               ID Documents
             </h2>
@@ -373,7 +375,7 @@ export default function ViewRequestPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
               {/* Front ID */}
               <div>
-                <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+                <h3 className={`text-sm font-medium mb-3 ${isDark ? 'text-white' : 'text-black'}`}>
                   Front of ID
                 </h3>
                 <div className="relative group">
@@ -403,7 +405,7 @@ export default function ViewRequestPage() {
 
               {/* Back ID */}
               <div>
-                <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+                <h3 className={`text-sm font-medium mb-3 ${isDark ? 'text-white' : 'text-black'}`}>
                   Back of ID
                 </h3>
                 <div className="relative group">

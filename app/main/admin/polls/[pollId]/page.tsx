@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation'
 import { ChartCard, EmptyState, ConfirmDialog } from '@/components/mainapp/components'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { PieChart, Calendar, Users, AlertTriangle, CheckCircle, FileText, MessageSquare } from 'lucide-react'
+import { useTheme } from '@/components/ThemeContext'
 
 interface PollQuestion {
   id: string
@@ -36,6 +37,7 @@ export default function PollDetails() {
   const [poll, setPoll] = useState<PollData | null>(null)
   const [loading, setLoading] = useState(true)
   const [closeDialog, setCloseDialog] = useState(false)
+  const { isDark } = useTheme()
 
   useEffect(() => {
     const fetchPoll = async () => {
@@ -103,15 +105,15 @@ export default function PollDetails() {
   const totalResponses = poll.totalResponses || 0
 
   return (
-    <div className="space-y-6">
+    <div className={`min-h-screen ${isDark ? 'bg-slate-900 text-white' : 'bg-white text-black'} space-y-6`}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className={`text-2xl font-bold text-gray-900 ${isDark ? 'text-white' : 'text-slate-900'}`}>
             {poll.title}
           </h1>
           {poll.description && (
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
+            <p className={`${isDark ? 'text-white' : 'text-black'} mt-1`}>
               {poll.description}
             </p>
           )}
@@ -130,49 +132,49 @@ export default function PollDetails() {
 
       {/* Poll Info */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-          <div className="flex items-center">
-            <Users className="w-5 h-5 text-blue-500 mr-2" />
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Responses</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{totalResponses}</p>
-            </div>
+      <div className={`${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'} rounded-xl border p-4`}>
+        <div className="flex items-center">
+          <Users className="w-5 h-5 text-blue-500 mr-2" />
+          <div>
+            <p className={`${isDark ? 'text-white' : 'text-black'} text-sm`}>Total Responses</p>
+            <p className={`${isDark ? 'text-white' : 'text-black'} text-xl font-bold`}>{totalResponses}</p>
           </div>
         </div>
+      </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-          <div className="flex items-center">
-            <PieChart className="w-5 h-5 text-green-500 mr-2" />
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Questions</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{poll.questions.length}</p>
-            </div>
+      <div className={`${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'} rounded-xl border p-4`}>
+        <div className="flex items-center">
+          <PieChart className="w-5 h-5 text-green-500 mr-2" />
+          <div>
+            <p className={`${isDark ? 'text-white' : 'text-black'} text-sm`}>Questions</p>
+            <p className={`${isDark ? 'text-white' : 'text-black'} text-xl font-bold`}>{poll.questions.length}</p>
           </div>
         </div>
+      </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-          <div className="flex items-center">
-            <CheckCircle className={`w-5 h-5 mr-2 ${poll.status === 'active' ? 'text-green-500' : 'text-red-500'}`} />
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Status</p>
-              <p className="text-sm font-medium text-gray-900 dark:text-white capitalize">
-                {poll.status}
-              </p>
-            </div>
+      <div className={`${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'} rounded-xl border p-4`}>
+        <div className="flex items-center">
+          <CheckCircle className={`w-5 h-5 mr-2 ${poll.status === 'active' ? 'text-green-500' : 'text-red-500'}`} />
+          <div>
+            <p className={`${isDark ? 'text-white' : 'text-black'} text-sm`}>Status</p>
+            <p className={`${isDark ? 'text-white' : 'text-black'} text-sm font-medium capitalize`}>
+              {poll.status}
+            </p>
           </div>
         </div>
+      </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-          <div className="flex items-center">
-            <Calendar className="w-5 h-5 text-orange-500 mr-2" />
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Deadline</p>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
-                {poll.deadline ? new Date(poll.deadline).toLocaleDateString() : 'No deadline'}
-              </p>
-            </div>
+      <div className={`${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'} rounded-xl border p-4`}>
+        <div className="flex items-center">
+          <Calendar className="w-5 h-5 text-orange-500 mr-2" />
+          <div>
+            <p className={`${isDark ? 'text-white' : 'text-black'} text-sm`}>Deadline</p>
+            <p className={`${isDark ? 'text-white' : 'text-black'} text-sm font-medium`}>
+              {poll.deadline ? new Date(poll.deadline).toLocaleDateString() : 'No deadline'}
+            </p>
           </div>
         </div>
+      </div>
       </div>
 
       {/* Questions and Results */}
@@ -181,15 +183,15 @@ export default function PollDetails() {
         const responseCount = responses.length
 
         return (
-          <div key={question.id} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+          <div key={question.id} className={`${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'} rounded-xl border p-6`}>
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-black'} mb-2`}>
                   Question {questionIndex + 1}
                   {question.required && <span className="text-red-500 ml-1">*</span>}
                 </h3>
-                <p className="text-gray-700 dark:text-gray-300 mb-2">{question.question}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className={`${isDark ? 'text-white' : 'text-black'} mb-2`}>{question.question}</p>
+                <p className={`text-sm ${isDark ? 'text-white' : 'text-black'}`}>
                   Type: {question.type} • {responseCount} responses
                 </p>
               </div>
@@ -205,12 +207,12 @@ export default function PollDetails() {
                   return (
                     <div key={optionIndex} className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          {option}
-                        </span>
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
-                          {optionResponses} responses ({percentage.toFixed(1)}%)
-                        </span>
+                      <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>
+                        {option}
+                      </span>
+                      <span className={`text-sm ${isDark ? 'text-white' : 'text-black'}`}>
+                        {optionResponses} responses ({percentage.toFixed(1)}%)
+                      </span>
                       </div>
                       <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
                         <div
@@ -233,12 +235,12 @@ export default function PollDetails() {
                   return (
                     <div key={optionIndex} className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          {option}
-                        </span>
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
-                          {optionResponses} responses ({percentage.toFixed(1)}%)
-                        </span>
+                      <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>
+                        {option}
+                      </span>
+                      <span className={`text-sm ${isDark ? 'text-white' : 'text-black'}`}>
+                        {optionResponses} responses ({percentage.toFixed(1)}%)
+                      </span>
                       </div>
                       <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
                         <div
@@ -259,23 +261,23 @@ export default function PollDetails() {
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {responses.slice(0, 10).map((response: string, index: number) => (
                       <div key={index} className="p-3 bg-gray-50 dark:bg-slate-700 rounded-lg">
-                        <p className="text-sm text-gray-700 dark:text-gray-300">{response || 'No response'}</p>
+                        <p className={`text-sm ${isDark ? 'text-white' : 'text-black'}`}>{response || 'No response'}</p>
                       </div>
                     ))}
                     {responses.length > 10 && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+                      <p className={`text-sm ${isDark ? 'text-white' : 'text-black'} text-center`}>
                         ... and {responses.length - 10} more responses
                       </p>
                     )}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">No responses yet</p>
+                  <p className={`text-sm ${isDark ? 'text-white' : 'text-black'}`}>No responses yet</p>
                 )}
               </div>
             )}
 
             {responseCount === 0 && (
-              <p className="text-center text-gray-500 dark:text-gray-400 py-4">
+              <p className={`text-center ${isDark ? 'text-white' : 'text-black'} py-4`}>
                 No responses yet for this question
               </p>
             )}
@@ -285,20 +287,20 @@ export default function PollDetails() {
 
       {/* Footer Note */}
       {poll.footer_note && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6">
+        <div className={`${isDark ? 'bg-slate-800 border-slate-700' : 'bg-blue-50 border-blue-200'} rounded-xl border p-6`}>
           <div className="flex items-start">
-            <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400 mr-3 mt-0.5" />
+            <FileText className={`w-5 h-5 mr-3 mt-0.5 ${isDark ? 'text-white' : 'text-blue-600'}`} />
             <div>
-              <h3 className="text-base font-semibold text-blue-800 dark:text-blue-200 mb-2">
+              <h3 className={`text-base font-semibold mb-2 ${isDark ? 'text-white' : 'text-blue-800'}`}>
                 Additional Information
               </h3>
-              <p className="text-blue-700 dark:text-blue-300 whitespace-pre-wrap">
+              <p className={`whitespace-pre-wrap ${isDark ? 'text-white' : 'text-blue-700'}`}>
                 {poll.footer_note}
               </p>
               {poll.complaint_link && (
                 <a
                   href={poll.complaint_link}
-                  className="inline-flex items-center mt-3 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                  className={`inline-flex items-center mt-3 ${isDark ? 'text-white hover:text-gray-300' : 'text-blue-600 hover:text-blue-800'}`}
                 >
                   <MessageSquare className="w-4 h-4 mr-1" />
                   Submit a complaint
@@ -310,22 +312,22 @@ export default function PollDetails() {
       )}
 
       {/* Poll Settings */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+      <div className={`${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'} rounded-xl border p-6`}>
+        <h2 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
           Poll Information
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div className="flex items-center">
             <CheckCircle className={`w-4 h-4 mr-2 ${poll.is_anonymous ? 'text-green-500' : 'text-gray-400'}`} />
-            <span className="text-gray-700 dark:text-gray-300">
+            <span className={`${isDark ? 'text-white' : 'text-black'}`}>
               Anonymous responses {poll.is_anonymous ? 'enabled' : 'disabled'}
             </span>
           </div>
 
           <div className="flex items-center">
             <CheckCircle className={`w-4 h-4 mr-2 ${poll.questions.some(q => q.type === 'checkbox') ? 'text-green-500' : 'text-gray-400'}`} />
-            <span className="text-gray-700 dark:text-gray-300">
+            <span className={`${isDark ? 'text-white' : 'text-black'}`}>
               Multiple choice questions {poll.questions.some(q => q.type === 'checkbox') ? 'included' : 'not included'}
             </span>
           </div>

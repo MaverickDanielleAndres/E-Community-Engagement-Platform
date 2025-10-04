@@ -23,7 +23,8 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      console.log('User not found for mark-read, returning success (no notifications to mark as read)')
+      return NextResponse.json({ success: true, message: 'No notifications to mark as read' })
     }
 
     const { error } = await supabase

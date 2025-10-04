@@ -238,10 +238,10 @@ export default function FeedbackFormEditor() {
             <GripVertical className="w-4 h-4 text-slate-400 cursor-grab" />
             {getFieldIcon(field.type)}
             <div>
-              <h4 className="font-medium text-slate-900 dark:text-white">
+              <h4 className={`font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>
                 {field.label || 'Untitled Field'}
               </h4>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className={`text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>
                 {getFieldTypeDescription(field.type)}
               </p>
             </div>
@@ -307,7 +307,7 @@ export default function FeedbackFormEditor() {
             <div className="space-y-4 pt-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  <label className={`block text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'} mb-2`}>
                     Field Label
                   </label>
                   <input
@@ -316,15 +316,15 @@ export default function FeedbackFormEditor() {
                     onChange={(e) => updateField(field.id, { label: e.target.value })}
                     className={`w-full px-3 py-2 border rounded-lg transition-colors ${
                       isDark
-                        ? 'bg-slate-700 border-slate-600 text-white focus:border-blue-500'
-                        : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
+                        ? 'bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 focus:border-blue-500'
+                        : 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-500 focus:border-blue-500'
                     }`}
                     placeholder="Enter field label..."
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  <label className={`block text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'} mb-2`}>
                     Field Type
                   </label>
                   <select
@@ -353,7 +353,7 @@ export default function FeedbackFormEditor() {
                     onChange={(e) => updateField(field.id, { required: e.target.checked })}
                     className="w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600"
                   />
-                  <span className="text-sm text-slate-700 dark:text-slate-300">
+                  <span className={`text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>
                     Required field
                   </span>
                 </label>
@@ -362,7 +362,7 @@ export default function FeedbackFormEditor() {
               {/* Type-specific options */}
               {field.type === 'rating' && (
                 <div className="space-y-3">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                  <label className={`block text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>
                     Rating Scale (1-{field.options?.max || 5})
                   </label>
                   <div className="grid grid-cols-5 gap-2">
@@ -383,8 +383,8 @@ export default function FeedbackFormEditor() {
                           }}
                           className={`w-full px-2 py-1 text-xs border rounded transition-colors ${
                             isDark
-                              ? 'bg-slate-700 border-slate-600 text-white focus:border-blue-500'
-                              : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
+                              ? 'bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 focus:border-blue-500'
+                              : 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-500 focus:border-blue-500'
                           }`}
                           placeholder={`Label ${rating}`}
                         />
@@ -396,7 +396,7 @@ export default function FeedbackFormEditor() {
 
               {field.type === 'select' && (
                 <div className="space-y-3">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                  <label className={`block text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>
                     Options
                   </label>
                   {field.options?.choices?.map((choice, idx) => (
@@ -442,14 +442,14 @@ export default function FeedbackFormEditor() {
                     className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
-                    <span className="text-sm">Add Option</span>
+                    <span className="text-sm dark:text-white">Add Option</span>
                   </button>
                 </div>
               )}
 
               {(field.type === 'textarea' || field.type === 'text') && (
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  <label className={`block text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'} mb-2`}>
                     Placeholder Text
                   </label>
                   <input
@@ -458,8 +458,8 @@ export default function FeedbackFormEditor() {
                     onChange={(e) => updateField(field.id, { placeholder: e.target.value })}
                     className={`w-full px-3 py-2 border rounded-lg transition-colors ${
                       isDark
-                        ? 'bg-slate-700 border-slate-600 text-white focus:border-blue-500'
-                        : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
+                        ? 'bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 focus:border-blue-500'
+                        : 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-500 focus:border-blue-500'
                     }`}
                     placeholder="Enter placeholder text..."
                   />
@@ -514,7 +514,7 @@ export default function FeedbackFormEditor() {
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
               {template?.title}
             </h2>
-            <p className="text-slate-600 dark:text-slate-400">
+            <p className="text-slate-900 dark:text-white">
               {template?.subtitle}
             </p>
           </div>
@@ -522,7 +522,7 @@ export default function FeedbackFormEditor() {
           <form className="space-y-6">
             {template?.fields.map((field) => (
               <div key={field.id} className="space-y-2">
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                <label className="block text-sm font-medium text-slate-900 dark:text-white">
                   {field.label} {field.required && <span className="text-red-500">*</span>}
                 </label>
 
@@ -534,7 +534,7 @@ export default function FeedbackFormEditor() {
                           <div className="text-3xl mb-1">
                             {field.options?.emojis?.[rating - 1] || '⭐'}
                           </div>
-                          <div className="text-xs text-slate-500">
+                          <div className={`text-xs ${isDark ? 'text-white' : 'text-slate-900'}`}>
                             {field.options?.labels?.[rating - 1] || rating.toString()}
                           </div>
                         </div>
@@ -592,7 +592,7 @@ export default function FeedbackFormEditor() {
                       className="w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600"
                       disabled
                     />
-                    <span className="text-sm text-slate-700 dark:text-slate-300">
+                    <span className="text-sm text-slate-900 dark:text-white">
                       {field.label}
                     </span>
                   </label>
@@ -618,7 +618,7 @@ export default function FeedbackFormEditor() {
       <div className="flex items-center justify-center py-12">
         <div className="flex items-center space-x-3">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-          <span className="text-slate-600 dark:text-slate-400">Loading form editor...</span>
+          <span className="text-slate-600 dark:text-white">Loading form editor...</span>
         </div>
       </div>
     )
@@ -628,10 +628,10 @@ export default function FeedbackFormEditor() {
     return (
       <div className="text-center py-12">
         <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
+        <h3 className={`text-lg font-medium ${isDark ? 'text-white' : 'text-slate-900'} mb-2`}>
           Failed to Load Form Template
         </h3>
-        <p className="text-slate-600 dark:text-slate-400 mb-4">
+        <p className={`text-slate-600 ${isDark ? 'text-white' : ''} mb-4`}>
           There was an error loading the feedback form template.
         </p>
         <button
@@ -655,52 +655,52 @@ export default function FeedbackFormEditor() {
       )}
 
       {/* Header */}
-      <div className={`rounded-xl border p-6 ${
-        isDark ? 'border-slate-600 bg-slate-800' : 'border-slate-200 bg-white'
-      }`}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center space-x-2">
-              <Palette className="w-6 h-6 text-blue-500" />
-              <span>Feedback Form Editor</span>
-            </h1>
-            <p className="text-slate-600 dark:text-slate-400 mt-1">
-              Design and customize your community feedback form
-            </p>
-          </div>
-          <div className="flex items-center space-x-3">
-            {hasUnsavedChanges && (
-              <div className="flex items-center space-x-1 text-amber-600 dark:text-amber-400">
-                <AlertCircle className="w-4 h-4" />
-                <span className="text-sm">Unsaved changes</span>
+          <div className={`rounded-xl border p-6 ${
+            isDark ? 'border-slate-600 bg-slate-800' : 'border-slate-200 bg-white'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'} flex items-center space-x-2`}>
+                  <Palette className="w-6 h-6 text-blue-500" />
+                  <span>Feedback Form Editor</span>
+                </h1>
+                <p className={`${isDark ? 'text-white' : 'text-slate-900'} mt-1`}>
+                  Design and customize your community feedback form
+                </p>
               </div>
-            )}
-            <button
-              onClick={() => setShowPreview(!showPreview)}
-              className={`px-4 py-2 rounded-lg transition-colors flex items-center space-x-2 ${
-                showPreview
-                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
-                  : 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
-              }`}
-            >
-              {showPreview ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              <span>{showPreview ? 'Hide Preview' : 'Show Preview'}</span>
-            </button>
-            <button
-              onClick={saveTemplate}
-              disabled={saving || !hasUnsavedChanges}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 transition-colors"
-            >
-              {saving ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              ) : (
-                <Save className="w-4 h-4" />
-              )}
-              <span>{saving ? 'Saving...' : 'Save Changes'}</span>
-            </button>
+              <div className="flex items-center space-x-3">
+                {hasUnsavedChanges && (
+                  <div className="flex items-center space-x-1 text-amber-600 dark:text-amber-400">
+                    <AlertCircle className="w-4 h-4" />
+                    <span className="text-sm">Unsaved changes</span>
+                  </div>
+                )}
+                <button
+                  onClick={() => setShowPreview(!showPreview)}
+                  className={`px-4 py-2 rounded-lg transition-colors flex items-center space-x-2 ${
+                    showPreview
+                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
+                      : `${isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900'}`
+                  }`}
+                >
+                  {showPreview ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                <span>{showPreview ? 'Hide Preview' : 'Show Preview'}</span>
+              </button>
+              <button
+                onClick={saveTemplate}
+                disabled={saving || !hasUnsavedChanges}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 transition-colors"
+              >
+                {saving ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                <span>{saving ? 'Saving...' : 'Save Changes'}</span>
+              </button>
+            </div>
           </div>
-        </div>
-      </div>
+          </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {/* Editor Panel */}
@@ -709,56 +709,56 @@ export default function FeedbackFormEditor() {
           <div className={`rounded-xl border p-6 ${
             isDark ? 'border-slate-600 bg-slate-800' : 'border-slate-200 bg-white'
           }`}>
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center space-x-2">
-              <Settings className="w-5 h-5 text-slate-500" />
-              <span>Form Settings</span>
-            </h3>
+          <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-900'} mb-4 flex items-center space-x-2`}>
+            <Settings className="w-5 h-5 text-slate-500" />
+            <span>Form Settings</span>
+          </h3>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Form Title
-                </label>
+          <div className="space-y-4">
+            <div>
+              <label className={`block text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'} mb-2`}>
+                Form Title
+              </label>
                 <input
                   type="text"
                   value={template.title}
                   onChange={(e) => setTemplate({ ...template, title: e.target.value })}
                   className={`w-full px-3 py-2 border rounded-lg transition-colors ${
                     isDark
-                      ? 'bg-slate-700 border-slate-600 text-white focus:border-blue-500'
-                      : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
+                      ? 'bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 focus:border-blue-500'
+                      : 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-500 focus:border-blue-500'
                   }`}
                   placeholder="Enter form title..."
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Subtitle
-                </label>
-                <input
-                  type="text"
-                  value={template.subtitle}
-                  onChange={(e) => setTemplate({ ...template, subtitle: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-lg transition-colors ${
-                    isDark
-                      ? 'bg-slate-700 border-slate-600 text-white focus:border-blue-500'
-                      : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
-                  }`}
-                  placeholder="Enter form subtitle..."
-                />
-              </div>
             </div>
+
+            <div>
+              <label className={`block text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'} mb-2`}>
+                Subtitle
+              </label>
+              <input
+                type="text"
+                value={template.subtitle}
+                onChange={(e) => setTemplate({ ...template, subtitle: e.target.value })}
+                className={`w-full px-3 py-2 border rounded-lg transition-colors ${
+                  isDark
+                    ? 'bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 focus:border-blue-500'
+                    : 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-500 focus:border-blue-500'
+                }`}
+                placeholder="Enter form subtitle..."
+              />
+            </div>
+          </div>
           </div>
 
           {/* Add Field */}
           <div className={`rounded-xl border p-6 ${
             isDark ? 'border-slate-600 bg-slate-800' : 'border-slate-200 bg-white'
           }`}>
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center space-x-2">
-              <Plus className="w-5 h-5 text-slate-500" />
-              <span>Add Field</span>
-            </h3>
+              <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-900'} mb-4 flex items-center space-x-2`}>
+                <Plus className={`w-5 h-5 ${isDark ? 'text-white' : 'text-slate-500'}`} />
+                <span className={isDark ? 'text-white' : 'text-slate-900'}>Add Field</span>
+              </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
@@ -771,17 +771,17 @@ export default function FeedbackFormEditor() {
                 <button
                   key={type}
                   onClick={() => addField(type)}
-                  className={`p-4 border rounded-xl text-left transition-all duration-200 ${bg} ${
+                  className={`group p-4 border rounded-xl text-left transition-all duration-200 ${bg} ${
                     isDark
                       ? 'border-slate-600 hover:border-slate-500'
                       : 'border-slate-200 hover:border-slate-300'
                   }`}
                 >
                   <Icon className={`w-6 h-6 mb-2 ${color}`} />
-                  <div className="font-medium text-slate-900 dark:text-white capitalize">
+                  <div className={`font-medium ${isDark ? 'text-white' : 'text-slate-900'} group-hover:text-slate-700 dark:group-hover:text-slate-300 capitalize`}>
                     {type === 'rating' ? 'Star Rating' : type === 'textarea' ? 'Text Area' : type}
                   </div>
-                  <div className="text-sm text-slate-500 dark:text-slate-400">
+                  <div className={`text-sm ${isDark ? 'text-white' : 'text-slate-900'} group-hover:text-slate-700 dark:group-hover:text-slate-300`}>
                     {getFieldTypeDescription(type)}
                   </div>
                 </button>
@@ -794,8 +794,8 @@ export default function FeedbackFormEditor() {
             isDark ? 'border-slate-600 bg-slate-800' : 'border-slate-200 bg-white'
           }`}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center space-x-2">
-                <Edit className="w-5 h-5 text-slate-500" />
+              <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-900'} flex items-center space-x-2`}>
+                <Edit className={`w-5 h-5 ${isDark ? 'text-white' : 'text-slate-500'}`} />
                 <span>Form Fields ({template.fields.length})</span>
               </h3>
               {template.fields.length > 0 && (
@@ -811,10 +811,10 @@ export default function FeedbackFormEditor() {
             {template.fields.length === 0 ? (
               <div className="text-center py-8">
                 <Type className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                <h4 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
+                <h4 className={`text-lg font-medium ${isDark ? 'text-white' : 'text-slate-900'} mb-2`}>
                   No Fields Added Yet
                 </h4>
-                <p className="text-slate-600 dark:text-slate-400 mb-4">
+                <p className={`text-slate-600 dark:text-white mb-4`}>
                   Start building your form by adding fields from the section above.
                 </p>
               </div>

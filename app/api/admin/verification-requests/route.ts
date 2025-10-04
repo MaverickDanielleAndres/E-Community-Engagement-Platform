@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
     // Check if user is admin
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('id, role')
+      .select('id, role, community_members(community_id)')
       .eq('email', session.user.email)
       .single()
 
@@ -151,6 +151,18 @@ export async function POST(request: NextRequest) {
         }, { status: 500 })
       }
 
+      // Log audit trail
+      await supabase
+        .from('audit_log')
+        .insert({
+          community_id: user.community_members?.[0]?.community_id || null,
+          user_id: user.id,
+          action_type: 'delete_verification_request',
+          entity_type: 'verification_request',
+          entity_id: id,
+          details: { deleted_request_id: id }
+        })
+
       return NextResponse.json({
         success: true,
         message: 'Request deleted successfully'
@@ -171,6 +183,18 @@ export async function POST(request: NextRequest) {
         }, { status: 500 })
       }
 
+      // Log audit trail
+      await supabase
+        .from('audit_log')
+        .insert({
+          community_id: user.community_members?.[0]?.community_id || null,
+          user_id: user.id,
+          action_type: 'delete_verification_history',
+          entity_type: 'verification_request',
+          entity_id: id,
+          details: { deleted_history_id: id }
+        })
+
       return NextResponse.json({
         success: true,
         message: 'History entry deleted successfully'
@@ -189,6 +213,18 @@ export async function POST(request: NextRequest) {
           message: 'Failed to clear history'
         }, { status: 500 })
       }
+
+      // Log audit trail
+      await supabase
+        .from('audit_log')
+        .insert({
+          community_id: user.community_members?.[0]?.community_id || null,
+          user_id: user.id,
+          action_type: 'clear_verification_history',
+          entity_type: 'verification_request',
+          entity_id: null,
+          details: { action: 'cleared_all_history' }
+        })
 
       return NextResponse.json({
         success: true,
@@ -225,6 +261,22 @@ export async function POST(request: NextRequest) {
           message: `Failed to ${action} request`
         }, { status: 500 })
       }
+
+      // Log audit trail for approve/reject
+      await supabase
+        .from('audit_log')
+        .insert({
+          community_id: user.community_members?.[0]?.community_id || null,
+          user_id: user.id,
+          action_type: action === 'approve' ? 'approve_verification_request' : 'reject_verification_request',
+          entity_type: 'verification_request',
+          entity_id: id,
+          details: {
+            action: action,
+            user_id: updateResult.data.user_id,
+            email: updateResult.data.email
+          }
+        })
 
       // If approved, update user status and add to community
       if (action === 'approve') {
@@ -342,6 +394,22 @@ export async function POST(request: NextRequest) {
             message: 'Failed to update user status'
           }, { status: 500 })
         }
+
+        // Log audit trail for member creation
+        await supabase
+          .from('audit_log')
+          .insert({
+            community_id: communityId,
+            user_id: user.id,
+            action_type: 'create_member',
+            entity_type: 'user',
+            entity_id: verification.user_id,
+            details: {
+              action: 'approved_verification',
+              user_email: verification.email,
+              role_assigned: 'Resident'
+            }
+          })
       }
 
       // If rejected, update user status to rejected

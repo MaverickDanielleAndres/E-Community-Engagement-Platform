@@ -99,7 +99,7 @@ export default function AdminFeedback() {
       render: (value: number) => (
         <div className="flex items-center space-x-2">
           {renderStars(value)}
-          <span className="text-sm text-gray-600 dark:text-gray-400">({value})</span>
+          <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>({value})</span>
         </div>
       )
     },
@@ -109,7 +109,7 @@ export default function AdminFeedback() {
       render: (value: string) => (
         <div className="max-w-xs">
           {value ? (
-            <p className="text-gray-900 dark:text-white truncate">{value}</p>
+            <p className={`truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{value}</p>
           ) : (
             <span className="text-gray-400 italic">No comment</span>
           )}
@@ -123,8 +123,8 @@ export default function AdminFeedback() {
         <div className="flex items-center text-sm">
           <User className="w-4 h-4 mr-2 text-gray-400" />
           <div>
-            <div className="text-gray-900 dark:text-white">{value?.name}</div>
-            <div className="text-gray-500 dark:text-gray-400 text-xs">{value?.email}</div>
+            <div className={`${isDark ? 'text-white' : 'text-gray-900'}`}>{value?.name}</div>
+            <div className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{value?.email}</div>
           </div>
         </div>
       )
@@ -133,7 +133,7 @@ export default function AdminFeedback() {
       key: 'created_at' as const,
       header: 'Date',
       render: (value: string) => (
-        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+        <div className={`flex items-center text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
           <Calendar className="w-4 h-4 mr-1" />
           {new Date(value).toLocaleDateString()}
         </div>
@@ -156,7 +156,7 @@ export default function AdminFeedback() {
       className={`flex items-center px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
         activeTab === tab
           ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
-          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+          : `${isDark ? 'bg-slate-700 text-gray-400 hover:bg-slate-600 hover:text-gray-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'}`
       }`}
     >
       <Icon className="w-4 h-4 mr-2" />
@@ -178,10 +178,10 @@ export default function AdminFeedback() {
       {/* Header with Tabs */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className={`text-2xl font-bold text-gray-900 ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Community Feedback
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className={`${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
             Manage feedback forms and view community responses
           </p>
         </div>
@@ -196,44 +196,44 @@ export default function AdminFeedback() {
         <>
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+            <div className={`${isDark ? 'bg-slate-800' : 'bg-white'} rounded-xl border ${isDark ? 'border-slate-700' : 'border-slate-200'} p-6`}>
               <div className="flex items-center">
                 <Smile className="w-8 h-8 text-green-500 mr-3" />
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Average Rating</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{averageRating}/5</p>
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Average Rating</p>
+                  <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{averageRating}/5</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+            <div className={`${isDark ? 'bg-slate-800' : 'bg-white'} rounded-xl border ${isDark ? 'border-slate-700' : 'border-slate-200'} p-6`}>
               <div className="flex items-center">
                 <TrendingUp className="w-8 h-8 text-blue-500 mr-3" />
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Feedback</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{feedback.length}</p>
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Total Feedback</p>
+                  <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{feedback.length}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+            <div className={`${isDark ? 'bg-slate-800' : 'bg-white'} rounded-xl border ${isDark ? 'border-slate-700' : 'border-slate-200'} p-6`}>
               <div className="flex items-center">
                 <Star className="w-8 h-8 text-yellow-500 mr-3" />
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">5-Star Ratings</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>5-Star Ratings</p>
+                  <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                     {feedback.filter(f => f.rating === 5).length}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+            <div className={`${isDark ? 'bg-slate-800' : 'bg-white'} rounded-xl border ${isDark ? 'border-slate-700' : 'border-slate-200'} p-6`}>
               <div className="flex items-center">
                 <User className="w-8 h-8 text-purple-500 mr-3" />
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">With Comments</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>With Comments</p>
+                  <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                     {feedback.filter(f => f.comment && f.comment.trim() !== '').length}
                   </p>
                 </div>
@@ -300,7 +300,7 @@ export default function AdminFeedback() {
           </div>
 
           {/* Feedback Table */}
-          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div className={`${isDark ? 'bg-slate-800' : 'bg-white'} rounded-xl border ${isDark ? 'border-slate-700' : 'border-slate-200'} overflow-hidden`}>
             {filteredFeedback.length === 0 && !loading ? (
               <EmptyState
                 title="No feedback found"

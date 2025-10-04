@@ -230,3 +230,86 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession()
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const feedbackId = searchParams.get('id')
+
+    if (!feedbackId) {
+      return NextResponse.json({ error: 'Feedback ID is required' }, { status: 400 })
+    }
+
+    // Get user
+    const { data: user } = await supabase
+      .from('users')
+      .select(`
+        id,
+        community_members(
+          community_id,
+          role
+        )
+      `)
+      .eq('email', session.user.email)
+      .single()
+
+    if (!user || !user.community_members?.[0]) {
+      return NextResponse.json({ error: 'Community membership required' }, { status: 403 })
+    }
+
+    const communityId = user.community_members[0].community_id
+
+    // Check if user is admin or the feedback owner
+    const { data: feedback } = await supabase
+      .from('feedback')
+      .select('user_id')
+      .eq('id', feedbackId)
+      .eq('community_id', communityId)
+      .single()
+
+    if (!feedback) {
+      return NextResponse.json({ error: 'Feedback not found' }, { status: 404 })
+    }
+
+    const isOwner = feedback.user_id === user.id
+    const isAdmin = user.community_members[0].role === 'Admin'
+
+    if (!isOwner && !isAdmin) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
+
+    // Delete the feedback
+    const { error: deleteError } = await supabase
+      .from('feedback')
+      .delete()
+      .eq('id', feedbackId)
+
+    if (deleteError) {
+      console.error('Feedback deletion error:', deleteError)
+      return NextResponse.json({ error: 'Failed to delete feedback' }, { status: 500 })
+    }
+
+    // Log audit trail
+    await supabase
+      .from('audit_log')
+      .insert({
+        community_id: communityId,
+        user_id: user.id,
+        action_type: 'delete_feedback',
+        entity_type: 'feedback',
+        entity_id: feedbackId,
+        details: { deleted_by: isAdmin ? 'admin' : 'owner' }
+      })
+
+    return NextResponse.json({ message: 'Feedback deleted successfully' })
+  } catch (error) {
+    console.error('Server error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}

@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession()
-    
+
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -98,8 +98,8 @@ export async function POST(request: NextRequest) {
     const { title, description, category } = body
 
     if (!title || !description) {
-      return NextResponse.json({ 
-        error: 'Title and description are required' 
+      return NextResponse.json({
+        error: 'Title and description are required'
       }, { status: 400 })
     }
 
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: `${title} ${description}` })
       })
-      
+
       if (sentimentResponse.ok) {
         const sentimentData = await sentimentResponse.json()
         sentiment = sentimentData.sentiment || 0
@@ -172,9 +172,29 @@ export async function POST(request: NextRequest) {
         details: { title, category }
       })
 
+    // Notify admins in the community
+    const { data: admins } = await supabase
+      .from('community_members')
+      .select('user_id')
+      .eq('community_id', communityId)
+      .eq('role', 'admin')
+
+    if (admins && admins.length > 0) {
+      const notifications = admins.map(admin => ({
+        user_id: admin.user_id,
+        title: 'New Complaint Submitted',
+        message: `A new complaint titled "${title}" has been submitted.`,
+        is_read: false,
+        created_at: new Date().toISOString()
+      }))
+      await supabase.from('notifications').insert(notifications)
+    }
+
     return NextResponse.json({ complaint, message: 'Complaint submitted successfully' })
   } catch (error) {
     console.error('Server error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+

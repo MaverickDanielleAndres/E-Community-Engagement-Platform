@@ -9,6 +9,7 @@ import { DataTable } from '@/components/ui/DataTable'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { getSupabaseClient } from '@/lib/supabase'
+import { useTheme } from '@/components/ThemeContext'
 import {
   EyeIcon,
   CheckIcon,
@@ -32,6 +33,7 @@ interface VerificationRequest {
 
 export default function AdminRequestsPage() {
   const { data: session, update } = useSession()
+  const { isDark } = useTheme()
   const [requests, setRequests] = useState<VerificationRequest[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null)
@@ -151,7 +153,7 @@ export default function AdminRequestsPage() {
       key: 'full_name' as keyof VerificationRequest,
       header: 'Name',
       render: (value: any, row: VerificationRequest) => (
-        <div className="font-medium text-slate-900 dark:text-slate-100">
+        <div className={`font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
           {row.full_name}
         </div>
       )
@@ -160,7 +162,7 @@ export default function AdminRequestsPage() {
       key: 'email' as keyof VerificationRequest,
       header: 'Email',
       render: (value: any, row: VerificationRequest) => (
-        <div className="text-slate-600 dark:text-slate-400 text-sm">
+        <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
           {row.email}
         </div>
       )
@@ -169,7 +171,7 @@ export default function AdminRequestsPage() {
       key: 'address' as keyof VerificationRequest,
       header: 'Address',
       render: (value: any, row: VerificationRequest) => (
-        <div className="text-slate-600 dark:text-slate-400 max-w-xs truncate text-sm">
+        <div className={`text-sm max-w-xs truncate ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
           {row.address}
         </div>
       ),
@@ -179,7 +181,7 @@ export default function AdminRequestsPage() {
       key: 'created_at' as keyof VerificationRequest,
       header: 'Submitted',
       render: (value: any, row: VerificationRequest) => (
-        <div className="text-slate-500 dark:text-slate-400 text-sm">
+        <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
           {new Date(row.created_at).toLocaleDateString()}
         </div>
       ),
@@ -233,7 +235,7 @@ export default function AdminRequestsPage() {
       key: 'full_name' as keyof VerificationRequest,
       header: 'Name',
       render: (value: any, row: VerificationRequest) => (
-        <div className="font-medium text-slate-900 dark:text-slate-100">
+        <div className={`font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
           {row.full_name}
         </div>
       )
@@ -242,7 +244,7 @@ export default function AdminRequestsPage() {
       key: 'email' as keyof VerificationRequest,
       header: 'Email',
       render: (value: any, row: VerificationRequest) => (
-        <div className="text-slate-600 dark:text-slate-400 text-sm">
+        <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
           {row.email}
         </div>
       )
@@ -251,7 +253,7 @@ export default function AdminRequestsPage() {
       key: 'address' as keyof VerificationRequest,
       header: 'Address',
       render: (value: any, row: VerificationRequest) => (
-        <div className="text-slate-600 dark:text-slate-400 max-w-xs truncate text-sm">
+        <div className={`text-sm max-w-xs truncate ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
           {row.address}
         </div>
       ),
@@ -261,9 +263,7 @@ export default function AdminRequestsPage() {
       key: 'status' as keyof VerificationRequest,
       header: 'Status',
       render: (value: any, row: VerificationRequest) => (
-        <div className={`text-sm font-semibold ${
-          row.status === 'approved' ? 'text-green-600' : 'text-red-600'
-        }`}>
+        <div className={`text-sm font-semibold ${row.status === 'approved' ? 'text-green-600' : 'text-red-600'}`}>
           {row.status.charAt(0).toUpperCase() + row.status.slice(1)}
         </div>
       )
@@ -272,7 +272,7 @@ export default function AdminRequestsPage() {
       key: 'approved_at' as keyof VerificationRequest,
       header: 'Approved',
       render: (value: any, row: VerificationRequest) => (
-        <div className="text-slate-500 dark:text-slate-400 text-sm">
+        <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
           {row.approved_at ? new Date(row.approved_at).toLocaleDateString() : 'N/A'}
         </div>
       ),
@@ -282,7 +282,7 @@ export default function AdminRequestsPage() {
       key: 'created_at' as keyof VerificationRequest,
       header: 'Submitted',
       render: (value: any, row: VerificationRequest) => (
-        <div className="text-slate-500 dark:text-slate-400 text-sm">
+        <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
           {new Date(row.created_at).toLocaleDateString()}
         </div>
       ),
@@ -316,7 +316,7 @@ export default function AdminRequestsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 ">
       {toast && (
         <Toast
           message={toast.message}
@@ -335,35 +335,39 @@ export default function AdminRequestsPage() {
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
+          <h1 className={`text-xl sm:text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+          
             Verification Requests
           </h1>
-          <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base">
+          <p className={`text-sm sm:text-base ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
             Review and manage ID verification requests
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button
-          variant={activeTab === 'pending' ? 'primary' : 'outline'}
+            variant={activeTab === 'pending' ? 'primary' : 'outline'}
             onClick={() => setActiveTab('pending')}
+            className={isDark ? 'text-white hover:text-black active:text-black' : ''}
           >
             Pending Requests
           </Button>
           <Button
-          variant={activeTab === 'history' ? 'primary' : 'outline'}
+            variant={activeTab === 'history' ? 'primary' : 'outline'}
             onClick={() => setActiveTab('history')}
+            className={isDark ? 'text-white hover:text-black active:text-black' : ''}
           >
             History
           </Button>
           {activeTab === 'history' && (
             <Button
-              variant="secondary"
+              variant="outline"
               onClick={() => confirmAction(null, 'clear_history')}
+              className={isDark ? 'text-white hover:text-black active:text-black' : ''}
             >
               Clear History
             </Button>
           )}
-          <Button onClick={() => fetchRequests(activeTab === 'history')} variant="outline" className="self-start sm:self-auto">
+          <Button onClick={() => fetchRequests(activeTab === 'history')} variant="outline" className={`self-start sm:self-auto ${isDark ? 'text-white hover:text-black active:text-black' : ''}`}>
             <ArrowPathIcon className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Refresh</span>
           </Button>
