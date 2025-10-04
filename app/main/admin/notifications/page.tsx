@@ -40,22 +40,23 @@ export default function AdminNotifications() {
     action: () => {}
   })
 
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/admin/notifications')
+      const data = await response.json()
+      setNotifications(data.notifications || [])
+      setLoading(false)
+    } catch (error) {
+      console.error('Error fetching notifications:', error)
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
     if (!session?.user?.email) return
 
     const supabase = getSupabaseClient()
-
-    const fetchNotifications = async () => {
-      try {
-        const response = await fetch('/api/admin/notifications')
-        const data = await response.json()
-        setNotifications(data.notifications || [])
-        setLoading(false)
-      } catch (error) {
-        console.error('Error fetching notifications:', error)
-        setLoading(false)
-      }
-    }
 
     const setupRealtimeSubscription = async () => {
       try {
@@ -117,6 +118,8 @@ export default function AdminNotifications() {
           prev.map(n => (n.id === id ? { ...n, is_read: true } : n))
         )
         setToast({ message: 'Notification marked as read', type: 'success' })
+        // Trigger sidebar refresh
+        localStorage.setItem('sidebarRefresh', 'true')
       } else {
         setToast({ message: 'Failed to mark notification as read', type: 'error' })
       }
@@ -135,6 +138,8 @@ export default function AdminNotifications() {
       if (response.ok) {
         setToast({ message: 'Notification deleted successfully', type: 'success' })
         setNotifications(prev => prev.filter(n => n.id !== id))
+        // Trigger sidebar refresh
+        localStorage.setItem('sidebarRefresh', 'true')
       } else {
         setToast({ message: 'Failed to delete notification', type: 'error' })
       }
@@ -153,6 +158,8 @@ export default function AdminNotifications() {
       if (response.ok) {
         setToast({ message: 'All notifications cleared successfully', type: 'success' })
         setNotifications([])
+        // Trigger sidebar refresh
+        localStorage.setItem('sidebarRefresh', 'true')
       } else {
         setToast({ message: 'Failed to clear notifications', type: 'error' })
       }
@@ -287,12 +294,26 @@ export default function AdminNotifications() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={fetchNotifications}
+            disabled={loading}
+            className={`p-2.5 rounded-xl border transition-all duration-200
+              focus:outline-none focus:ring-2 focus:ring-blue-500
+              disabled:opacity-50 disabled:cursor-not-allowed
+              ${isDark
+                ? 'bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700'
+                : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+              }
+            `}
+            title="Refresh notifications"
+          >
+            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+          </button>
           {notifications.length > 0 && (
             <Button
               variant="secondary"
               onClick={() => confirmAction(null, 'clear_all')}
             >
-              <RefreshCw className="w-4 h-4 mr-2" />
               Clear All
             </Button>
           )}

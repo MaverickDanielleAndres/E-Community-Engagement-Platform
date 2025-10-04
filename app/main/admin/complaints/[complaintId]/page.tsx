@@ -29,7 +29,7 @@ export default function ComplaintDetails() {
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
   const [newStatus, setNewStatus] = useState('')
-  const [notes, setNotes] = useState('')
+  const [resolutionMessage, setResolutionMessage] = useState('')
 
   useEffect(() => {
     const fetchComplaint = async () => {
@@ -39,6 +39,11 @@ export default function ComplaintDetails() {
           const data = await response.json()
           setComplaint(data.complaint)
           setNewStatus(data.complaint?.status || '')
+        } else if (response.status === 404) {
+          console.error('Complaint not found:', complaintId)
+          setComplaint(null)
+        } else {
+          console.error('Failed to fetch complaint:', response.status, response.statusText)
         }
       } catch (error) {
         console.error('Failed to fetch complaint:', error)
@@ -65,7 +70,7 @@ export default function ComplaintDetails() {
         credentials: 'include',
         body: JSON.stringify({
           status: newStatus,
-          notes: notes.trim() || undefined
+          resolution_message: resolutionMessage.trim() || undefined
         }),
       })
 
@@ -73,7 +78,7 @@ export default function ComplaintDetails() {
 
       if (response.ok && result.complaint) {
         setComplaint(result.complaint)
-        setNotes('')
+        setResolutionMessage('')
         // Set refresh flag for list page
         localStorage.setItem('complaintsListRefresh', 'true')
         // Set refresh flag for sidebar
@@ -255,14 +260,14 @@ export default function ComplaintDetails() {
           </div>
 
           <div>
-            <label htmlFor="notes" className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-              Notes (Optional)
+            <label htmlFor="resolution_message" className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+              Resolution Message (Optional)
             </label>
             <textarea
-              id="notes"
+              id="resolution_message"
               rows={3}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              value={resolutionMessage}
+              onChange={(e) => setResolutionMessage(e.target.value)}
               className={`
                 w-full px-3 py-2 rounded-lg border transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500
                 ${isDark
@@ -270,7 +275,7 @@ export default function ComplaintDetails() {
                   : 'bg-white border-slate-300 text-gray-900'
                 }
               `}
-              placeholder="Add any notes about this status update..."
+              placeholder="Add any resolution message about this status update..."
             />
           </div>
 

@@ -4,15 +4,19 @@
 import { useState, useEffect } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useTheme } from '@/components/ThemeContext'
+import { useToast } from '@/components/ToastContext'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bell, Search, User, LogOut, Settings, ChevronDown, PlusSquare, FileText } from 'lucide-react'
+import { Bell, Search, User, LogOut, Settings, ChevronDown, PlusSquare, FileText, RotateCcw } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Notification } from '@/types/notification'
+import { getSupabaseClient } from '@/lib/supabase'
+import { refreshHeaderAndSidebar } from '@/components/utils/refresh'
 
 export function UserHeader() {
   const { data: session } = useSession()
   const { isDark, toggleTheme } = useTheme()
+  const { showToast } = useToast()
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
   const [userImage, setUserImage] = useState<string>('')
@@ -55,6 +59,42 @@ export function UserHeader() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  // Refresh function to refetch header data and trigger sidebar refresh
+  const handleRefresh = async () => {
+    if (isRefreshing) return
+
+    setIsRefreshing(true)
+    try {
+      // Refetch notifications
+      const notificationsResponse = await fetch('/api/notifications')
+      if (notificationsResponse.ok) {
+        const notificationsData = await notificationsResponse.json()
+        setNotifications(notificationsData.notifications || [])
+      }
+
+      // Refetch user data
+      const userResponse = await fetch('/api/me/summary')
+      if (userResponse.ok) {
+        const userData = await userResponse.json()
+        setUserImage(userData.settings?.image || '')
+      }
+
+      const communityResponse = await fetch('/api/user/community')
+      if (communityResponse.ok) {
+        const communityData = await communityResponse.json()
+        setCommunityLogo(communityData.logo_url || '')
+      }
+
+      // Use shared refresh function for sidebar
+      await refreshHeaderAndSidebar()
+    } catch (error) {
+      console.error('Error refreshing data:', error)
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
 
   useEffect(() => {
     if (!session?.user?.email) return
@@ -70,7 +110,65 @@ export function UserHeader() {
     }
 
     fetchNotifications()
-  }, [session?.user?.email])
+
+    // Setup Supabase real-time subscription for notifications
+    const supabase = getSupabaseClient()
+    const channel = supabase
+      .channel('user_notifications')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${user?.id}` }, (payload) => {
+        fetchNotifications() // Refetch notifications on any change
+
+        // Show toast for new notifications
+        if (payload.eventType === 'INSERT') {
+          const newNotification = payload.new as Notification
+          showToast(`New notification: ${newNotification.title}`, 'info')
+        }
+      })
+      .subscribe()
+
+    return () => {
+      channel.unsubscribe()
+    }
+  }, [session?.user?.email, showToast])
+
+  // Listen for header refresh events
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'sidebarRefresh' && e.newValue === 'true') {
+        localStorage.removeItem('sidebarRefresh')
+        // Refresh header data
+        const refreshHeaderData = async () => {
+          try {
+            // Refetch notifications
+            const notificationsResponse = await fetch('/api/notifications')
+            if (notificationsResponse.ok) {
+              const notificationsData = await notificationsResponse.json()
+              setNotifications(notificationsData.notifications || [])
+            }
+
+            // Refetch user data
+            const userResponse = await fetch('/api/me/summary')
+            if (userResponse.ok) {
+              const userData = await userResponse.json()
+              setUserImage(userData.settings?.image || '')
+            }
+
+            const communityResponse = await fetch('/api/user/community')
+            if (communityResponse.ok) {
+              const communityData = await communityResponse.json()
+              setCommunityLogo(communityData.logo_url || '')
+            }
+          } catch (error) {
+            console.error('Error refreshing header data:', error)
+          }
+        }
+        refreshHeaderData()
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
+  }, [])
 
   return (
     <motion.header
@@ -227,7 +325,7 @@ export function UserHeader() {
                               <p className={`text-xs mt-1 ${
                                 isDark ? 'text-slate-400' : 'text-slate-500'
                               }`}>
-                                {notification.message}
+                                {notification.body}
                               </p>
                               <p className={`text-xs mt-1 ${
                                 isDark ? 'text-slate-500' : 'text-slate-400'
@@ -267,6 +365,22 @@ export function UserHeader() {
             </AnimatePresence>
           </div>
 
+          {/* Refresh Button */}
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className={`p-2 transition-colors rounded-lg ${
+              isRefreshing
+                ? 'opacity-50 cursor-not-allowed'
+                : isDark
+                ? 'hover:bg-slate-800 text-slate-300 hover:text-white'
+                : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
+            }`}
+            title="Refresh header and sidebar"
+          >
+            <RotateCcw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </button>
+
           {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
@@ -280,7 +394,7 @@ export function UserHeader() {
             {isDark ? (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
+           N   </svg>
             ) : (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />

@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { DataTable, EmptyState, ChartCard, SearchInput } from '@/components/mainapp/components'
-import { Smile, Star, User, Calendar, TrendingUp, Settings, Edit, Eye } from 'lucide-react'
+import { Smile, Star, User, Calendar, TrendingUp, Settings, Edit, Eye, RefreshCw } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
 import { useTheme } from '@/components/ThemeContext'
 import { Toast } from '@/components/Toast'
@@ -27,14 +27,9 @@ export default function AdminFeedback() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
   const { isDark } = useTheme()
 
-  useEffect(() => {
-    if (activeTab === 'responses') {
-      fetchFeedback()
-    }
-  }, [activeTab])
-
   const fetchFeedback = async () => {
     try {
+      setLoading(true)
       const response = await fetch('/api/feedback')
       if (response.ok) {
         const data = await response.json()
@@ -49,6 +44,12 @@ export default function AdminFeedback() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (activeTab === 'responses') {
+      fetchFeedback()
+    }
+  }, [activeTab])
 
   const getRatingStats = () => {
     const ratings = [1, 2, 3, 4, 5].map(rating => ({
@@ -187,6 +188,23 @@ export default function AdminFeedback() {
         </div>
         
         <div className="flex items-center space-x-2 mt-4 sm:mt-0">
+          {activeTab === 'responses' && (
+            <button
+              onClick={fetchFeedback}
+              disabled={loading}
+              className={`p-2.5 rounded-xl border transition-all duration-200
+                focus:outline-none focus:ring-2 focus:ring-blue-500
+                disabled:opacity-50 disabled:cursor-not-allowed
+                ${isDark
+                  ? 'bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700'
+                  : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+                }
+              `}
+              title="Refresh feedback data"
+            >
+              <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+          )}
           <TabButton tab="responses" label="View Responses" icon={Eye} />
           <TabButton tab="form-editor" label="Edit Form" icon={Edit} />
         </div>

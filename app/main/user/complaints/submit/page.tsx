@@ -28,6 +28,12 @@ export default function SubmitComplaint() {
       })
 
       if (response.ok) {
+        // Trigger sidebar refresh for admin users
+        localStorage.setItem('sidebarRefresh', 'true')
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'sidebarRefresh',
+          newValue: 'true'
+        }))
         router.push('/main/user/complaints/my')
       }
     } catch (error) {

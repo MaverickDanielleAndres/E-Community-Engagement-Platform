@@ -97,12 +97,45 @@ export function AdminSidebar() {
     }
   }, [session?.user?.email])
 
+  // Real-time notifications subscription
+  useEffect(() => {
+    if (!session?.user?.id) return
+
+    const { createClient } = require('@supabase/supabase-js')
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+
+    const channel = supabase
+      .channel('admin_sidebar_notifications')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${session.user.id}` }, () => {
+        // Refresh notification count when notifications change
+        const fetchNotificationCount = async () => {
+          try {
+            const notificationsResponse = await fetch('/api/admin/notifications')
+            if (notificationsResponse.ok) {
+              const notificationsData = await notificationsResponse.json()
+              const unread = notificationsData.notifications?.filter((n: any) => !n.is_read).length || 0
+              setNotificationCount(unread)
+            }
+          } catch (error) {
+            console.error('Error fetching notification count:', error)
+          }
+        }
+        fetchNotificationCount()
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [session?.user?.id])
+
   // Listen for sidebar refresh flag
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'sidebarRefresh' && e.newValue === 'true') {
-        // Clear the flag
-        localStorage.removeItem('sidebarRefresh')
+      if (e.key === 'sidebarRefresh') {
         // Refresh counts immediately
         if (session?.user?.email) {
           const fetchCounts = async () => {
@@ -130,8 +163,39 @@ export function AdminSidebar() {
       }
     }
 
+    const handleCustomEvent = () => {
+      // Refresh counts immediately
+      if (session?.user?.email) {
+        const fetchCounts = async () => {
+          try {
+            // Fetch complaints count (total pending/unresolved)
+            const complaintsResponse = await fetch('/api/complaints?status=pending')
+            if (complaintsResponse.ok) {
+              const complaintsData = await complaintsResponse.json()
+              setComplaintCount(complaintsData.complaints?.length || 0)
+            }
+
+            // Fetch notifications count (unread)
+            const notificationsResponse = await fetch('/api/admin/notifications')
+            if (notificationsResponse.ok) {
+              const notificationsData = await notificationsResponse.json()
+              const unread = notificationsData.notifications?.filter((n: any) => !n.is_read).length || 0
+              setNotificationCount(unread)
+            }
+          } catch (error) {
+            console.error('Error fetching counts:', error)
+          }
+        }
+        fetchCounts()
+      }
+    }
+
     window.addEventListener('storage', handleStorageChange)
-    return () => window.removeEventListener('storage', handleStorageChange)
+    window.addEventListener('sidebarRefresh', handleCustomEvent)
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('sidebarRefresh', handleCustomEvent)
+    }
   }, [session?.user?.email])
 
   const navigationSections: NavSection[] = [

@@ -38,7 +38,8 @@ export async function GET(request: NextRequest) {
         category,
         created_at,
         updated_at,
-        user_email
+        user_email,
+        resolution_message
       `)
       .eq('community_id', (userRole as any).community_id)
       .eq('user_email', session.user.email)

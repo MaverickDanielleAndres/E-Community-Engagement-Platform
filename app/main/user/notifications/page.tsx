@@ -4,6 +4,8 @@
 import { useState, useEffect } from 'react'
 import { DataTable } from '@/components/mainapp/components'
 import { Bell, Check, AlertTriangle, Info, CheckCircle } from 'lucide-react'
+import { ArrowPathIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { refreshHeaderAndSidebar } from '@/components/utils/refresh'
 
 interface Notification {
   id: string
@@ -18,6 +20,7 @@ export default function UserNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedNotifications, setSelectedNotifications] = useState<string[]>([])
+  const [confirmClearAll, setConfirmClearAll] = useState(false)
 
   useEffect(() => {
     fetchNotifications()
@@ -37,6 +40,23 @@ export default function UserNotifications() {
     }
   }
 
+  const refreshNotifications = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/notifications')
+      if (response.ok) {
+        const data = await response.json()
+        setNotifications(data.notifications || [])
+      }
+    } catch (error) {
+      console.error('Error refreshing notifications:', error)
+    } finally {
+      setLoading(false)
+    }
+    // Refresh header and sidebar data
+    refreshHeaderAndSidebar()
+  }
+
   const markAsRead = async (notificationIds: string[]) => {
     try {
       const response = await fetch('/api/notifications', {
@@ -54,9 +74,31 @@ export default function UserNotifications() {
           )
         )
         setSelectedNotifications([])
+        // Trigger sidebar refresh
+        localStorage.setItem('sidebarRefresh', Date.now().toString())
+        window.dispatchEvent(new CustomEvent('sidebarRefresh'))
       }
     } catch (error) {
       console.error('Error marking notifications as read:', error)
+    }
+  }
+
+  const clearAllNotifications = async () => {
+    try {
+      const response = await fetch('/api/notifications?clear=true', {
+        method: 'DELETE',
+      })
+      if (response.ok) {
+        setNotifications([])
+        setConfirmClearAll(false)
+        // Trigger sidebar refresh
+        localStorage.setItem('sidebarRefresh', Date.now().toString())
+        window.dispatchEvent(new CustomEvent('sidebarRefresh'))
+      } else {
+        console.error('Failed to clear notifications')
+      }
+    } catch (error) {
+      console.error('Error clearing notifications:', error)
     }
   }
 
@@ -102,15 +144,60 @@ export default function UserNotifications() {
           <h1 className="text-2xl font-bold text-white">Notifications</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">Stay updated with community activity</p>
         </div>
-        {selectedNotifications.length > 0 && (
+        <div className="flex items-center space-x-2">
+          {selectedNotifications.length > 0 && (
+            <button
+              onClick={() => markAsRead(selectedNotifications)}
+              className="inline-flex items-center px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              <Check className="w-3 h-3 mr-1.5" />
+              Mark as Read ({selectedNotifications.length})
+            </button>
+          )}
+          {notifications.length > 0 && (
+            <>
+              <button
+                onClick={() => setConfirmClearAll(true)}
+                className="inline-flex items-center px-3 py-1.5 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700"
+              >
+                <TrashIcon className="w-3 h-3 mr-1.5" />
+                Clear All
+              </button>
+              {confirmClearAll && (
+                <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-sm w-full">
+                    <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Confirm Clear All</h2>
+                    <p className="mb-6 text-gray-700 dark:text-gray-300">Are you sure you want to clear all notifications? This action cannot be undone.</p>
+                    <div className="flex justify-end space-x-4">
+                      <button
+                        onClick={() => setConfirmClearAll(false)}
+                        className="px-4 py-2 rounded bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-white hover:bg-gray-400 dark:hover:bg-gray-700"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={clearAllNotifications}
+                        className="px-4 py-2 rounded bg-gray-600 text-white hover:bg-gray-700"
+                      >
+                        Clear All
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
           <button
-            onClick={() => markAsRead(selectedNotifications)}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            onClick={refreshNotifications}
+            disabled={loading}
+            title="Refresh notifications"
+            className={`p-2 rounded-md transition-colors ${
+              loading ? 'animate-spin' : ''
+            } text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-700`}
           >
-            <Check className="w-4 h-4 mr-2" />
-            Mark as Read ({selectedNotifications.length})
+            <ArrowPathIcon className="w-5 h-5" />
           </button>
-        )}
+        </div>
       </div>
 
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">

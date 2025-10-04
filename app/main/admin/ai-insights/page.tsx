@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react'
 import { DataTable, EmptyState, ChartCard } from '@/components/mainapp/components'
-import { Bot, AlertTriangle, TrendingUp, Brain, Target, Zap } from 'lucide-react'
+import { Bot, AlertTriangle, TrendingUp, Brain, Target, Zap, RefreshCw } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ScatterChart, Scatter } from 'recharts'
 import { useTheme } from '@/components/ThemeContext'
 
@@ -35,77 +35,78 @@ export default function AdminAIInsights() {
   const [sentimentTrend, setSentimentTrend] = useState<any[]>([])
   const { isDark } = useTheme()
 
-  useEffect(() => {
-    const fetchAIData = async () => {
-      try {
-        // Mock data for demonstration - replace with real AI service calls
-        const mockAnomalies: AnomalyFlag[] = [
-          {
-            id: '1',
-            entity_type: 'poll',
-            entity_id: 'poll-123',
-            anomaly_type: 'unusual_voting_pattern',
-            severity: 'high',
-            details: { votes_in_hour: 45, normal_range: '5-15' },
-            flagged_at: new Date().toISOString()
-          },
-          {
-            id: '2',
-            entity_type: 'complaint',
-            entity_id: 'complaint-456',
-            anomaly_type: 'sentiment_spike',
-            severity: 'medium',
-            details: { sentiment_score: -0.8, normal_range: '-0.3 to 0.3' },
-            flagged_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-          }
-        ]
+  const fetchAIData = async () => {
+    try {
+      setLoading(true)
+      // Mock data for demonstration - replace with real AI service calls
+      const mockAnomalies: AnomalyFlag[] = [
+        {
+          id: '1',
+          entity_type: 'poll',
+          entity_id: 'poll-123',
+          anomaly_type: 'unusual_voting_pattern',
+          severity: 'high',
+          details: { votes_in_hour: 45, normal_range: '5-15' },
+          flagged_at: new Date().toISOString()
+        },
+        {
+          id: '2',
+          entity_type: 'complaint',
+          entity_id: 'complaint-456',
+          anomaly_type: 'sentiment_spike',
+          severity: 'medium',
+          details: { sentiment_score: -0.8, normal_range: '-0.3 to 0.3' },
+          flagged_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+        }
+      ]
 
-        const mockInsights: AIInsight[] = [
-          {
-            type: 'engagement_pattern',
-            title: 'Peak Engagement Hours Detected',
-            description: 'Community is most active between 7-9 PM weekdays. Consider scheduling important polls during this time.',
-            confidence: 0.87,
-            impact: 'medium',
-            actionable: true
-          },
-          {
-            type: 'sentiment_analysis',
-            title: 'Improving Community Sentiment',
-            description: 'Overall sentiment has improved by 15% over the past month, particularly in governance-related discussions.',
-            confidence: 0.92,
-            impact: 'high',
-            actionable: false
-          },
-          {
-            type: 'participation_forecast',
-            title: 'Predicted Participation Drop',
-            description: 'ML model predicts 20% decrease in poll participation next week based on historical patterns.',
-            confidence: 0.73,
-            impact: 'medium',
-            actionable: true
-          }
-        ]
+      const mockInsights: AIInsight[] = [
+        {
+          type: 'engagement_pattern',
+          title: 'Peak Engagement Hours Detected',
+          description: 'Community is most active between 7-9 PM weekdays. Consider scheduling important polls during this time.',
+          confidence: 0.87,
+          impact: 'medium',
+          actionable: true
+        },
+        {
+          type: 'sentiment_analysis',
+          title: 'Improving Community Sentiment',
+          description: 'Overall sentiment has improved by 15% over the past month, particularly in governance-related discussions.',
+          confidence: 0.92,
+          impact: 'high',
+          actionable: false
+        },
+        {
+          type: 'participation_forecast',
+          title: 'Predicted Participation Drop',
+          description: 'ML model predicts 20% decrease in poll participation next week based on historical patterns.',
+          confidence: 0.73,
+          impact: 'medium',
+          actionable: true
+        }
+      ]
 
-        const mockSentimentTrend = [
-          { date: '2024-01', positive: 0.65, negative: -0.15, neutral: 0.2 },
-          { date: '2024-02', positive: 0.70, negative: -0.12, neutral: 0.18 },
-          { date: '2024-03', positive: 0.68, negative: -0.08, neutral: 0.24 },
-          { date: '2024-04', positive: 0.72, negative: -0.10, neutral: 0.18 },
-          { date: '2024-05', positive: 0.75, negative: -0.06, neutral: 0.19 },
-          { date: '2024-06', positive: 0.78, negative: -0.04, neutral: 0.18 }
-        ]
+      const mockSentimentTrend = [
+        { date: '2024-01', positive: 0.65, negative: -0.15, neutral: 0.2 },
+        { date: '2024-02', positive: 0.70, negative: -0.12, neutral: 0.18 },
+        { date: '2024-03', positive: 0.68, negative: -0.08, neutral: 0.24 },
+        { date: '2024-04', positive: 0.72, negative: -0.10, neutral: 0.18 },
+        { date: '2024-05', positive: 0.75, negative: -0.06, neutral: 0.19 },
+        { date: '2024-06', positive: 0.78, negative: -0.04, neutral: 0.18 }
+      ]
 
-        setAnomalies(mockAnomalies)
-        setInsights(mockInsights)
-        setSentimentTrend(mockSentimentTrend)
-      } catch (error) {
-        console.error('Failed to fetch AI data:', error)
-      } finally {
-        setLoading(false)
-      }
+      setAnomalies(mockAnomalies)
+      setInsights(mockInsights)
+      setSentimentTrend(mockSentimentTrend)
+    } catch (error) {
+      console.error('Failed to fetch AI data:', error)
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchAIData()
   }, [])
 
@@ -197,10 +198,19 @@ export default function AdminAIInsights() {
           </p>
         </div>
         
-        <button className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200">
-          <Bot className="w-4 h-4 mr-2" />
-          Run Analysis
-        </button>
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={fetchAIData}
+            className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </button>
+          <button className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200">
+            <Bot className="w-4 h-4 mr-2" />
+            Run Analysis
+          </button>
+        </div>
       </div>
 
       {/* AI Insights Cards */}

@@ -7,6 +7,7 @@ import { DataTable, EmptyState, SearchInput } from '@/components/mainapp/compone
 import { MessageSquareWarning, Eye, Calendar, User, AlertCircle, Trash2, RefreshCw } from 'lucide-react'
 import { useTheme } from '@/components/ThemeContext'
 import { Toast } from '@/components/Toast'
+import { refreshHeaderAndSidebar } from '@/components/utils/refresh'
 
 interface Complaint {
   id: string
@@ -87,6 +88,18 @@ export default function AdminComplaints() {
     }
   }, [])
 
+  // Listen for sidebar refresh flag when new complaints are submitted
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'sidebarRefresh' && e.newValue === 'true') {
+        localStorage.removeItem('sidebarRefresh')
+        refreshComplaints()
+      }
+    }
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
+  }, [])
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
@@ -132,6 +145,8 @@ export default function AdminComplaints() {
       if (response.ok) {
         setComplaints(complaints.filter(c => c.id !== complaintId))
         setToast({ message: 'Complaint deleted successfully', type: 'success' })
+        // Trigger sidebar refresh
+        localStorage.setItem('sidebarRefresh', 'true')
       } else {
         setToast({ message: 'Failed to delete complaint', type: 'error' })
       }
@@ -262,6 +277,25 @@ export default function AdminComplaints() {
             Review and respond to community complaints
           </p>
         </div>
+        <button
+          onClick={() => {
+            refreshComplaints()
+            localStorage.setItem('sidebarRefresh', 'true')
+            window.dispatchEvent(new StorageEvent('storage', {
+              key: 'sidebarRefresh',
+              newValue: 'true'
+            }))
+          }}
+          disabled={loading}
+          className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+            loading
+              ? 'opacity-50 cursor-not-allowed'
+              : `hover:shadow-md ${isDark ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-white hover:bg-slate-50 text-slate-900 border border-slate-200'}`
+          }`}
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          <span>Refresh</span>
+        </button>
       </div>
 
       {/* Filters */}

@@ -9,6 +9,7 @@ import { useSession } from 'next-auth/react'
 import { useTheme } from '@/components/ThemeContext'
 import { useSidebar } from '@/components/ui/SidebarContext'
 import { motion, AnimatePresence } from 'framer-motion'
+import { getSupabaseClient } from '@/lib/supabase'
 import {
   LayoutDashboard, Bot, Users, MessageSquareWarning,
   Smile, PlusSquare, Bell, Settings,
@@ -64,6 +65,8 @@ export function UserSidebar() {
   useEffect(() => {
     if (!session?.user?.email) return
 
+    let intervalId: NodeJS.Timeout
+
     const fetchCounts = async () => {
       try {
         // Fetch notifications count (unread)
@@ -86,6 +89,103 @@ export function UserSidebar() {
     }
 
     fetchCounts()
+
+    // Setup Supabase real-time subscriptions
+    const supabase = getSupabaseClient()
+
+    // Notifications subscription
+    const notificationsChannel = supabase
+      .channel('sidebar_notifications')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${session.user.id}` }, () => {
+        fetchCounts()
+      })
+      .subscribe()
+
+    // Polls subscription (listen for any changes to polls table)
+    const pollsChannel = supabase
+      .channel('sidebar_polls')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'polls' }, () => {
+        fetchCounts()
+      })
+      .subscribe()
+
+    return () => {
+      notificationsChannel.unsubscribe()
+      pollsChannel.unsubscribe()
+    }
+
+    // Fallback polling every 30 seconds
+    intervalId = setInterval(fetchCounts, 30000)
+
+    return () => {
+      clearInterval(intervalId)
+    }
+  }, [session?.user?.email, session?.user?.id])
+
+  // Listen for sidebar refresh flag
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'sidebarRefresh') {
+        // Refresh counts immediately
+        if (session?.user?.email) {
+          const fetchCounts = async () => {
+            try {
+              // Fetch notifications count (unread)
+              const notificationsResponse = await fetch('/api/notifications')
+              if (notificationsResponse.ok) {
+                const notificationsData = await notificationsResponse.json()
+                const unread = notificationsData.notifications?.filter((n: any) => !n.is_read).length || 0
+                setNotificationCount(unread)
+              }
+
+              // Fetch active polls count
+              const pollsResponse = await fetch('/api/polls?status=active')
+              if (pollsResponse.ok) {
+                const pollsData = await pollsResponse.json()
+                setActivePollsCount(pollsData.polls?.length || 0)
+              }
+            } catch (error) {
+              console.error('Error fetching counts:', error)
+            }
+          }
+          fetchCounts()
+        }
+      }
+    }
+
+    const handleCustomEvent = () => {
+      // Refresh counts immediately
+      if (session?.user?.email) {
+        const fetchCounts = async () => {
+          try {
+            // Fetch notifications count (unread)
+            const notificationsResponse = await fetch('/api/notifications')
+            if (notificationsResponse.ok) {
+              const notificationsData = await notificationsResponse.json()
+              const unread = notificationsData.notifications?.filter((n: any) => !n.is_read).length || 0
+              setNotificationCount(unread)
+            }
+
+            // Fetch active polls count
+            const pollsResponse = await fetch('/api/polls?status=active')
+            if (pollsResponse.ok) {
+              const pollsData = await pollsResponse.json()
+              setActivePollsCount(pollsData.polls?.length || 0)
+            }
+          } catch (error) {
+            console.error('Error fetching counts:', error)
+          }
+        }
+        fetchCounts()
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('sidebarRefresh', handleCustomEvent)
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('sidebarRefresh', handleCustomEvent)
+    }
   }, [session?.user?.email])
 
   const navigationSections: NavSection[] = [

@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { createClient } from '@supabase/supabase-js'
+import { authOptions } from '@/lib/auth'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -54,6 +55,7 @@ export async function GET(request: NextRequest) {
         sentiment,
         created_at,
         updated_at,
+        resolution_message,
         users(name, email)
       `)
       .eq('community_id', communityId)
@@ -172,22 +174,33 @@ export async function POST(request: NextRequest) {
         details: { title, category }
       })
 
-    // Notify admins in the community
-    const { data: admins } = await supabase
-      .from('community_members')
-      .select('user_id')
-      .eq('community_id', communityId)
-      .eq('role', 'admin')
+    // Notify all admin users
+    const { data: adminUsers, error: adminError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('role', 'Admin')
 
-    if (admins && admins.length > 0) {
-      const notifications = admins.map(admin => ({
-        user_id: admin.user_id,
+    if (adminError) {
+      console.error('Error fetching admin users:', adminError)
+    } else if (adminUsers && adminUsers.length > 0) {
+      // Create notifications for all admin users
+      const notifications = adminUsers.map(admin => ({
+        user_id: admin.id,
         title: 'New Complaint Submitted',
-        message: `A new complaint titled "${title}" has been submitted.`,
-        is_read: false,
-        created_at: new Date().toISOString()
+        body: `A new complaint titled "${title}" has been submitted.`,
+        type: 'info',
+        link_url: '/main/admin/complaints',
+        is_read: false
       }))
-      await supabase.from('notifications').insert(notifications)
+
+      const { error: notificationError } = await supabase
+        .from('notifications')
+        .insert(notifications)
+
+      if (notificationError) {
+        console.error('Notification creation error:', notificationError)
+        // Don't fail the request, just log
+      }
     }
 
     return NextResponse.json({ complaint, message: 'Complaint submitted successfully' })
@@ -198,3 +211,67 @@ export async function POST(request: NextRequest) {
 }
 
 
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession()
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const clearAll = searchParams.get('clear_all') === 'true'
+
+    if (!clearAll) {
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+    }
+
+    // Get user
+    const { data: user } = await supabase
+      .from('users')
+      .select(`
+        id,
+        community_members(
+          community_id,
+          role
+        )
+      `)
+      .eq('email', session.user.email)
+      .single()
+
+    if (!user || !user.community_members?.[0]) {
+      return NextResponse.json({ error: 'Community membership required' }, { status: 403 })
+    }
+
+    const communityId = user.community_members[0].community_id
+
+    // Delete all complaints for this user in this community
+    const { error: deleteError } = await supabase
+      .from('complaints')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('community_id', communityId)
+
+    if (deleteError) {
+      console.error('Delete complaints error:', deleteError)
+      return NextResponse.json({ error: 'Failed to clear complaints' }, { status: 500 })
+    }
+
+    // Log audit trail
+    await supabase
+      .from('audit_log')
+      .insert({
+        community_id: communityId,
+        user_id: user.id,
+        action_type: 'clear_all_complaints',
+        entity_type: 'complaint',
+        entity_id: null,
+        details: { action: 'cleared_all_user_complaints' }
+      })
+
+    return NextResponse.json({ message: 'All complaints cleared successfully' })
+  } catch (error) {
+    console.error('Server error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}

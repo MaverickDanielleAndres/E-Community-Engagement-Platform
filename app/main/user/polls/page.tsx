@@ -6,7 +6,9 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { DataTable, EmptyState } from '@/components/mainapp/components'
 import { PieChart, Eye, Calendar, Users, Clock } from 'lucide-react'
+import { ArrowPathIcon } from '@heroicons/react/24/outline'
 import { useTheme } from '@/components/ThemeContext'
+import { refreshHeaderAndSidebar } from '@/components/utils/refresh'
 
 interface Poll {
   id: string
@@ -145,16 +147,47 @@ export default function UserPolls() {
   const activePolls = polls.filter(poll => poll.status === 'active')
   const closedPolls = polls.filter(poll => poll.status === 'closed')
 
+  const refreshPolls = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/polls')
+      if (response.ok) {
+        const data = await response.json()
+        setPolls(data.polls || [])
+      }
+    } catch (error) {
+      console.error('Failed to refresh polls:', error)
+    } finally {
+      setLoading(false)
+    }
+    // Refresh header and sidebar data
+    refreshHeaderAndSidebar()
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white">
-          Community Polls
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Participate in community decision making
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">
+            Community Polls
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            Participate in community decision making
+          </p>
+        </div>
+        <button
+          onClick={refreshPolls}
+          disabled={loading}
+          title="Refresh polls"
+          className={`p-2 rounded-md transition-colors ${
+            isDark
+              ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700'
+              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+          } ${loading ? 'animate-spin' : ''}`}
+        >
+          <ArrowPathIcon className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Stats */}

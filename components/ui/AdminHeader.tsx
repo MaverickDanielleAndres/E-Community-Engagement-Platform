@@ -8,7 +8,7 @@ import { useTheme } from '@/components/ThemeContext'
 import { useSidebar } from '@/components/ui/SidebarContext'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { getSupabaseClient } from '@/lib/supabase'
-import { Bell, Search, User, LogOut, Settings, ChevronDown, Mail, Menu } from 'lucide-react'
+import { Bell, Search, User, LogOut, Settings, ChevronDown, Mail, Menu, RotateCcw } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface Notification {
@@ -27,6 +27,7 @@ export function AdminHeader() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [communityLogo, setCommunityLogo] = useState('')
   const [userImage, setUserImage] = useState('')
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const { data: session } = useSession()
   const { isDark } = useTheme()
   const { isCollapsed, setIsCollapsed } = useSidebar()
@@ -85,7 +86,7 @@ export function AdminHeader() {
     // Subscribe to real-time updates
     const channel = supabase
       .channel('header_notifications')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, (payload) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${session.user.id}` }, (payload) => {
         fetchNotifications() // Refetch on any change
       })
       .subscribe()
@@ -94,6 +95,150 @@ export function AdminHeader() {
       channel.unsubscribe()
     }
   }, [session?.user?.email])
+
+  // Listen for sidebar refresh flag
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'sidebarRefresh') {
+        // Refresh header data immediately
+        if (session?.user?.email) {
+          const fetchNotifications = async () => {
+            try {
+              const response = await fetch('/api/admin/notifications')
+              const data = await response.json()
+              setNotifications(data.notifications || [])
+            } catch (error) {
+              console.error('Error fetching notifications:', error)
+            }
+          }
+
+          const fetchCommunityLogo = async () => {
+            try {
+              const response = await fetch('/api/admin/settings')
+              if (response.ok) {
+                const data = await response.json()
+                setCommunityLogo(data.logo_url || '')
+              } else if (response.status === 403) {
+                console.warn('Unable to fetch community logo: Admin access required')
+              } else {
+                console.error('Error fetching community logo:', response.status)
+              }
+            } catch (error) {
+              console.error('Error fetching community logo:', error)
+            }
+          }
+
+          const fetchUserImage = async () => {
+            try {
+              const response = await fetch('/api/me/summary')
+              if (response.ok) {
+                const data = await response.json()
+                setUserImage(data.settings?.image || '')
+              }
+            } catch (error) {
+              console.error('Error fetching user image:', error)
+            }
+          }
+
+          fetchNotifications()
+          fetchCommunityLogo()
+          fetchUserImage()
+        }
+      }
+    }
+
+    const handleCustomEvent = () => {
+      // Refresh header data immediately
+      if (session?.user?.email) {
+        const fetchNotifications = async () => {
+          try {
+            const response = await fetch('/api/admin/notifications')
+            const data = await response.json()
+            setNotifications(data.notifications || [])
+          } catch (error) {
+            console.error('Error fetching notifications:', error)
+          }
+        }
+
+        const fetchCommunityLogo = async () => {
+          try {
+            const response = await fetch('/api/admin/settings')
+            if (response.ok) {
+              const data = await response.json()
+              setCommunityLogo(data.logo_url || '')
+            } else if (response.status === 403) {
+              console.warn('Unable to fetch community logo: Admin access required')
+            } else {
+              console.error('Error fetching community logo:', response.status)
+            }
+          } catch (error) {
+            console.error('Error fetching community logo:', error)
+          }
+        }
+
+        const fetchUserImage = async () => {
+          try {
+            const response = await fetch('/api/me/summary')
+            if (response.ok) {
+              const data = await response.json()
+              setUserImage(data.settings?.image || '')
+            }
+          } catch (error) {
+            console.error('Error fetching user image:', error)
+          }
+        }
+
+        fetchNotifications()
+        fetchCommunityLogo()
+        fetchUserImage()
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('sidebarRefresh', handleCustomEvent)
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('sidebarRefresh', handleCustomEvent)
+    }
+  }, [session?.user?.email])
+
+  const handleRefresh = async () => {
+    if (isRefreshing) return
+
+    setIsRefreshing(true)
+    try {
+      // Refresh notifications
+      const response = await fetch('/api/admin/notifications')
+      const data = await response.json()
+      setNotifications(data.notifications || [])
+
+      // Refresh community logo
+      const logoResponse = await fetch('/api/admin/settings')
+      if (logoResponse.ok) {
+        const logoData = await logoResponse.json()
+        setCommunityLogo(logoData.logo_url || '')
+      }
+
+      // Refresh user image
+      const userResponse = await fetch('/api/me/summary')
+      if (userResponse.ok) {
+        const userData = await userResponse.json()
+        setUserImage(userData.settings?.image || '')
+      }
+
+      // Trigger sidebar refresh for both AdminSidebar and UserSidebar
+      localStorage.setItem('sidebarRefresh', 'true')
+      // Dispatch storage event to trigger immediate refresh
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'sidebarRefresh',
+        newValue: 'true'
+      }))
+    } catch (error) {
+      console.error('Error refreshing data:', error)
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
 
   const handleSignOut = async () => {
     const { signOut } = await import('next-auth/react')
@@ -170,6 +315,22 @@ export function AdminHeader() {
 
         {/* Right Section */}
         <div className="flex items-center space-x-3">
+          {/* Refresh Button */}
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className={`
+              p-2.5 rounded-xl transition-all duration-200
+              ${isDark
+                ? 'hover:bg-slate-800 text-slate-300 hover:text-white disabled:opacity-50'
+                : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900 disabled:opacity-50'
+              }
+            `}
+            title="Refresh data"
+          >
+            <RotateCcw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </button>
+
           {/* Theme Toggle */}
           <ThemeToggle className="hidden sm:block" />
 

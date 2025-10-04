@@ -5,9 +5,11 @@ import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { motion } from 'framer-motion'
 import { Users, MessageSquareWarning, Smile, Bell, Target, Calendar } from 'lucide-react'
+import { ArrowPathIcon } from '@heroicons/react/24/outline'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { KPICard } from '@/components/mainapp/components'
 import { useTheme } from '@/components/ThemeContext'
+import { refreshHeaderAndSidebar } from '@/components/utils/refresh'
 
 interface DashboardStats {
   activePolls: number
@@ -65,6 +67,25 @@ export default function UserDashboard() {
     )
   }
 
+  const refreshDashboard = async () => {
+    setLoading(true)
+    try {
+      if (!session?.user?.email) return
+      const response = await fetch('/api/user/dashboard')
+      if (response.ok) {
+        const { stats: fetchedStats, recentActivity: fetchedActivity } = await response.json()
+        setStats(fetchedStats)
+        setRecentActivity(fetchedActivity)
+      }
+    } catch (error) {
+      console.error('Failed to refresh dashboard data:', error)
+    } finally {
+      setLoading(false)
+    }
+    // Refresh header and sidebar data
+    refreshHeaderAndSidebar()
+  }
+
   return (
     <div className="space-y-6">
       {/* Welcome Header */}
@@ -73,9 +94,23 @@ export default function UserDashboard() {
         animate={{ opacity: 1, y: 0 }}
         className="space-y-2"
       >
-        <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-          Welcome back, {session?.user?.name || session?.user?.email?.split('@')[0] || 'Resident'}
-        </h1>
+        <div className="flex items-center justify-between">
+          <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            Welcome back, {session?.user?.name || session?.user?.email?.split('@')[0] || 'Resident'}
+          </h1>
+          <button
+            onClick={refreshDashboard}
+            disabled={loading}
+            title="Refresh dashboard"
+            className={`p-2 rounded-md transition-colors ${
+              isDark
+                ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+            } ${loading ? 'animate-spin' : ''}`}
+          >
+            <ArrowPathIcon className="w-5 h-5" />
+          </button>
+        </div>
         <p className={isDark ? 'text-slate-400' : 'text-gray-600'}>
           Here's what's happening in your community today
         </p>

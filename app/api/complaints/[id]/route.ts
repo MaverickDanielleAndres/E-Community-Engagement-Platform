@@ -36,6 +36,7 @@ export async function GET(
         sentiment,
         created_at,
         updated_at,
+        resolution_message,
         users(name, email)
       `)
       .eq('id', id)
@@ -65,10 +66,10 @@ export async function DELETE(
 
     const { id } = params
 
-    // First get the complaint to find its community and check status
+    // First get the complaint to find its community, check status, and get user details
     const { data: complaint } = await supabase
       .from('complaints')
-      .select('community_id, status')
+      .select('community_id, status, user_id, title')
       .eq('id', id)
       .single()
 
@@ -128,6 +129,17 @@ export async function DELETE(
         entity_id: id,
         details: { deleted_at: new Date().toISOString() }
       })
+
+    // Notify user about complaint deletion
+    await supabase.from('notifications').insert({
+      user_id: complaint.user_id,
+      type: 'warning',
+      title: 'Complaint Deleted',
+      body: `Your complaint titled "${complaint.title}" has been deleted by an administrator.`,
+      link_url: '/main/user/complaints/my',
+      is_read: false,
+      created_at: new Date().toISOString()
+    })
 
     return NextResponse.json({ message: 'Complaint deleted successfully' })
   } catch (error) {
@@ -206,6 +218,7 @@ export async function PUT(
         sentiment,
         created_at,
         updated_at,
+        resolution_message,
         users(name, email)
       `)
       .single()
@@ -230,8 +243,10 @@ export async function PUT(
     // Notify user about complaint status update
     await supabase.from('notifications').insert({
       user_id: complaint.user_id,
+      type: 'complaint',
       title: 'Complaint Status Updated',
-      message: `Your complaint titled "${updatedComplaint.title}" status has been updated to "${updatedComplaint.status}".`,
+      body: `Your complaint titled "${updatedComplaint.title}" status has been updated to "${updatedComplaint.status}".`,
+      link_url: '/main/user/complaints/my',
       is_read: false,
       created_at: new Date().toISOString()
     })

@@ -125,3 +125,50 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession()
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { data: user } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', session.user.email)
+      .single()
+
+    const url = new URL(request.url)
+    const clear = url.searchParams.get('clear')
+
+    if (user) {
+      if (clear === 'true') {
+        // Clear all notifications for the user
+        const { error } = await supabase
+          .from('notifications')
+          .delete()
+          .eq('user_id', user.id)
+
+        if (error) {
+          console.error('Clear all error:', error)
+          return NextResponse.json({ error: 'Failed to clear notifications' }, { status: 500 })
+        }
+
+        return NextResponse.json({ message: 'All notifications cleared successfully' })
+      }
+    } else {
+      // If user not found, consider it successful (no notifications to clear)
+      if (clear === 'true') {
+        return NextResponse.json({ message: 'All notifications cleared successfully' })
+      }
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+  } catch (error) {
+    console.error('Server error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}

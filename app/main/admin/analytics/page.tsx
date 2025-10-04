@@ -1,10 +1,9 @@
-'use client'
-
+use'use client'n
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { 
-  TrendingUp, Users, MessageSquareWarning, PieChart as PieChartIcon, 
-  Activity, Calendar, ArrowUpRight, ArrowDownRight
+import {
+  TrendingUp, Users, MessageSquareWarning, PieChart as PieChartIcon,
+  Activity, Calendar, ArrowUpRight, ArrowDownRight, RefreshCw
 } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
          LineChart, Line, PieChart, Pie, Cell, AreaChart, Area } from 'recharts'
@@ -34,64 +33,64 @@ export default function AdminAnalytics() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
   const { isDark } = useTheme()
 
-  useEffect(() => {
-    const fetchAnalytics = async () => {
-      try {
-        setLoading(true)
-        // Mock data to match the specified chart requirements
-        const mockData: AnalyticsData = {
-          memberGrowth: [
-            { month: 'May', members: 0 },
-            { month: 'Jun', members: 0.5 },
-            { month: 'Jul', members: 1 },
-            { month: 'Aug', members: 1.5 },
-            { month: 'Sep', members: 2 },
-            { month: 'Oct', members: 2 }
-          ],
-          engagementTrend: [
-            { date: '2025-05', polls: 0, complaints: 0, feedback: 0 },
-            { date: '2025-06', polls: 0.25, complaints: 0.25, feedback: 0.25 },
-            { date: '2025-07', polls: 0.5, complaints: 0.5, feedback: 0.5 },
-            { date: '2025-08', polls: 0.75, complaints: 0.75, feedback: 0.75 },
-            { date: '2025-09', polls: 1, complaints: 1, feedback: 1 },
-            { date: '2025-10', polls: 1, complaints: 1, feedback: 1 }
-          ],
-          complaintsByCategory: [
-            { name: 'Other', value: 100 }
-          ],
-          sentimentAnalysis: [],
-          participationRates: [
-            { activity: 'Voting', rate: 0 },
-            { activity: 'Complaints', rate: 0.5 },
-            { activity: 'Feedback', rate: 1 },
-            { activity: 'Events', rate: 1.5 }
-          ],
-          weeklyActivity: [
-            { day: 'Sun', active: 0 },
-            { day: 'Mon', active: 0.5 },
-            { day: 'Tue', active: 1 },
-            { day: 'Wed', active: 1.5 },
-            { day: 'Thu', active: 2 },
-            { day: 'Fri', active: 2.5 },
-            { day: 'Sat', active: 3 }
-          ],
-          totalMembers: 150,
-          activeMembers: 120,
-          totalPolls: 25,
-          totalComplaints: 10,
-          averageSentiment: 0.7,
-          participationRate: 85.5
-        }
-
-        setData(mockData)
-      } catch (error) {
-        console.error('Failed to fetch analytics:', error)
-        setToast({ message: 'Failed to load analytics data', type: 'error' })
-      } finally {
-        setLoading(false)
+  const fetchAnalytics = async () => {
+    try {
+      setLoading(true)
+      // Mock data to match the specified chart requirements
+      const mockData: AnalyticsData = {
+        memberGrowth: [
+          { month: 'May', members: 0 },
+          { month: 'Jun', members: 0.5 },
+          { month: 'Jul', members: 1 },
+          { month: 'Aug', members: 1.5 },
+          { month: 'Sep', members: 2 },
+          { month: 'Oct', members: 2 }
+        ],
+        engagementTrend: [
+          { date: '2025-05', polls: 0, complaints: 0, feedback: 0 },
+          { date: '2025-06', polls: 0.25, complaints: 0.25, feedback: 0.25 },
+          { date: '2025-07', polls: 0.5, complaints: 0.5, feedback: 0.5 },
+          { date: '2025-08', polls: 0.75, complaints: 0.75, feedback: 0.75 },
+          { date: '2025-09', polls: 1, complaints: 1, feedback: 1 },
+          { date: '2025-10', polls: 1, complaints: 1, feedback: 1 }
+        ],
+        complaintsByCategory: [
+          { name: 'Other', value: 100 }
+        ],
+        sentimentAnalysis: [],
+        participationRates: [
+          { activity: 'Voting', rate: 0 },
+          { activity: 'Complaints', rate: 0.5 },
+          { activity: 'Feedback', rate: 1 },
+          { activity: 'Events', rate: 1.5 }
+        ],
+        weeklyActivity: [
+          { day: 'Sun', active: 0 },
+          { day: 'Mon', active: 0.5 },
+          { day: 'Tue', active: 1 },
+          { day: 'Wed', active: 1.5 },
+          { day: 'Thu', active: 2 },
+          { day: 'Fri', active: 2.5 },
+          { day: 'Sat', active: 3 }
+        ],
+        totalMembers: 150,
+        activeMembers: 120,
+        totalPolls: 25,
+        totalComplaints: 10,
+        averageSentiment: 0.7,
+        participationRate: 85.5
       }
-    }
 
+      setData(mockData)
+    } catch (error) {
+      console.error('Failed to fetch analytics:', error)
+      setToast({ message: 'Failed to load analytics data', type: 'error' })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
     fetchAnalytics()
   }, [timeRange])
 
@@ -113,8 +112,8 @@ export default function AdminAnalytics() {
         <TrendingUp className="w-12 h-12 text-slate-400 mx-auto mb-4" />
         <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
           Unable to load analytics
-        </h3>
-        <p className="text-slate-500 dark:text-slate-400">
+        </h3>md esh
+        <p classNamre="text-slate-500 dark:text-slate-400">
           Please try refreshing the page
         </p>
       </div>
@@ -154,23 +153,42 @@ export default function AdminAnalytics() {
           </p>
         </div>
 
-        <select
-          value={timeRange}
-          onChange={(e) => setTimeRange(e.target.value)}
-          className={`
-            px-4 py-2.5 rounded-xl border transition-all duration-200
-            focus:outline-none focus:ring-2 focus:ring-blue-500
-            ${isDark 
-              ? 'bg-slate-800 border-slate-600 text-white' 
-              : 'bg-white border-slate-300 text-slate-900'
-            }
-          `}
-        >
-          <option value="7d">Last 7 days</option>
-          <option value="30d">Last 30 days</option>
-          <option value="90d">Last 90 days</option>
-          <option value="1y">Last year</option>
-        </select>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={fetchAnalytics}
+            disabled={loading}
+            className={`
+              p-2.5 rounded-xl border transition-all duration-200
+              focus:outline-none focus:ring-2 focus:ring-blue-500
+              disabled:opacity-50 disabled:cursor-not-allowed
+              ${isDark
+                ? 'bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700'
+                : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+              }
+            `}
+            title="Refresh analytics data"
+          >
+            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+
+          <select
+            value={timeRange}
+            onChange={(e) => setTimeRange(e.target.value)}
+            className={`
+              px-4 py-2.5 rounded-xl border transition-all duration-200
+              focus:outline-none focus:ring-2 focus:ring-blue-500
+              ${isDark
+                ? 'bg-slate-800 border-slate-600 text-white'
+                : 'bg-white border-slate-300 text-slate-900'
+              }
+            `}
+          >
+            <option value="7d">Last 7 days</option>
+            <option value="30d">Last 30 days</option>
+            <option value="90d">Last 90 days</option>
+            <option value="1y">Last year</option>
+          </select>
+        </div>
       </motion.div>
 
       {/* KPI Cards */}

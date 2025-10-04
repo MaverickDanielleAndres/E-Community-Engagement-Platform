@@ -5,6 +5,7 @@ import { UserHeader } from '@/components/ui/UserHeader'
 import { RoleGuard } from '@/components/mainapp/components'
 import { SidebarProvider, useSidebar } from '@/components/ui/SidebarContext'
 import { useTheme } from '@/components/ThemeContext'
+import { ToastProvider } from '@/components/ToastContext'
 
 function UserLayoutContent({ children }: { children: React.ReactNode }) {
   const { isCollapsed } = useSidebar()
@@ -34,9 +35,11 @@ export default function UserLayout({
 }) {
   return (
     <RoleGuard allowedRoles={['Resident', 'Admin']}>
-      <SidebarProvider>
-        <UserLayoutContent>{children}</UserLayoutContent>
-      </SidebarProvider>
+      <ToastProvider>
+        <SidebarProvider>
+          <UserLayoutContent>{children}</UserLayoutContent>
+        </SidebarProvider>
+      </ToastProvider>
     </RoleGuard>
   )
 }

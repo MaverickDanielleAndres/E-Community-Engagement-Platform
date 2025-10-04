@@ -263,8 +263,6 @@ export default function AdminMembers() {
         </div>
       </motion.div>
 
-      ON
-
       {/* Stats Cards */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}

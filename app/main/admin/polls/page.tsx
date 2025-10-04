@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { DataTable, EmptyState, ConfirmDialog } from '@/components/mainapp/components'
 import { Toast } from '@/components/Toast'
-import { PlusSquare, Eye, Edit, Trash2, Calendar, Users } from 'lucide-react'
+import { PlusSquare, Eye, Edit, Trash2, Calendar, Users, RefreshCw } from 'lucide-react'
 import { useTheme } from '@/components/ThemeContext'
+import { refreshHeaderAndSidebar } from '@/components/utils/refresh'
 
 interface Poll {
   id: string
@@ -28,21 +29,22 @@ export default function AdminPolls() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
   const { isDark } = useTheme()
 
-  useEffect(() => {
-    const fetchPolls = async () => {
-      try {
-        const response = await fetch('/api/polls')
-        if (response.ok) {
-          const data = await response.json()
-          setPolls(data.polls || [])
-        }
-      } catch (error) {
-        console.error('Failed to fetch polls:', error)
-      } finally {
-        setLoading(false)
+  const fetchPolls = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/polls')
+      if (response.ok) {
+        const data = await response.json()
+        setPolls(data.polls || [])
       }
+    } catch (error) {
+      console.error('Failed to fetch polls:', error)
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchPolls()
 
     // Poll for updates every 30 seconds to reflect status changes
@@ -186,13 +188,30 @@ export default function AdminPolls() {
             Create and manage community polls
           </p>
         </div>
-        <Link
-          href="/main/admin/polls/create"
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
-        >
-          <PlusSquare className="w-4 h-4 mr-2" />
-          Create Poll
-        </Link>
+        <div className="flex items-center space-x-3 mt-4 sm:mt-0">
+          <button
+            onClick={fetchPolls}
+            disabled={loading}
+            className={`p-2.5 rounded-xl border transition-all duration-200
+              focus:outline-none focus:ring-2 focus:ring-blue-500
+              disabled:opacity-50 disabled:cursor-not-allowed
+              ${isDark
+                ? 'bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700'
+                : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+              }
+            `}
+            title="Refresh polls data"
+          >
+            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+          <Link
+            href="/main/admin/polls/create"
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
+          >
+            <PlusSquare className="w-4 h-4 mr-2" />
+            Create Poll
+          </Link>
+        </div>
       </div>
 
       {/* Polls Table */}

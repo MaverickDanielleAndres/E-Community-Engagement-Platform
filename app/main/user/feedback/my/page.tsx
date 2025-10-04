@@ -4,7 +4,9 @@
 import { useState, useEffect } from 'react'
 import { DataTable } from '@/components/mainapp/components'
 import { Star, Calendar } from 'lucide-react'
+import { ArrowPathIcon } from '@heroicons/react/24/outline'
 import { useTheme } from '@/components/ThemeContext'
+import { refreshHeaderAndSidebar } from '@/components/utils/refresh'
 
 interface Feedback {
   id: string
@@ -34,6 +36,23 @@ export default function MyFeedback() {
     }
     fetchFeedback()
   }, [])
+
+  const refreshFeedback = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/feedback?my=true')
+      if (response.ok) {
+        const data = await response.json()
+        setFeedback(data.feedback || [])
+      }
+    } catch (error) {
+      console.error('Failed to refresh feedback:', error)
+    } finally {
+      setLoading(false)
+    }
+    // Refresh header and sidebar data
+    refreshHeaderAndSidebar()
+  }
 
   const renderRating = (feedback: Feedback) => {
     // Handle new form_data structure
@@ -127,9 +146,23 @@ export default function MyFeedback() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">My Feedback</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">View your submitted feedback history</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">My Feedback</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">View your submitted feedback history</p>
+        </div>
+        <button
+          onClick={refreshFeedback}
+          disabled={loading}
+          title="Refresh feedback"
+          className={`p-2 rounded-md transition-colors ${
+            isDark
+              ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700'
+              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+          } ${loading ? 'animate-spin' : ''}`}
+        >
+          <ArrowPathIcon className="w-5 h-5" />
+        </button>
       </div>
 
       <div className={`rounded-xl border overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>

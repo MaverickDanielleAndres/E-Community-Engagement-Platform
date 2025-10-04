@@ -54,31 +54,31 @@ export default function AdminDashboard() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
   const { isDark } = useTheme()
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true)
-        
-        const response = await fetch('/api/admin/dashboard')
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch dashboard data')
-        }
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true)
 
-        const data = await response.json()
-        
-        setStats(data.stats)
-        setRecentActivity(data.recentActivity)
-        setChartData(data.memberGrowthData)
+      const response = await fetch('/api/admin/dashboard')
 
-      } catch (error) {
-        console.error('Failed to fetch dashboard data:', error)
-        setToast({ message: 'Error loading dashboard data', type: 'error' })
-      } finally {
-        setLoading(false)
+      if (!response.ok) {
+        throw new Error('Failed to fetch dashboard data')
       }
-    }
 
+      const data = await response.json()
+
+      setStats(data.stats)
+      setRecentActivity(data.recentActivity)
+      setChartData(data.memberGrowthData)
+
+    } catch (error) {
+      console.error('Failed to fetch dashboard data:', error)
+      setToast({ message: 'Error loading dashboard data', type: 'error' })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
     fetchDashboardData()
   }, [])
 
@@ -145,12 +145,31 @@ export default function AdminDashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <h1 className={`text-4xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-          Welcome back, {session?.user?.name || 'Administrator'}
-        </h1>
-        <p className={isDark ? 'text-slate-400' : 'text-slate-600'}>
-          Here's what's happening in your community today
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className={`text-4xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              Welcome back, {session?.user?.name || 'Administrator'}
+            </h1>
+            <p className={isDark ? 'text-slate-400' : 'text-slate-600'}>
+              Here's what's happening in your community today
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              setLoading(true)
+              fetchDashboardData()
+              // Trigger sidebar refresh
+              localStorage.setItem('sidebarRefresh', 'true')
+              window.dispatchEvent(new StorageEvent('storage', {
+                key: 'sidebarRefresh',
+                newValue: 'true'
+              }))
+            }}
+            className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+          >
+            Refresh
+          </button>
+        </div>
       </motion.div>
 
       {/* Stats Cards */}

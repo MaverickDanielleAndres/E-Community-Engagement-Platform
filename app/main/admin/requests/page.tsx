@@ -367,10 +367,21 @@ export default function AdminRequestsPage() {
               Clear History
             </Button>
           )}
-          <Button onClick={() => fetchRequests(activeTab === 'history')} variant="outline" className={`self-start sm:self-auto ${isDark ? 'text-white hover:text-black active:text-black' : ''}`}>
-            <ArrowPathIcon className="w-4 h-4 mr-2" />
-            <span className="hidden sm:inline">Refresh</span>
-          </Button>
+          <button
+            onClick={() => fetchRequests(activeTab === 'history')}
+            disabled={isLoading}
+            className={`p-2.5 rounded-xl border transition-all duration-200
+              focus:outline-none focus:ring-2 focus:ring-blue-500
+              disabled:opacity-50 disabled:cursor-not-allowed
+              ${isDark
+                ? 'bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700'
+                : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+              }
+            `}
+            title="Refresh requests"
+          >
+            <ArrowPathIcon className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+          </button>
         </div>
       </div>
 
