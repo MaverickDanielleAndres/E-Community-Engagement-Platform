@@ -28,10 +28,11 @@ export async function GET(request: NextRequest) {
 
     if (userError || !user) {
       console.error('User not found:', userError)
+      // Return 'deleted' status for deleted accounts
       return NextResponse.json({
-        success: false,
-        message: 'User not found'
-      }, { status: 404 })
+        success: true,
+        status: 'deleted'
+      })
     }
 
     // If user is approved, return approved

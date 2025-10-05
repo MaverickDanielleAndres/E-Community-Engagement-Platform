@@ -6,7 +6,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
 export async function PUT(
@@ -14,7 +14,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession()
    
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -37,7 +37,7 @@ export async function PUT(
       .eq('email', session.user.email)
       .single()
 
-    if (adminError || !adminUser || !adminUser.community_members?.[0] || adminUser.community_members[0].role !== 'admin') {
+    if (adminError || !adminUser || !adminUser.community_members?.[0] || adminUser.community_members[0].role !== 'Admin') {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
@@ -79,7 +79,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession()
    
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -100,13 +100,24 @@ export async function DELETE(
       .eq('email', session.user.email)
       .single()
 
-    if (adminError || !adminUser || !adminUser.community_members?.[0] || adminUser.community_members[0].role !== 'admin') {
+    if (adminError || !adminUser || !adminUser.community_members?.[0] || adminUser.community_members[0].role !== 'Admin') {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
     const communityId = adminUser.community_members[0].community_id
 
-    // Remove member from community
+    // First delete any id_verification records for this user
+    const { error: idVerificationError } = await supabase
+      .from('id_verifications')
+      .delete()
+      .eq('user_id', id)
+
+    if (idVerificationError) {
+      console.error('Failed to delete id_verification records:', idVerificationError)
+      // Don't fail the entire operation if this fails, just log it
+    }
+
+    // Then remove member from community
     const { error } = await supabase
       .from('community_members')
       .delete()
@@ -116,6 +127,29 @@ export async function DELETE(
     if (error) {
       console.error('Delete error:', error)
       return NextResponse.json({ error: 'Failed to remove member' }, { status: 500 })
+    }
+
+    // Finally delete the user from users table to completely remove them
+    const { error: userDeleteError } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', id)
+
+    if (userDeleteError) {
+      console.error('Failed to delete user from users table:', userDeleteError)
+      // Don't fail the entire operation if this fails, just log it
+      // The user is still removed from the community, which is the main goal
+    }
+
+    // Also delete all sessions for this user to remove active sessions
+    const { error: sessionDeleteError } = await supabase
+      .from('sessions')
+      .delete()
+      .eq('user_id', id)
+
+    if (sessionDeleteError) {
+      console.error('Failed to delete user sessions:', sessionDeleteError)
+      // Don't fail the entire operation if this fails, just log it
     }
 
     // Log audit trail

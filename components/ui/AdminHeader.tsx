@@ -8,7 +8,7 @@ import { useTheme } from '@/components/ThemeContext'
 import { useSidebar } from '@/components/ui/SidebarContext'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { getSupabaseClient } from '@/lib/supabase'
-import { Bell, Search, User, LogOut, Settings, ChevronDown, Mail, Menu, RotateCcw } from 'lucide-react'
+import { Bell, User, LogOut, Settings, ChevronDown, Mail, Menu, RotateCcw } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface Notification {
@@ -23,7 +23,7 @@ interface Notification {
 export function AdminHeader() {
   const [showNotifications, setShowNotifications] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
+  // Removed searchQuery state and related search handlers as per request
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [communityLogo, setCommunityLogo] = useState('')
   const [userImage, setUserImage] = useState('')
@@ -292,26 +292,7 @@ export function AdminHeader() {
           </div>
         </div>
 
-        {/* Center Section - Search */}
-        <div className="flex-1 max-w-md mx-8 relative">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search members, complaints, polls..."
-              className={`
-                w-full pl-10 pr-4 py-2.5 rounded-xl border transition-all duration-200
-                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                ${isDark
-                  ? 'bg-slate-800 border-slate-600 text-white placeholder-slate-400'
-                  : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-500'
-                }
-              `}
-            />
-          </div>
-        </div>
+
 
         {/* Right Section */}
         <div className="flex items-center space-x-3">

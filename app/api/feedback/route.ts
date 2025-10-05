@@ -18,7 +18,8 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const my = searchParams.get('my') === 'true'
-    const limit = parseInt(searchParams.get('limit') || '50')
+    const limit = parseInt(searchParams.get('limit') || '10')
+    const page = parseInt(searchParams.get('page') || '1')
 
     // Get user's community
     const { data: user } = await supabase
@@ -50,21 +51,39 @@ export async function GET(request: NextRequest) {
         template_id,
         created_at,
         users(name, email)
-      `)
+      `, { count: 'exact' })
       .eq('community_id', communityId)
       .order('created_at', { ascending: false })
-      .limit(limit)
+      .range((page - 1) * limit, page * limit - 1)
 
     // Apply filters
     if (my) {
       query = query.eq('user_id', user.id)
     }
 
-    const { data: feedback, error } = await query
+    const { data: feedback, error, count } = await query
 
     if (error) {
       console.error('Database error:', error)
       return NextResponse.json({ error: 'Failed to fetch feedback' }, { status: 500 })
+    }
+
+    // Fetch active feedback form template for the community
+    const { data: template } = await supabase
+      .from('feedback_form_templates')
+      .select('fields')
+      .eq('community_id', communityId)
+      .eq('is_active', true)
+      .single();
+
+    // Build mapping from field id to label
+    const fieldIdToLabel: Record<string, string> = {};
+    if (template?.fields && Array.isArray(template.fields)) {
+      for (const field of template.fields) {
+        if (field.id && field.label) {
+          fieldIdToLabel[field.id] = field.label;
+        }
+      }
     }
 
     // Enrich feedback with resolved details
@@ -75,6 +94,7 @@ export async function GET(request: NextRequest) {
 
           // Resolve any UUID values from common entities
           for (const [key, value] of Object.entries(item.form_data)) {
+            const label = fieldIdToLabel[key] || key.charAt(0).toUpperCase() + key.slice(1);
             if (typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)) {
               // Try complaints first
               let resolvedText = '';
@@ -97,17 +117,11 @@ export async function GET(request: NextRequest) {
                 }
               }
               if (resolvedText) {
-                details += `${key.charAt(0).toUpperCase() + key.slice(1)}: ${resolvedText}. `;
+                details += `${label}: ${resolvedText}. `;
               }
+            } else {
+              details += `${label}: ${value}. `;
             }
-          }
-
-          // Extract non-UUID text fields
-          const textEntries = Object.entries(item.form_data).filter(
-            ([key, val]) => typeof val === 'string' && val.length > 0 && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val)
-          );
-          for (const [key, val] of textEntries) {
-            details += `${key.charAt(0).toUpperCase() + key.slice(1)}: ${val}. `;
           }
 
           item.resolved_details = details.trim() || 'Form data submitted without details';
@@ -121,7 +135,7 @@ export async function GET(request: NextRequest) {
       })
     );
 
-    return NextResponse.json({ feedback: enrichedFeedback })
+    return NextResponse.json({ feedback: enrichedFeedback, total: count || 0, page, limit })
   } catch (error) {
     console.error('Server error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

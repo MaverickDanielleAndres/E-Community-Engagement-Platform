@@ -3,7 +3,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useParams } from 'next/navigation'
+import { Dialog } from '@headlessui/react'
 import { EmptyState, ConfirmDialog } from '@/components/mainapp/components'
 import { useTheme } from '@/components/ThemeContext'
 import { MessageSquareWarning, User, Calendar, Tag, AlertTriangle, CheckCircle, Clock } from 'lucide-react'
@@ -18,7 +20,50 @@ interface ComplaintData {
   sentiment: number
   created_at: string
   updated_at: string
+  media_urls?: string[]
   users: { name: string; email: string }
+}
+
+function MediaItem({ url, index }: { url: string; index: number }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const isVideo = url.includes('.mp4') || url.includes('.webm') || url.includes('.ogg')
+
+  return (
+    <div className="relative">
+      {isVideo ? (
+        <video
+          src={url}
+          controls
+          className="w-full h-48 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
+          preload="metadata"
+          onClick={() => setIsOpen(true)}
+        >
+          Your browser does not support the video tag.
+        </video>
+      ) : (
+        <>
+          <img
+            src={url}
+            alt={`Attachment ${index + 1}`}
+            className="w-full h-48 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
+            onClick={() => setIsOpen(true)}
+          />
+          <Dialog open={isOpen} onClose={() => setIsOpen(false)} className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 backdrop-blur-sm">
+          <Dialog.Panel className="relative max-w-4xl max-h-full p-4">
+              <img src={url} alt={`Attachment ${index + 1}`} className="max-w-full max-h-[80vh] rounded-lg" />
+              <button
+                onClick={() => setIsOpen(false)}
+                className="absolute top-2 right-2 text-white bg-black bg-opacity-50 rounded-full p-1 hover:bg-opacity-75 focus:outline-none focus:ring-2 focus:ring-white"
+                aria-label="Close"
+              >
+                &#x2715;
+              </button>
+            </Dialog.Panel>
+          </Dialog>
+        </>
+      )}
+    </div>
+  )
 }
 
 export default function ComplaintDetails() {
@@ -127,11 +172,23 @@ export default function ComplaintDetails() {
 
   if (!complaint) {
     return (
-      <EmptyState
-        title="Complaint not found"
-        description="The complaint you're looking for doesn't exist or has been deleted"
-        icon={MessageSquareWarning}
-      />
+      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+        <MessageSquareWarning className={`w-16 h-16 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+        <div className="text-center">
+          <h2 className={`text-xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            Complaint not found
+          </h2>
+          <p className={`mb-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+            The complaint you're looking for doesn't exist or has been deleted.
+          </p>
+          <Link
+            href="/main/admin/complaints"
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
+          >
+            Back to Complaints List
+          </Link>
+        </div>
+      </div>
     )
   }
 
@@ -217,6 +274,19 @@ export default function ComplaintDetails() {
               {complaint.description}
             </p>
           </div>
+
+          {complaint.media_urls && complaint.media_urls.length > 0 && (
+            <div>
+              <h3 className={`text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                Media Attachments
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {complaint.media_urls.map((url, index) => (
+                  <MediaItem key={index} url={url} index={index} />
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center pt-4 border-t border-slate-200 dark:border-slate-700">
             <User className="w-5 h-5 mr-2 text-gray-400" />

@@ -96,8 +96,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json()
-    const { title, description, category } = body
+    // Parse multipart form data
+    const formData = await request.formData()
+    const title = formData.get('title') as string
+    const description = formData.get('description') as string
+    const category = (formData.get('category') as string) || 'other'
 
     if (!title || !description) {
       return NextResponse.json({
@@ -149,7 +152,7 @@ export async function POST(request: NextRequest) {
         user_id: user.id,
         title,
         description,
-        category: category || 'other',
+        category,
         status: 'pending',
         priority: 0,
         sentiment
@@ -160,6 +163,44 @@ export async function POST(request: NextRequest) {
     if (complaintError) {
       console.error('Complaint creation error:', complaintError)
       return NextResponse.json({ error: 'Failed to create complaint' }, { status: 500 })
+    }
+
+    // Handle media uploads
+    const mediaUrls: string[] = []
+    for (const [key, value] of formData.entries()) {
+      if (key.startsWith('media_') && value instanceof File) {
+        const file = value
+        const fileExt = file.name.split('.').pop()
+        const fileName = `complaint-media/${complaint.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('complaint-media')
+          .upload(fileName, file)
+
+        if (uploadError) {
+          console.error('File upload error:', uploadError)
+          continue
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from('complaint-media')
+          .getPublicUrl(fileName)
+
+        if (publicUrlData?.publicUrl) {
+          mediaUrls.push(publicUrlData.publicUrl)
+        }
+      }
+    }
+
+    // Update complaint with media URLs if any
+    if (mediaUrls.length > 0) {
+      const { error: updateError } = await supabase
+        .from('complaints')
+        .update({ media_urls: mediaUrls })
+        .eq('id', complaint.id)
+
+      if (updateError) {
+        console.error('Failed to update complaint with media URLs:', updateError)
+      }
     }
 
     // Log audit trail

@@ -105,7 +105,7 @@ export default function PollDetails() {
   const totalResponses = poll.totalResponses || 0
 
   return (
-    <div className={`min-h-screen ${isDark ? 'bg-slate-900 text-white' : 'bg-white text-black'} space-y-6`}>
+<div className={`min-h-screen ${isDark ? 'bg-slate-900 text-white' : 'bg-[#f9fafc] text-black'} space-y-6`}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>

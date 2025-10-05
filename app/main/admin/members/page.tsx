@@ -241,25 +241,40 @@ export default function AdminMembers() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="flex items-center space-x-4 mb-4">
-          {communityInfo && (
-            <img
-              src={communityInfo.logo_url || '/default-logo.png'}
-              alt="Community Logo"
-              className="w-12 h-12 rounded-lg object-cover"
-              onError={(e) => {
-                e.currentTarget.src = '/default-logo.png'
-              }}
-            />
-          )}
-          <div>
-            <h1 className={`text-4xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Community Members
-            </h1>
-            <p className={isDark ? 'text-slate-400' : 'text-slate-600'}>
-              Manage your community members and their access levels
-            </p>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-4">
+            {communityInfo && (
+              <img
+                src={communityInfo.logo_url || '/default-logo.png'}
+                alt="Community Logo"
+                className="w-12 h-12 rounded-lg object-cover"
+                onError={(e) => {
+                  e.currentTarget.src = '/default-logo.png'
+                }}
+              />
+            )}
+            <div>
+              <h1 className={`text-4xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                Community Members
+              </h1>
+              <p className={isDark ? 'text-slate-400' : 'text-slate-600'}>
+                Manage your community members and their access levels
+              </p>
+            </div>
           </div>
+          {communityInfo && (
+            <div className={`px-3 py-1 rounded-lg border cursor-pointer select-all ${
+              isDark
+                ? 'bg-slate-700 border-slate-600 text-white'
+                : 'bg-white border-slate-300 text-slate-900'
+            }`} title="Community Code" onClick={() => {
+              if (communityInfo.code) {
+                navigator.clipboard.writeText(communityInfo.code)
+              }
+            }}>
+              {communityInfo.code}
+            </div>
+          )}
         </div>
       </motion.div>
 
@@ -483,17 +498,19 @@ export default function AdminMembers() {
                       >
                         <Edit className="w-4 h-4" />
                       </button>
-                      <button
-                        onClick={() => openDeleteDialog(member)}
-                        className={`p-2 rounded-lg transition-colors duration-200 ${
-                          isDark
-                            ? 'text-slate-400 hover:text-red-400 hover:bg-slate-700'
-                            : 'text-slate-600 hover:text-red-600 hover:bg-slate-100'
-                        }`}
-                        title="Remove Member"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {member.role !== 'Admin' && (
+                        <button
+                          onClick={() => openDeleteDialog(member)}
+                          className={`p-2 rounded-lg transition-colors duration-200 ${
+                            isDark
+                              ? 'text-slate-400 hover:text-red-400 hover:bg-slate-700'
+                              : 'text-slate-600 hover:text-red-600 hover:bg-slate-100'
+                          }`}
+                          title="Remove Member"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </motion.tr>

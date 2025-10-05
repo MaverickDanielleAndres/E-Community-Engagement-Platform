@@ -29,7 +29,9 @@ export default function SubmitFeedback() {
         const { template: fetchedTemplate } = await response.json()
         setTemplate(fetchedTemplate)
         // Initialize form data with default values
-        const initialData: Record<string, string | number | boolean> = {}
+        const initialData: Record<string, string | number | boolean> = {
+          feedback_for: 'None' // Default value for the feedback_for field
+        }
         fetchedTemplate.fields.forEach((field: FormField) => {
           if (field.type === 'checkbox') {
             initialData[field.id] = false
@@ -139,6 +141,18 @@ export default function SubmitFeedback() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className={`p-6 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
           <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                This feedback is for
+              </label>
+              <input
+                type="text"
+                value={formData.feedback_for as string || ''}
+                onChange={(e) => handleFieldChange('feedback_for', e.target.value)}
+                className={`w-full px-3 py-2 rounded-lg border ${isDark ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-300 text-gray-900'}`}
+                placeholder="Enter what this feedback is for..."
+              />
+            </div>
             {template.fields.map((field: FormField) => (
               <div key={field.id}>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

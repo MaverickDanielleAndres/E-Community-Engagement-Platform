@@ -6,7 +6,7 @@ import { useSession, signOut } from 'next-auth/react'
 import { useTheme } from '@/components/ThemeContext'
 import { useToast } from '@/components/ToastContext'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bell, Search, User, LogOut, Settings, ChevronDown, PlusSquare, FileText, RotateCcw } from 'lucide-react'
+import { Bell, User, LogOut, Settings, ChevronDown, PlusSquare, FileText, RotateCcw } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Notification } from '@/types/notification'
@@ -18,7 +18,7 @@ export function UserHeader() {
   const { isDark, toggleTheme } = useTheme()
   const { showToast } = useToast()
   const router = useRouter()
-  const [searchQuery, setSearchQuery] = useState('')
+  // Removed searchQuery state and related
   const [userImage, setUserImage] = useState<string>('')
   const [communityLogo, setCommunityLogo] = useState('')
 
@@ -49,12 +49,7 @@ export function UserHeader() {
     fetchUserData()
   }, [session])
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (searchQuery.trim()) {
-      console.log('Searching for:', searchQuery)
-    }
-  }
+
 
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
@@ -192,23 +187,7 @@ export function UserHeader() {
             />
           )}
 
-          {/* Search */}
-          <form onSubmit={handleSearch} className="relative hidden md:block">
-            <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${
-              isDark ? 'text-slate-400' : 'text-slate-400'
-            }`} />
-            <input
-              type="text"
-              placeholder="Search polls, complaints..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={`pl-10 pr-4 py-2 w-64 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                isDark
-                  ? 'border-slate-700 bg-slate-800/50 text-white placeholder-slate-400'
-                  : 'border-slate-200 bg-white/50 text-slate-900 placeholder-slate-500'
-              }`}
-            />
-          </form>
+
 
           {/* Quick Actions */}
           <div className="hidden md:flex items-center space-x-2">

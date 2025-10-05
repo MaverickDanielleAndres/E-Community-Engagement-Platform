@@ -12,6 +12,8 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
+    const limit = parseInt(searchParams.get('limit') || '10')
+    const page = parseInt(searchParams.get('page') || '1')
 
     const supabase = getSupabaseServerClient()
 
@@ -40,23 +42,24 @@ export async function GET(request: NextRequest) {
         updated_at,
         user_email,
         resolution_message
-      `)
+      `, { count: 'exact' })
       .eq('community_id', (userRole as any).community_id)
       .eq('user_email', session.user.email)
       .order('created_at', { ascending: false })
+      .range((page - 1) * limit, page * limit - 1)
 
     if (status) {
       query = query.eq('status', status)
     }
 
-    const { data: complaints, error } = await query
+    const { data: complaints, error, count } = await query
 
     if (error) {
       console.error('Error fetching user complaints:', error)
       return NextResponse.json({ error: 'Failed to fetch complaints' }, { status: 500 })
     }
 
-    return NextResponse.json({ complaints: complaints || [] })
+    return NextResponse.json({ complaints: complaints || [], total: count || 0, page, limit })
   } catch (error) {
     console.error('Error in user complaints API:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

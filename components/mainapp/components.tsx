@@ -463,7 +463,7 @@ export function ConfirmDialog({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+          className="fixed inset-0 backdrop-blur-md bg-black/20 transition-opacity"
           onClick={onClose}
         />
 

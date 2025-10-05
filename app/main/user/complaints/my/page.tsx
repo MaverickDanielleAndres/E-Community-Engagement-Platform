@@ -2,8 +2,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { DataTable, ConfirmDialog } from '@/components/mainapp/components'
-import { MessageSquareWarning, Calendar, TrashIcon } from 'lucide-react'
+import { DataTable } from '@/components/mainapp/components'
+import { MessageSquareWarning, Calendar } from 'lucide-react'
 import { ArrowPathIcon } from '@heroicons/react/24/outline'
 import { useTheme } from '@/components/ThemeContext'
 import { refreshHeaderAndSidebar } from '@/components/utils/refresh'
@@ -21,48 +21,42 @@ export default function MyComplaints() {
   const { isDark } = useTheme()
   const [complaints, setComplaints] = useState<Complaint[]>([])
   const [loading, setLoading] = useState(true)
-  const [confirmDelete, setConfirmDelete] = useState<{ id: string; title: string } | null>(null)
+  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
+  const limit = 10
+
+  const fetchComplaints = async (pageNumber: number) => {
+    setLoading(true)
+    try {
+      const response = await fetch(`/api/user/complaints?my=true&page=${pageNumber}&limit=${limit}`)
+      if (response.ok) {
+        const data = await response.json()
+        setComplaints(data.complaints || [])
+        setTotal(data.total || 0)
+        setPage(data.page || 1)
+      }
+    } catch (error) {
+      console.error('Failed to fetch complaints:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const fetchComplaints = async () => {
-      try {
-        const response = await fetch('/api/complaints?my=true')
-        if (response.ok) {
-          const data = await response.json()
-          setComplaints(data.complaints || [])
-        }
-      } catch (error) {
-        console.error('Failed to fetch complaints:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchComplaints()
-  }, [])
+    fetchComplaints(page)
+  }, [page])
 
   // Listen for sidebar refresh flag to refresh complaints list automatically
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'sidebarRefresh' && e.newValue === 'true') {
         localStorage.removeItem('sidebarRefresh')
-        const fetchComplaints = async () => {
-          try {
-            const response = await fetch('/api/complaints?my=true')
-            if (response.ok) {
-              const data = await response.json()
-              setComplaints(data.complaints || [])
-            }
-          } catch (error) {
-            console.error('Failed to fetch complaints:', error)
-          }
-        }
-        fetchComplaints()
+        fetchComplaints(page)
       }
     }
     window.addEventListener('storage', handleStorageChange)
     return () => window.removeEventListener('storage', handleStorageChange)
-  }, [])
+  }, [page])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -70,25 +64,6 @@ export default function MyComplaints() {
       case 'in-progress': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
       case 'resolved': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-    }
-  }
-
-  const handleDeleteComplaint = async (complaintId: string) => {
-    try {
-      const response = await fetch(`/api/complaints/${complaintId}`, {
-        method: 'DELETE',
-      })
-
-      if (response.ok) {
-        setComplaints(complaints.filter(c => c.id !== complaintId))
-        setConfirmDelete(null)
-        // Trigger sidebar refresh
-        localStorage.setItem('sidebarRefresh', 'true')
-      } else {
-        console.error('Failed to delete complaint')
-      }
-    } catch (error) {
-      console.error('Failed to delete complaint:', error)
     }
   }
 
@@ -130,53 +105,19 @@ export default function MyComplaints() {
           {new Date(value).toLocaleDateString()}
         </div>
       )
-    },
-    {
-      key: 'id' as const,
-      header: 'Actions',
-      render: (value: string, row: Complaint) => (
-        <button
-          onClick={() => setConfirmDelete({ id: value, title: row.title })}
-          className="p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200"
-          title="Delete complaint"
-        >
-          <TrashIcon className="w-4 h-4" />
-        </button>
-      )
     }
   ]
 
   const refreshComplaints = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch('/api/complaints?my=true')
-      if (response.ok) {
-        const data = await response.json()
-        setComplaints(data.complaints || [])
-      }
-    } catch (error) {
-      console.error('Failed to fetch complaints:', error)
-    } finally {
-      setLoading(false)
-    }
+    fetchComplaints(page)
     // Refresh header and sidebar data
     refreshHeaderAndSidebar()
   }
 
+  const totalPages = Math.ceil(total / limit)
+
   return (
     <div className="space-y-6">
-      {/* Delete Confirmation Dialog */}
-      {confirmDelete && (
-        <ConfirmDialog
-          isOpen={true}
-          onClose={() => setConfirmDelete(null)}
-          title="Delete Complaint"
-          description={`Are you sure you want to delete the complaint "${confirmDelete.title}"? This action cannot be undone.`}
-          onConfirm={() => handleDeleteComplaint(confirmDelete.id)}
-          variant="danger"
-        />
-      )}
-
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">
@@ -208,6 +149,25 @@ export default function MyComplaints() {
           emptyMessage="You haven't submitted any complaints yet"
         />
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex justify-center space-x-2 mt-4">
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+            <button
+              key={pageNum}
+              onClick={() => setPage(pageNum)}
+              disabled={loading || pageNum === page}
+              className={`px-3 py-1 rounded-md border ${
+                pageNum === page
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white text-blue-600 border-blue-600 hover:bg-blue-100'
+              }`}
+            >
+              {pageNum}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

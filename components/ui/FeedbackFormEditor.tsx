@@ -37,48 +37,18 @@ export default function FeedbackFormEditor() {
 
   const fetchTemplate = async () => {
     try {
-      const response = await fetch('/api/admin/feedback-form')
-      if (response.ok) {
-        const data = await response.json()
-        setTemplate(data.template)
-        setOriginalTemplate(data.template)
+      const res = await fetch('/api/admin/feedback-form')
+      if (res.ok) {
+        const { template: fetchedTemplate } = await res.json()
+        setTemplate(fetchedTemplate)
+        setOriginalTemplate(fetchedTemplate)
       } else {
-        setToast({ message: 'Failed to load form template', type: 'error' })
+        console.error('Failed to fetch template')
       }
     } catch (error) {
-      console.error('Failed to fetch template:', error)
-      setToast({ message: 'Failed to load form template', type: 'error' })
+      console.error('Error fetching template:', error)
     } finally {
       setLoading(false)
-    }
-  }
-
-  const saveTemplate = async () => {
-    if (!template) return
-
-    setSaving(true)
-    try {
-      const response = await fetch('/api/admin/feedback-form', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(template),
-      })
-
-      if (response.ok) {
-        setOriginalTemplate(template)
-        setHasUnsavedChanges(false)
-        setToast({ message: 'Form template saved successfully', type: 'success' })
-      } else {
-        const error = await response.json()
-        setToast({ message: error.error || 'Failed to save template', type: 'error' })
-      }
-    } catch (error) {
-      console.error('Failed to save template:', error)
-      setToast({ message: 'Failed to save template', type: 'error' })
-    } finally {
-      setSaving(false)
     }
   }
 
@@ -90,18 +60,8 @@ export default function FeedbackFormEditor() {
       type,
       label: getDefaultLabel(type),
       required: false,
-      ...(type === 'rating' && {
-        options: {
-          max: 5,
-          labels: ['Very Poor', 'Poor', 'Average', 'Good', 'Excellent'],
-          emojis: ['😡', '😞', '😐', '😊', '😄']
-        }
-      }),
-      ...(type === 'select' && {
-        options: {
-          choices: ['Option 1', 'Option 2', 'Option 3']
-        }
-      })
+      placeholder: type === 'text' || type === 'textarea' ? 'Enter your response...' : undefined,
+      options: type === 'rating' ? { max: 5, emojis: ['⭐', '⭐', '⭐', '⭐', '⭐'], labels: [] } : undefined
     }
 
     setTemplate({
@@ -111,23 +71,12 @@ export default function FeedbackFormEditor() {
     setExpandedFields(prev => new Set([...prev, newField.id]))
   }, [template])
 
-  const updateField = useCallback((fieldId: string, updates: Partial<FormField>) => {
-    if (!template) return
-
-    setTemplate({
-      ...template,
-      fields: template.fields.map(field =>
-        field.id === fieldId ? { ...field, ...updates } : field
-      )
-    })
-  }, [template])
-
   const removeField = useCallback((fieldId: string) => {
     if (!template) return
 
     setTemplate({
       ...template,
-      fields: template.fields.filter(field => field.id !== fieldId)
+      fields: template.fields.filter(f => f.id !== fieldId)
     })
     setExpandedFields(prev => {
       const newSet = new Set(prev)
@@ -135,6 +84,44 @@ export default function FeedbackFormEditor() {
       return newSet
     })
   }, [template])
+
+  const updateField = useCallback((fieldId: string, updates: Partial<FormField>) => {
+    if (!template) return
+
+    setTemplate({
+      ...template,
+      fields: template.fields.map(f =>
+        f.id === fieldId ? { ...f, ...updates } : f
+      )
+    })
+  }, [template])
+
+  const saveTemplate = async () => {
+    if (!template) return
+
+    setSaving(true)
+    try {
+      const response = await fetch('/api/admin/feedback-form', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ template })
+      })
+
+      if (response.ok) {
+        setOriginalTemplate(template)
+        setHasUnsavedChanges(false)
+        setToast({ message: 'Form template saved successfully!', type: 'success' })
+      } else {
+        const error = await response.json()
+        setToast({ message: error.error || 'Failed to save template', type: 'error' })
+      }
+    } catch (error) {
+      console.error('Error saving template:', error)
+      setToast({ message: 'Error saving template', type: 'error' })
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const duplicateField = useCallback((fieldId: string) => {
     if (!template) return
@@ -474,11 +461,11 @@ export default function FeedbackFormEditor() {
 
   const renderPreview = () => (
     <div className={`rounded-xl border ${
-      isDark ? 'border-slate-600 bg-slate-900' : 'border-slate-200 bg-white'
+      isDark ? 'border-slate-600 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-900'
     }`}>
       <div className="p-6 border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+          <h3 className="text-lg font-semibold text-white">
             Live Preview
           </h3>
           <div className="flex items-center space-x-2">
@@ -511,92 +498,95 @@ export default function FeedbackFormEditor() {
       <div className={`p-6 ${previewMode === 'mobile' ? 'max-w-sm mx-auto' : ''}`}>
         <div className="space-y-6">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+            <h2 className="text-2xl font-bold text-white mb-2">
               {template?.title}
             </h2>
-            <p className="text-slate-900 dark:text-white">
+            <p className="text-white">
               {template?.subtitle}
             </p>
           </div>
 
           <form className="space-y-6">
-            {template?.fields.map((field) => (
-              <div key={field.id} className="space-y-2">
-                <label className="block text-sm font-medium text-slate-900 dark:text-white">
-                  {field.label} {field.required && <span className="text-red-500">*</span>}
-                </label>
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-white">
+              This feedback is for:
+            </label>
+            <input
+              type="text"
+              value="None"
+              disabled
+              className={`w-full px-3 py-2 border rounded-lg transition-colors disabled:opacity-100 ${
+                isDark
+                  ? 'bg-slate-800 border-slate-600 !text-white focus:border-blue-500'
+                  : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
+              }`}
+            />
+          </div>
+          {template?.fields.map((field) => (
+            <div key={field.id} className="space-y-2">
+              <label className="block text-sm font-medium text-white">
+                {field.label} {field.required && <span className="text-red-500">*</span>}
+              </label>
 
-                {field.type === 'rating' && (
-                  <div className="space-y-4">
-                    <div className="flex justify-center space-x-4">
-                      {Array.from({ length: field.options?.max || 5 }, (_, i) => i + 1).map((rating) => (
-                        <div key={rating} className="text-center cursor-pointer hover:scale-110 transition-transform">
-                          <div className="text-3xl mb-1">
-                            {field.options?.emojis?.[rating - 1] || '⭐'}
-                          </div>
-                          <div className={`text-xs ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                            {field.options?.labels?.[rating - 1] || rating.toString()}
-                          </div>
+              {field.type === 'rating' && (
+                <div className="space-y-4">
+                  <div className="flex justify-center space-x-4">
+                    {Array.from({ length: field.options?.max || 5 }, (_, i) => i + 1).map((rating) => (
+                      <div key={rating} className="text-center cursor-pointer hover:scale-110 transition-transform">
+                        <div className="text-3xl mb-1">
+                          {field.options?.emojis?.[rating - 1] || '⭐'}
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {field.type === 'textarea' && (
-                  <textarea
-                    placeholder={field.placeholder}
-                    rows={4}
-                    className={`w-full px-3 py-2 border rounded-lg transition-colors ${
-                      isDark
-                        ? 'bg-slate-800 border-slate-600 text-white focus:border-blue-500'
-                        : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
-                    }`}
-                    disabled
-                  />
-                )}
-
-                {field.type === 'text' && (
-                  <input
-                    type="text"
-                    placeholder={field.placeholder}
-                    className={`w-full px-3 py-2 border rounded-lg transition-colors ${
-                      isDark
-                        ? 'bg-slate-800 border-slate-600 text-white focus:border-blue-500'
-                        : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
-                    }`}
-                    disabled
-                  />
-                )}
-
-                {field.type === 'select' && (
-                  <select
-                    className={`w-full px-3 py-2 border rounded-lg transition-colors ${
-                      isDark
-                        ? 'bg-slate-800 border-slate-600 text-white focus:border-blue-500'
-                        : 'bg-white border-slate-300 text-slate-900 focus:border-blue-500'
-                    }`}
-                    disabled
-                  >
-                    <option>Select an option...</option>
-                    {field.options?.choices?.map((choice, idx) => (
-                      <option key={idx} value={choice}>{choice}</option>
+                        <div className="text-xs text-white">
+                          {field.options?.labels?.[rating - 1] || rating.toString()}
+                        </div>
+                      </div>
                     ))}
-                  </select>
-                )}
+                  </div>
+                </div>
+              )}
 
-                {field.type === 'checkbox' && (
-                  <label className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600"
-                      disabled
-                    />
-                    <span className="text-sm text-slate-900 dark:text-white">
-                      {field.label}
-                    </span>
-                  </label>
-                )}
+              {field.type === 'textarea' && (
+                <textarea
+                  placeholder={field.placeholder}
+                  rows={4}
+                  className={`w-full px-3 py-2 border rounded-lg transition-colors bg-slate-800 border-slate-600 text-white focus:border-blue-500`}
+                  disabled
+                />
+              )}
+
+              {field.type === 'text' && (
+                <input
+                  type="text"
+                  placeholder={field.placeholder}
+                  className={`w-full px-3 py-2 border rounded-lg transition-colors bg-slate-800 border-slate-600 text-white focus:border-blue-500`}
+                  disabled
+                />
+              )}
+
+              {field.type === 'select' && (
+                <select
+                  className="w-full px-3 py-2 border rounded-lg transition-colors bg-slate-800 border-slate-600 text-white focus:border-blue-500"
+                  disabled
+                >
+                  <option>Select an option...</option>
+                  {field.options?.choices?.map((choice, idx) => (
+                    <option key={idx} value={choice}>{choice}</option>
+                  ))}
+                </select>
+              )}
+
+              {field.type === 'checkbox' && (
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600"
+                    disabled
+                  />
+                  <span className="text-sm text-white">
+                    {field.label}
+                  </span>
+                </label>
+              )}
               </div>
             ))}
 

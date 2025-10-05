@@ -7,7 +7,7 @@ import { ChevronUp, ChevronDown, Search, Filter } from 'lucide-react'
 import { useTheme } from '@/components/ThemeContext'
 
 interface DataTableColumn<T> {
-  key: keyof T
+  key: keyof T | string
   header: string
   render?: (value: any, row: T, index: number) => React.ReactNode
   sortable?: boolean
@@ -70,11 +70,11 @@ export function DataTable<T extends Record<string, any>>({
   const endIndex = startIndex + pageSize
   const paginatedData = pagination ? sortedData.slice(startIndex, endIndex) : sortedData
 
-  const handleSort = (column: keyof T) => {
+  const handleSort = (column: keyof T | string) => {
     if (sortColumn === column) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
     } else {
-      setSortColumn(column)
+      setSortColumn(column as keyof T)
       setSortDirection('asc')
     }
   }
@@ -183,9 +183,9 @@ export function DataTable<T extends Record<string, any>>({
                   transition={{ duration: 0.2, delay: index * 0.03 }}
                   className={`
                     transition-colors duration-200
-                    ${isDark 
-                      ? 'hover:bg-slate-700/50 text-slate-200' 
-                      : 'hover:bg-slate-50 text-slate-900'
+                    ${isDark
+                      ? 'bg-slate-700 hover:bg-slate-600 text-white'
+                      : 'bg-white hover:bg-slate-50 text-slate-900'
                     }
                   `}
                 >

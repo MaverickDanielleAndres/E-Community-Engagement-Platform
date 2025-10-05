@@ -17,7 +17,6 @@ export function AdminLayoutContent({ children }: { children: React.ReactNode }) 
 
       <div className={`${isCollapsed ? 'ml-[80px]' : 'ml-[320px]'} transition-all duration-300`}>
         <AdminHeader />
-
         <main className="p-6">
           <div className="max-w-7xl mx-auto">
             {children}

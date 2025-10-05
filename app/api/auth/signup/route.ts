@@ -15,7 +15,8 @@ const signupSchema = z.object({
   password: z.string()
     .min(8, 'Password must be at least 8 characters')
     .regex(/(?=.*[0-9])/, 'Password must contain at least one number')
-    .regex(/(?=.*[!@#$%^&*])/, 'Password must contain at least one symbol')
+    .regex(/(?=.*[!@#$%^&*])/, 'Password must contain at least one symbol'),
+  communityCode: z.string().min(1, 'Community code is required')
 })
 
 export async function POST(request: NextRequest) {
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
       name: validatedData.email.split('@')[0], // Use email prefix as temporary name
       email: validatedData.email,
       hashed_password: await bcrypt.hash(validatedData.password, 12),
-      community_code: null,
+      community_code: validatedData.communityCode.toUpperCase(),
       role: 'Guest',
       verification_code: verificationCode,
       expires_at: expiresAt.toISOString()

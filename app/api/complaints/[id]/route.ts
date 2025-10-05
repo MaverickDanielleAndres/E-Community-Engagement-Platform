@@ -15,15 +15,34 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession()
-    
+    const session = await getServerSession(authOptions)
+
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { id } = params
 
-    // Fetch complaint with user details
+    // Get user and their community
+    const { data: user } = await supabase
+      .from('users')
+      .select(`
+        id,
+        community_members(
+          community_id,
+          role
+        )
+      `)
+      .eq('email', session.user.email)
+      .single()
+
+    if (!user || !user.community_members?.[0]) {
+      return NextResponse.json({ error: 'Community membership required' }, { status: 403 })
+    }
+
+    const communityId = user.community_members[0].community_id
+
+    // Fetch complaint with user details, ensuring it belongs to user's community
     const { data: complaint, error } = await supabase
       .from('complaints')
       .select(`
@@ -37,16 +56,52 @@ export async function GET(
         created_at,
         updated_at,
         resolution_message,
+        media_urls,
         users(name, email)
       `)
       .eq('id', id)
+      .eq('community_id', communityId)
       .single()
 
     if (error || !complaint) {
       return NextResponse.json({ error: 'Complaint not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ complaint })
+    // Generate signed URLs for media files if they exist
+    let signedMediaUrls = []
+    if (complaint.media_urls && complaint.media_urls.length > 0) {
+      signedMediaUrls = await Promise.all(
+        complaint.media_urls.map(async (url: string) => {
+          try {
+            // Extract the file path from the public URL
+            // URL format: https://[project].supabase.co/storage/v1/object/public/complaint-media/[path]
+            const urlObj = new URL(url)
+            const pathParts = urlObj.pathname.split('/')
+            // Find the index of 'complaint-media' and take everything after it
+            const mediaIndex = pathParts.findIndex(part => part === 'complaint-media')
+            const fileName = pathParts.slice(mediaIndex + 1).join('/') // Get the file path after 'complaint-media/'
+
+            // Generate signed URL that expires in 1 hour
+            const { data: signedUrlData } = await supabase.storage
+              .from('complaint-media')
+              .createSignedUrl(fileName, 3600) // 1 hour expiry
+
+            return signedUrlData?.signedUrl || url
+          } catch (error) {
+            console.error('Error generating signed URL for', url, error)
+            return url // Fallback to original URL
+          }
+        })
+      )
+    }
+
+    // Return complaint with signed media URLs
+    const complaintWithSignedUrls = {
+      ...complaint,
+      media_urls: signedMediaUrls.length > 0 ? signedMediaUrls : complaint.media_urls
+    }
+
+    return NextResponse.json({ complaint: complaintWithSignedUrls })
   } catch (error) {
     console.error('Server error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -219,6 +274,7 @@ export async function PUT(
         created_at,
         updated_at,
         resolution_message,
+        media_urls,
         users(name, email)
       `)
       .single()
@@ -226,6 +282,40 @@ export async function PUT(
     if (error) {
       console.error('Update error:', error)
       return NextResponse.json({ error: 'Failed to update complaint' }, { status: 500 })
+    }
+
+    // Generate signed URLs for media files if they exist
+    let signedMediaUrls = []
+    if (updatedComplaint.media_urls && updatedComplaint.media_urls.length > 0) {
+      signedMediaUrls = await Promise.all(
+        updatedComplaint.media_urls.map(async (url: string) => {
+          try {
+            // Extract the file path from the public URL
+            // URL format: https://[project].supabase.co/storage/v1/object/public/complaint-media/[path]
+            const urlObj = new URL(url)
+            const pathParts = urlObj.pathname.split('/')
+            // Find the index of 'complaint-media' and take everything after it
+            const mediaIndex = pathParts.findIndex(part => part === 'complaint-media')
+            const fileName = pathParts.slice(mediaIndex + 1).join('/') // Get the file path after 'complaint-media/'
+
+            // Generate signed URL that expires in 1 hour
+            const { data: signedUrlData } = await supabase.storage
+              .from('complaint-media')
+              .createSignedUrl(fileName, 3600) // 1 hour expiry
+
+            return signedUrlData?.signedUrl || url
+          } catch (error) {
+            console.error('Error generating signed URL for', url, error)
+            return url // Fallback to original URL
+          }
+        })
+      )
+    }
+
+    // Return complaint with signed media URLs
+    const updatedComplaintWithSignedUrls = {
+      ...updatedComplaint,
+      media_urls: signedMediaUrls.length > 0 ? signedMediaUrls : updatedComplaint.media_urls
     }
 
     // Log audit trail
@@ -253,7 +343,7 @@ export async function PUT(
 
     return NextResponse.json({
       message: 'Complaint updated successfully',
-      complaint: updatedComplaint
+      complaint: updatedComplaintWithSignedUrls
     })
   } catch (error) {
     console.error('Server error:', error)

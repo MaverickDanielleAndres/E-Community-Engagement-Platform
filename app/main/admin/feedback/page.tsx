@@ -1,9 +1,10 @@
-// @/app/main/admin/feedback/page.tsx - Updated with form editor
+// @/app/main/admin/feedback/page.tsx - Updated with form editor and pagination
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { DataTable, EmptyState, ChartCard, SearchInput } from '@/components/mainapp/components'
-import { Smile, Star, User, Calendar, TrendingUp, Settings, Edit, Eye, RefreshCw } from 'lucide-react'
+import { Smile, Star, User, Calendar, TrendingUp, Settings, Edit, Eye, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
 import { useTheme } from '@/components/ThemeContext'
 import { Toast } from '@/components/Toast'
@@ -27,13 +28,20 @@ export default function AdminFeedback() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
   const { isDark } = useTheme()
 
-  const fetchFeedback = async () => {
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize] = useState(10)
+  const [totalFeedback, setTotalFeedback] = useState(0)
+
+  const fetchFeedback = async (page = 1) => {
     try {
       setLoading(true)
-      const response = await fetch('/api/feedback')
+      const response = await fetch(`/api/feedback?page=${page}&limit=${pageSize}`)
       if (response.ok) {
         const data = await response.json()
         setFeedback(data.feedback || [])
+        setTotalFeedback(data.total || 0)
+        setCurrentPage(data.page || 1)
       } else {
         setToast({ message: 'Failed to load feedback', type: 'error' })
       }
@@ -47,13 +55,21 @@ export default function AdminFeedback() {
 
   useEffect(() => {
     if (activeTab === 'responses') {
-      fetchFeedback()
+      fetchFeedback(currentPage)
     }
-  }, [activeTab])
+  }, [activeTab, currentPage])
 
   const getRatingStats = () => {
+    const ratingLabels = {
+      1: 'Poor',
+      2: 'Fair',
+      3: 'Good',
+      4: 'Very Good',
+      5: 'Excellent'
+    }
+
     const ratings = [1, 2, 3, 4, 5].map(rating => ({
-      rating: `${rating} Star${rating !== 1 ? 's' : ''}`,
+      rating: ratingLabels[rating as keyof typeof ratingLabels],
       count: feedback.filter(f => f.rating === rating).length,
       percentage: feedback.length > 0 ? ((feedback.filter(f => f.rating === rating).length / feedback.length) * 100).toFixed(1) : '0'
     }))
@@ -63,7 +79,7 @@ export default function AdminFeedback() {
 
   const getMonthlyTrend = () => {
     const monthlyData: { [key: string]: { total: number; sum: number } } = {}
-    
+
     feedback.forEach(f => {
       const month = new Date(f.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
       if (!monthlyData[month]) {
@@ -93,7 +109,7 @@ export default function AdminFeedback() {
     </div>
   )
 
-  const columns = [
+  const columns: any = [
     {
       key: 'rating' as const,
       header: 'Rating',
@@ -139,6 +155,20 @@ export default function AdminFeedback() {
           {new Date(value).toLocaleDateString()}
         </div>
       )
+    },
+    {
+      key: 'action',
+      header: 'Action',
+      sortable: false,
+      render: (_: any, row: Feedback) => (
+        <Link
+          href={`/main/admin/feedback/${row.id}`}
+          className="inline-flex items-center px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
+        >
+          <Eye className="w-4 h-4 mr-1" />
+          View
+        </Link>
+      )
     }
   ]
 
@@ -147,7 +177,7 @@ export default function AdminFeedback() {
     f.users?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const averageRating = feedback.length > 0 
+  const averageRating = feedback.length > 0
     ? (feedback.reduce((sum, f) => sum + f.rating, 0) / feedback.length).toFixed(1)
     : '0'
 
@@ -164,6 +194,21 @@ export default function AdminFeedback() {
       {label}
     </button>
   )
+
+  // Pagination controls
+  const totalPages = Math.ceil(totalFeedback / pageSize)
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1)
+    }
+  }
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -186,11 +231,11 @@ export default function AdminFeedback() {
             Manage feedback forms and view community responses
           </p>
         </div>
-        
+
         <div className="flex items-center space-x-2 mt-4 sm:mt-0">
           {activeTab === 'responses' && (
             <button
-              onClick={fetchFeedback}
+              onClick={() => fetchFeedback(currentPage)}
               disabled={loading}
               className={`p-2.5 rounded-xl border transition-all duration-200
                 focus:outline-none focus:ring-2 focus:ring-blue-500
@@ -229,7 +274,7 @@ export default function AdminFeedback() {
                 <TrendingUp className="w-8 h-8 text-blue-500 mr-3" />
                 <div>
                   <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Total Feedback</p>
-                  <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{feedback.length}</p>
+                  <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{totalFeedback}</p>
                 </div>
               </div>
             </div>
@@ -259,54 +304,6 @@ export default function AdminFeedback() {
             </div>
           </div>
 
-          {/* Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ChartCard title="Rating Distribution">
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={getRatingStats()}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#374151" : "#e5e7eb"} />
-                  <XAxis dataKey="rating" stroke={isDark ? "#9CA3AF" : "#6B7280"} />
-                  <YAxis stroke={isDark ? "#9CA3AF" : "#6B7280"} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: isDark ? '#1F2937' : '#FFFFFF', 
-                      border: 'none', 
-                      borderRadius: '8px',
-                      color: isDark ? '#F9FAFB' : '#111827'
-                    }} 
-                    formatter={(value: any, name: string) => [`${value} responses (${getRatingStats().find(r => r.count === value)?.percentage}%)`, 'Count']}
-                  />
-                  <Bar dataKey="count" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartCard>
-
-            <ChartCard title="Monthly Rating Trend">
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={getMonthlyTrend()}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#374151" : "#e5e7eb"} />
-                  <XAxis dataKey="month" stroke={isDark ? "#9CA3AF" : "#6B7280"} />
-                  <YAxis stroke={isDark ? "#9CA3AF" : "#6B7280"} domain={[1, 5]} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: isDark ? '#1F2937' : '#FFFFFF', 
-                      border: 'none', 
-                      borderRadius: '8px',
-                      color: isDark ? '#F9FAFB' : '#111827'
-                    }} 
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="average" 
-                    stroke="#10B981" 
-                    strokeWidth={3}
-                    dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartCard>
-          </div>
-
           {/* Search */}
           <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
             <SearchInput
@@ -334,6 +331,98 @@ export default function AdminFeedback() {
               />
             )}
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between">
+              <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalFeedback)} of {totalFeedback} feedback entries
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={handlePrevPage}
+                  disabled={currentPage === 1}
+                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200
+                    ${currentPage === 1
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-slate-700 dark:text-gray-500'
+                      : `${isDark ? 'bg-slate-700 text-gray-300 hover:bg-slate-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`
+                    }
+                  `}
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" />
+                  Previous
+                </button>
+
+                <span className={`px-3 py-2 text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Page {currentPage} of {totalPages}
+                </span>
+
+                <button
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages}
+                  className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200
+                    ${currentPage === totalPages
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-slate-700 dark:text-gray-500'
+                      : `${isDark ? 'bg-slate-700 text-gray-300 hover:bg-slate-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`
+                    }
+                  `}
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ChartCard title="Rating Distribution">
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={getRatingStats()}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#374151" : "#e5e7eb"} />
+                  <XAxis dataKey="rating" stroke={isDark ? "#9CA3AF" : "#6B7280"} />
+                  <YAxis stroke={isDark ? "#9CA3AF" : "#6B7280"} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: isDark ? '#F9FAFB' : '#111827'
+                    }}
+                    formatter={(value: any, name: string) => [`${value} responses (${getRatingStats().find(r => r.count === value)?.percentage}%)`, 'Count']}
+                  />
+                  <Bar dataKey="count" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="Monthly Rating Trend">
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={getMonthlyTrend()}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "#374151" : "#e5e7eb"} />
+                  <XAxis dataKey="month" stroke={isDark ? "#9CA3AF" : "#6B7280"} />
+                  <YAxis stroke={isDark ? "#9CA3AF" : "#6B7280"} domain={[1, 5]} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: isDark ? '#F9FAFB' : '#111827'
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="average"
+                    stroke="#10B981"
+                    strokeWidth={3}
+                    dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+          </div>
+
+          
         </>
       ) : (
         <FeedbackFormEditor />

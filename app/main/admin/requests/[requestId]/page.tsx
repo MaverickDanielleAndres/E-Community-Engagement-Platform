@@ -128,7 +128,7 @@ export default function ViewRequestPage() {
       if (response.ok && result.success) {
         setToast({ message: result.message, type: 'success' })
         setTimeout(() => {
-          router.push('/admin/requests')
+          router.push('/main/admin/requests')
         }, 2000)
       } else {
         setToast({ message: result.message || 'Action failed', type: 'error' })
@@ -233,12 +233,12 @@ export default function ViewRequestPage() {
       )}
 
       {/* Header */}
-      <div className="flex flex-col gap-4">
+      <div className={`flex flex-col gap-4 ${isDark ? 'bg-slate-900' : 'bg-white'} p-4 rounded-lg`}>
         <div className="flex items-center gap-4">
           <Button
             variant="outline"
-            onClick={() => router.push('/admin/requests')}
-            className="shrink-0"
+            onClick={() => router.push('/main/admin/requests')}
+            className={`shrink-0 ${isDark ? 'bg-slate-800 text-white border border-slate-700 hover:bg-slate-700' : ''}`}
           >
             <ArrowLeftIcon className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Back to Requests</span>
@@ -253,45 +253,45 @@ export default function ViewRequestPage() {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <span className={`px-3 py-1 rounded-full text-xs font-medium w-fit ${
-            request.status === 'pending'
-              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-              : request.status === 'approved'
-              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-              : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-          }`}>
-            {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-          </span>
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <Button
-              variant="outline"
-              onClick={() => confirmAction('approve')}
-              className="text-green-600 hover:text-green-700 border-green-200 hover:border-green-300 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:border-green-800 dark:hover:bg-green-900/30 flex-1 sm:flex-none"
-              disabled={request.status === 'approved'}
-            >
-              <CheckIcon className="w-4 h-4 mr-2" />
-              Approve
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => confirmAction('reject')}
-              className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:border-red-800 dark:hover:bg-red-900/30 flex-1 sm:flex-none"
-              disabled={request.status === 'rejected'}
-            >
-              <XMarkIcon className="w-4 h-4 mr-2" />
-              Reject
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => confirmAction('delete')}
-              className="text-gray-600 hover:text-gray-700 border-gray-200 hover:border-gray-300 bg-gray-50 hover:bg-gray-100 dark:bg-gray-900/20 dark:border-gray-800 dark:hover:bg-gray-900/30 flex-1 sm:flex-none"
-            >
-              <TrashIcon className="w-4 h-4 mr-2" />
-              Delete
-            </Button>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <span className={`px-3 py-1 rounded-full text-xs font-medium w-fit ${
+              request.status === 'pending'
+                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                : request.status === 'approved'
+                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+            }`}>
+              {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+            </span>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <Button
+                variant="outline"
+                onClick={() => confirmAction('approve')}
+                className={`text-white hover:text-black border-green-600 hover:border-green-700 ${isDark ? 'bg-green-900/80 dark:border-green-800 dark:hover:bg-green-900/90' : 'bg-green-600 hover:bg-green-700'} flex-1 sm:flex-none`}
+                disabled={request.status === 'approved'}
+              >
+                <CheckIcon className="w-4 h-4 mr-2" />
+                Approve
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => confirmAction('reject')}
+                className={`text-white hover:text-black border-red-600 hover:border-red-700 ${isDark ? 'bg-red-900/80 dark:border-red-800 dark:hover:bg-red-900/90' : 'bg-red-600 hover:bg-red-700'} flex-1 sm:flex-none`}
+                disabled={request.status === 'rejected'}
+              >
+                <XMarkIcon className="w-4 h-4 mr-2" />
+                Reject
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => confirmAction('delete')}
+                className={`text-white hover:text-black border-gray-600 hover:border-gray-700 ${isDark ? 'bg-gray-900/80 dark:border-gray-800 dark:hover:bg-gray-900/90' : 'bg-gray-600 hover:bg-gray-700'} flex-1 sm:flex-none`}
+              >
+                <TrashIcon className="w-4 h-4 mr-2" />
+                Delete
+              </Button>
+            </div>
           </div>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
@@ -302,7 +302,7 @@ export default function ViewRequestPage() {
           transition={{ duration: 0.6 }}
           className="lg:col-span-1"
         >
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-8 border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div className={`${isDark ? 'bg-slate-900' : 'bg-white'} rounded-2xl p-4 md:p-8 border ${isDark ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
             <h2 className={`text-lg font-semibold mb-6 flex items-center gap-2 ${isDark ? 'text-white' : 'text-black'}`}>
               <UserIcon className="w-5 h-5" />
               Personal Information
@@ -310,48 +310,48 @@ export default function ViewRequestPage() {
 
             <div className="space-y-4 md:space-y-6">
               <div>
-                <label className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 block">Full Name</label>
-                <p className="text-slate-900 dark:text-slate-100 font-medium">{request.full_name}</p>
+                <label className={`text-sm font-medium mb-1 block ${isDark ? 'text-white' : 'text-black'}`}>Full Name</label>
+                <p className={`${isDark ? 'text-white' : 'text-black'} font-medium`}>{request.full_name}</p>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 block">Email</label>
-                <p className="text-slate-900 dark:text-slate-100 font-medium break-all">{request.email}</p>
+                <label className={`text-sm font-medium mb-1 block ${isDark ? 'text-white' : 'text-black'}`}>Email</label>
+                <p className={`${isDark ? 'text-white' : 'text-black'} font-medium break-all`}>{request.email}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 block">Age</label>
-                  <p className="text-slate-900 dark:text-slate-100">{request.age} years old</p>
+                  <label className={`text-sm font-medium mb-1 block ${isDark ? 'text-white' : 'text-black'}`}>Age</label>
+                  <p className={`${isDark ? 'text-white' : 'text-black'}`}>{request.age} years old</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 block">Gender</label>
-                  <p className="text-slate-900 dark:text-slate-100">{request.gender}</p>
+                  <label className={`text-sm font-medium mb-1 block ${isDark ? 'text-white' : 'text-black'}`}>Gender</label>
+                  <p className={`${isDark ? 'text-white' : 'text-black'}`}>{request.gender}</p>
                 </div>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 block flex items-center gap-1">
+                <label className={`text-sm font-medium mb-1 block flex items-center gap-1 ${isDark ? 'text-white' : 'text-black'}`}>
                   <MapPinIcon className="w-4 h-4" />
                   Address
                 </label>
-                <p className="text-slate-900 dark:text-slate-100">{request.address}</p>
+                <p className={`${isDark ? 'text-white' : 'text-black'}`}>{request.address}</p>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 block flex items-center gap-1">
+                <label className={`text-sm font-medium mb-1 block flex items-center gap-1 ${isDark ? 'text-white' : 'text-black'}`}>
                   <DocumentIcon className="w-4 h-4" />
                   ID Number
                 </label>
-                <p className="text-slate-900 dark:text-slate-100 font-mono">{request.id_number}</p>
+                <p className={`${isDark ? 'text-white' : 'text-black'} font-mono`}>{request.id_number}</p>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1 block flex items-center gap-1">
+                <label className={`text-sm font-medium mb-1 block flex items-center gap-1 ${isDark ? 'text-white' : 'text-black'}`}>
                   <CalendarIcon className="w-4 h-4" />
                   Submitted
                 </label>
-                <p className="text-slate-900 dark:text-slate-100 text-sm">
+                <p className={`${isDark ? 'text-white' : 'text-black'} text-sm`}>
                   {new Date(request.created_at).toLocaleDateString()} at {new Date(request.created_at).toLocaleTimeString()}
                 </p>
               </div>
@@ -366,7 +366,7 @@ export default function ViewRequestPage() {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="lg:col-span-2"
         >
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 md:p-8 border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div className={`${isDark ? 'bg-slate-900' : 'bg-white'} rounded-2xl p-4 md:p-8 border ${isDark ? 'border-slate-700' : 'border-slate-200'} shadow-sm`}>
             <h2 className={`text-lg font-semibold mb-6 flex items-center gap-2 ${isDark ? 'text-white' : 'text-black'}`}>
               <EyeIcon className="w-5 h-5" />
               ID Documents
@@ -382,7 +382,7 @@ export default function ViewRequestPage() {
                   {brokenImages.front || !request.front_id_url ? (
                     <div className="aspect-video bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center border-2 border-dashed border-slate-300 dark:border-slate-600">
                       <DocumentIcon className="w-12 h-12 text-slate-400 dark:text-slate-500" />
-                      <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">Image not available</p>
+                      <p className={`text-sm mt-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Image not available</p>
                     </div>
                   ) : (
                     <div
@@ -412,7 +412,7 @@ export default function ViewRequestPage() {
                   {brokenImages.back || !request.back_id_url ? (
                     <div className="aspect-video bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center border-2 border-dashed border-slate-300 dark:border-slate-600">
                       <DocumentIcon className="w-12 h-12 text-slate-400 dark:text-slate-500" />
-                      <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">Image not available</p>
+                      <p className={`text-sm mt-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Image not available</p>
                     </div>
                   ) : (
                     <div

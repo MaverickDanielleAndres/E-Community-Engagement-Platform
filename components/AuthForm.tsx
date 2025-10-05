@@ -38,7 +38,8 @@ const signupSchema = z.object({
   password: z.string()
     .min(8, 'Password must be at least 8 characters')
     .regex(/(?=.*[0-9])/, 'Password must contain at least one number')
-    .regex(/(?=.*[!@#$%^&*])/, 'Password must contain at least one symbol')
+    .regex(/(?=.*[!@#$%^&*])/, 'Password must contain at least one symbol'),
+  communityCode: z.string().min(1, 'Community code is required').toUpperCase()
 })
 
 type LoginFormData = z.infer<typeof loginSchema>
@@ -131,13 +132,15 @@ export default function AuthForm({ type }: AuthFormProps) {
             setError('Please verify your email before signing in')
           } else if (result.error.includes('OAuth')) {
             setError('Please sign in with your OAuth provider')
+          } else if (result.error.includes('No user found')) {
+            setError('No account found with this email. Please sign up.')
           } else {
             setError('Invalid email or password')
           }
         } else {
           console.log('Login successful, getting session...')
           setToast({ message: 'Successfully signed in! Redirecting...', type: 'success' })
-          
+
           // Wait for session to be established, then redirect based on role and status
           setTimeout(async () => {
             try {
@@ -181,11 +184,26 @@ export default function AuthForm({ type }: AuthFormProps) {
       } else {
         // Signup flow
         console.log('Attempting signup for:', data.email)
-        
+
+        // Validate community code first
+        const codeValidationResponse = await fetch('/api/community/validate-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: data.communityCode }),
+        })
+
+        const codeValidationResult = await codeValidationResponse.json()
+
+        if (!codeValidationResponse.ok || !codeValidationResult.valid) {
+          setError('Invalid community code. Please check and try again.')
+          setIsLoading(false)
+          return
+        }
+
         // Check for duplicate email before signup
         const emailCheckResponse = await fetch(`/api/auth/check-email?email=${encodeURIComponent(data.email)}`)
         const { exists } = await emailCheckResponse.json()
-        
+
         if (exists) {
           setError('An account with this email already exists')
           setIsLoading(false)
@@ -205,7 +223,7 @@ export default function AuthForm({ type }: AuthFormProps) {
 
         if (response.ok && result.success) {
           setToast({ message: result.message, type: 'success' })
-          
+
           setTimeout(() => {
             router.push(`/verification?email=${encodeURIComponent(result.email)}`)
           }, 1500)
@@ -400,6 +418,18 @@ export default function AuthForm({ type }: AuthFormProps) {
                     </motion.div>
                   )}
                 </div>
+
+                <Input
+                  label="Community Code"
+                  type="text"
+                  {...register('communityCode')}
+                  error={errors.communityCode?.message?.toString()}
+                  placeholder="Enter community code"
+                  onChange={(e) => {
+                    // Convert to uppercase as user types
+                    e.target.value = e.target.value.toUpperCase()
+                  }}
+                />
               </>
             )}
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import { motion } from 'framer-motion'
@@ -17,21 +17,42 @@ import {
 } from '@heroicons/react/24/outline'
 
 export default function WaitingPage() {
-  const [status, setStatus] = useState<'pending' | 'approved' | 'rejected' | null>(null)
+  const [status, setStatus] = useState<'pending' | 'approved' | 'rejected' | 'deleted' | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isReminding, setIsReminding] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null)
+  const hasRedirectedRef = useRef(false)
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
   const router = useRouter()
   const { data: session } = useSession()
 
   const checkStatus = async () => {
+    // If already redirected, don't do anything
+    if (hasRedirectedRef.current) return
+
     try {
       const response = await fetch('/api/user/status')
       const result = await response.json()
 
       if (response.ok && result.success) {
+        if (result.status === 'deleted') {
+          hasRedirectedRef.current = true
+          // Clear the polling interval immediately
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current)
+            intervalRef.current = null
+          }
+          setToast({ message: 'No account found. Please sign up.', type: 'error' })
+          // Force immediate redirect and stop all activity
+          setTimeout(() => {
+            // Use router.push instead of window.location.href to avoid full reload
+            router.push('/auth/signup')
+          }, 100) // Small delay to show toast
+          return
+        }
+
         setStatus(result.status)
 
         if (result.status === 'rejected') {
@@ -118,15 +139,28 @@ export default function WaitingPage() {
     // Initial check
     checkStatus()
 
-    // Poll every 30 seconds
-    const interval = setInterval(checkStatus, 30000)
+    // Poll every 30 seconds only if not redirected
+    intervalRef.current = setInterval(() => {
+      if (!hasRedirectedRef.current) {
+        checkStatus()
+      }
+    }, 30000)
 
-    return () => clearInterval(interval)
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+      }
+    }
   }, [])
 
   const handleManualCheck = () => {
     setIsLoading(true)
     checkStatus()
+  }
+
+  // If already redirected, don't render anything
+  if (hasRedirectedRef.current) {
+    return null
   }
 
   if (isLoading && !status) {
@@ -180,6 +214,11 @@ export default function WaitingPage() {
                 <XCircleIcon className="w-8 h-8 sm:w-10 sm:h-10 text-red-600 dark:text-red-400" />
               </div>
             )}
+            {status === 'deleted' && (
+              <div className="w-full h-full bg-gray-100 dark:bg-gray-900/30 rounded-full flex items-center justify-center">
+                <XCircleIcon className="w-8 h-8 sm:w-10 sm:h-10 text-gray-600 dark:text-gray-400" />
+              </div>
+            )}
           </motion.div>
 
           {/* Title */}
@@ -187,6 +226,7 @@ export default function WaitingPage() {
             {status === 'pending' && 'Verification Pending'}
             {status === 'approved' && 'Account Approved!'}
             {status === 'rejected' && 'Verification Rejected'}
+            {status === 'deleted' && 'Account Not Found'}
           </h1>
 
           {/* Message */}
@@ -194,6 +234,7 @@ export default function WaitingPage() {
             {status === 'pending' && 'Your ID verification has been submitted and is being reviewed by our administrators. This usually takes 1-2 business days.'}
             {status === 'approved' && 'Congratulations! Your account has been approved. Click the button below to access your dashboard.'}
             {status === 'rejected' && 'Unfortunately, your verification was not approved. You will be redirected to sign up again.'}
+            {status === 'deleted' && 'No account found with this email. Redirecting to sign up...'}
           </p>
 
           {/* Action Buttons */}

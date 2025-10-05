@@ -153,7 +153,7 @@ export default function AdminRequestsPage() {
       key: 'full_name' as keyof VerificationRequest,
       header: 'Name',
       render: (value: any, row: VerificationRequest) => (
-        <div className={`font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+        <div className={`font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>
           {row.full_name}
         </div>
       )
@@ -162,7 +162,7 @@ export default function AdminRequestsPage() {
       key: 'email' as keyof VerificationRequest,
       header: 'Email',
       render: (value: any, row: VerificationRequest) => (
-        <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+        <div className={`text-sm ${isDark ? 'text-white' : 'text-slate-600'}`}>
           {row.email}
         </div>
       )
@@ -171,7 +171,7 @@ export default function AdminRequestsPage() {
       key: 'address' as keyof VerificationRequest,
       header: 'Address',
       render: (value: any, row: VerificationRequest) => (
-        <div className={`text-sm max-w-xs truncate ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+        <div className={`text-sm max-w-xs truncate ${isDark ? 'text-white' : 'text-slate-600'}`}>
           {row.address}
         </div>
       ),
@@ -181,7 +181,7 @@ export default function AdminRequestsPage() {
       key: 'created_at' as keyof VerificationRequest,
       header: 'Submitted',
       render: (value: any, row: VerificationRequest) => (
-        <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+        <div className={`text-sm ${isDark ? 'text-white' : 'text-slate-500'}`}>
           {new Date(row.created_at).toLocaleDateString()}
         </div>
       ),
@@ -192,9 +192,9 @@ export default function AdminRequestsPage() {
       header: 'Actions',
       render: (value: any, row: VerificationRequest) => (
         <div className="flex items-center gap-1 sm:gap-2">
-          <Link href={`/admin/requests/${row.id}`}>
-            <Button variant="outline" size="sm" className="p-2">
-              <EyeIcon className="w-4 h-4" />
+          <Link href={`/main/admin/requests/${row.id}`}>
+            <Button variant="outline" size="sm" className={`p-2 ${isDark ? 'text-white' : ''}`}>
+              <EyeIcon className={`w-4 h-4 ${isDark ? 'text-white' : ''}`} />
               <span className="sr-only">View</span>
             </Button>
           </Link>
@@ -202,27 +202,27 @@ export default function AdminRequestsPage() {
             variant="outline"
             size="sm"
             onClick={() => confirmAction(row.id, 'approve')}
-            className="text-green-600 hover:text-green-700 p-2"
+            className={`p-2 ${isDark ? 'text-white' : 'text-green-600 hover:text-green-700'}`}
           >
-            <CheckIcon className="w-4 h-4" />
+            <CheckIcon className={`w-4 h-4 ${isDark ? 'text-white' : ''}`} />
             <span className="sr-only">Approve</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => confirmAction(row.id, 'reject')}
-            className="text-red-600 hover:text-red-700 p-2"
+            className={`p-2 ${isDark ? 'text-white' : 'text-red-600 hover:text-red-700'}`}
           >
-            <XMarkIcon className="w-4 h-4" />
+            <XMarkIcon className={`w-4 h-4 ${isDark ? 'text-white' : ''}`} />
             <span className="sr-only">Reject</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => confirmAction(row.id, 'delete')}
-            className="text-gray-600 hover:text-gray-700 p-2"
+            className={`p-2 ${isDark ? 'text-white' : 'text-gray-600 hover:text-gray-700'}`}
           >
-            <TrashIcon className="w-4 h-4" />
+            <TrashIcon className={`w-4 h-4 ${isDark ? 'text-white' : ''}`} />
             <span className="sr-only">Delete</span>
           </Button>
         </div>
@@ -235,7 +235,7 @@ export default function AdminRequestsPage() {
       key: 'full_name' as keyof VerificationRequest,
       header: 'Name',
       render: (value: any, row: VerificationRequest) => (
-        <div className={`font-medium ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+        <div className={`font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>
           {row.full_name}
         </div>
       )
@@ -244,7 +244,7 @@ export default function AdminRequestsPage() {
       key: 'email' as keyof VerificationRequest,
       header: 'Email',
       render: (value: any, row: VerificationRequest) => (
-        <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+        <div className={`text-sm ${isDark ? 'text-white' : 'text-slate-600'}`}>
           {row.email}
         </div>
       )
@@ -253,7 +253,7 @@ export default function AdminRequestsPage() {
       key: 'address' as keyof VerificationRequest,
       header: 'Address',
       render: (value: any, row: VerificationRequest) => (
-        <div className={`text-sm max-w-xs truncate ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+        <div className={`text-sm max-w-xs truncate ${isDark ? 'text-white' : 'text-slate-600'}`}>
           {row.address}
         </div>
       ),
@@ -263,7 +263,7 @@ export default function AdminRequestsPage() {
       key: 'status' as keyof VerificationRequest,
       header: 'Status',
       render: (value: any, row: VerificationRequest) => (
-        <div className={`text-sm font-semibold ${row.status === 'approved' ? 'text-green-600' : 'text-red-600'}`}>
+        <div className={`text-sm font-semibold ${isDark ? 'text-white' : row.status === 'approved' ? 'text-green-600' : 'text-red-600'}`}>
           {row.status.charAt(0).toUpperCase() + row.status.slice(1)}
         </div>
       )
@@ -272,7 +272,7 @@ export default function AdminRequestsPage() {
       key: 'approved_at' as keyof VerificationRequest,
       header: 'Approved',
       render: (value: any, row: VerificationRequest) => (
-        <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+        <div className={`text-sm ${isDark ? 'text-white' : 'text-slate-500'}`}>
           {row.approved_at ? new Date(row.approved_at).toLocaleDateString() : 'N/A'}
         </div>
       ),
@@ -282,7 +282,7 @@ export default function AdminRequestsPage() {
       key: 'created_at' as keyof VerificationRequest,
       header: 'Submitted',
       render: (value: any, row: VerificationRequest) => (
-        <div className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+        <div className={`text-sm ${isDark ? 'text-white' : 'text-slate-500'}`}>
           {new Date(row.created_at).toLocaleDateString()}
         </div>
       ),
@@ -297,9 +297,9 @@ export default function AdminRequestsPage() {
             variant="outline"
             size="sm"
             onClick={() => confirmAction(row.id, 'delete_history')}
-            className="text-gray-600 hover:text-gray-700 p-2"
+            className={`p-2 ${isDark ? 'text-white' : 'text-gray-600 hover:text-gray-700'}`}
           >
-            <TrashIcon className="w-4 h-4" />
+            <TrashIcon className={`w-4 h-4 ${isDark ? 'text-white' : ''}`} />
             <span className="sr-only">Delete History</span>
           </Button>
         </div>
