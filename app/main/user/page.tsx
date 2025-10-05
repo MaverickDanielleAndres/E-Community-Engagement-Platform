@@ -61,8 +61,8 @@ export default function UserDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className={`flex items-center justify-center min-h-[400px] ${isDark ? 'bg-slate-900 text-white' : 'bg-white text-black'}`}>
+        <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${isDark ? 'border-blue-400' : 'border-blue-600'}`}></div>
       </div>
     )
   }
@@ -87,7 +87,7 @@ export default function UserDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${isDark ? 'bg-slate-1000 text-white' : 'bg-white text-black'}`}>
       {/* Welcome Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -95,7 +95,7 @@ export default function UserDashboard() {
         className="space-y-2"
       >
         <div className="flex items-center justify-between">
-          <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+          <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
             Welcome back, {session?.user?.name || session?.user?.email?.split('@')[0] || 'Resident'}
           </h1>
           <button
@@ -108,10 +108,10 @@ export default function UserDashboard() {
                 : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
             } ${loading ? 'animate-spin' : ''}`}
           >
-            <ArrowPathIcon className="w-5 h-5" />
+            <ArrowPathIcon className={`w-5 h-5 ${isDark ? 'text-white' : 'text-black'}`} />
           </button>
         </div>
-        <p className={isDark ? 'text-slate-400' : 'text-gray-600'}>
+        <p className={`${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
           Here's what's happening in your community today
         </p>
       </motion.div>
@@ -178,11 +178,11 @@ export default function UserDashboard() {
       </motion.div>
 
       {/* Recent Activity */}
-      <div className={`${isDark ? 'bg-slate-800' : 'bg-white'} rounded-lg border ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+      <div className={`${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'} rounded-lg border`}>
         <div className={`p-6 border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-          <h3 className={`flex items-center gap-2 text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+          <h3 className={`flex items-center gap-2 text-lg font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
             Recent Activity
-            <span className={`px-2 py-1 text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 rounded`}>Last 7 days</span>
+            <span className={`px-2 py-1 text-xs font-medium ${isDark ? 'bg-slate-100 text-slate-700' : 'bg-slate-900 text-slate-100'} rounded`}>Last 7 days</span>
           </h3>
           <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>Stay updated with community events</p>
         </div>
@@ -204,7 +204,7 @@ export default function UserDashboard() {
                     activity.type === 'complaint' ? 'bg-red-500' : 'bg-green-500'
                   }`}></div>
                   <div>
-                    <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{activity.title}</p>
+                    <p className={`font-medium ${isDark ? 'text-white' : 'text-black'}`}>{activity.title}</p>
                     <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{activity.date}</p>
                   </div>
                 </div>

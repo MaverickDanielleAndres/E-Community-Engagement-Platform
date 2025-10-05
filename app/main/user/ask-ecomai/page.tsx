@@ -79,8 +79,8 @@ export default function UserAskEComAI() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Ask EComAI</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">Get help with community questions and information</p>
+        <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>Ask EComAI</h1>
+        <p className={`mt-1 ${isDark ? 'text-slate-400' : 'text-black'}`}>Get help with community questions and information</p>
       </div>
 
       {/* FAQ Chips */}

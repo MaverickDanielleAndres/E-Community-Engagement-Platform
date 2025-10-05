@@ -287,6 +287,27 @@ export async function DELETE(
         details: {}
       })
 
+    // Create notifications for all community members
+    const { data: members } = await supabase
+      .from('community_members')
+      .select('user_id')
+      .eq('community_id', poll.community_id)
+
+    if (members && members.length > 0) {
+      const memberIds = members.map((m: any) => m.user_id)
+      const notifications = memberIds.map((memberId: string) => ({
+        user_id: memberId,
+        type: 'poll_deleted',
+        title: 'A poll has been deleted',
+        body: 'A poll that was previously available has been removed by the admin.',
+        link_url: '/main/user/polls',
+        is_read: false,
+        created_at: new Date().toISOString()
+      }))
+
+      await supabase.from('notifications').insert(notifications)
+    }
+
     return NextResponse.json({ message: 'Poll deleted successfully' })
   } catch (error) {
     console.error('Server error:', error)

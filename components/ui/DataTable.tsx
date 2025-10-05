@@ -147,7 +147,7 @@ export function DataTable<T extends Record<string, any>>({
                   onClick={() => column.sortable !== false && handleSort(column.key)}
                   className={`
                     px-6 py-4 text-left text-sm font-semibold transition-colors duration-200
-                    ${column.sortable !== false ? 'cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700' : ''}
+                    ${column.sortable !== false ? 'cursor-pointer' : ''}
                     ${isDark ? 'text-slate-200' : 'text-slate-700'}
                     ${column.width || ''}
                   `}

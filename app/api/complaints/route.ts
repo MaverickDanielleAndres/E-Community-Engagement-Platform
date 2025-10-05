@@ -56,6 +56,7 @@ export async function GET(request: NextRequest) {
         created_at,
         updated_at,
         resolution_message,
+        media_urls,
         users(name, email)
       `)
       .eq('community_id', communityId)

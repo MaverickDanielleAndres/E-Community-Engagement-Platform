@@ -142,32 +142,32 @@ export default function UserSettings() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className={`max-w-2xl mx-auto space-y-6 ${isDark ? 'text-white bg-slate-900' : 'text-black bg-white'}`}>
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">Manage your account preferences</p>
+        <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>Settings</h1>
+        <p className={`mt-1 ${isDark ? 'text-slate-400' : 'text-black'}`}>Manage your account preferences</p>
       </div>
 
       {/* Community Info */}
       {community && (
-        <div className={`p-6 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+        <div className={`p-6 rounded-xl border ${isDark ? 'bg-transparent border-slate-700' : 'bg-transparent border-slate-200'}`}>
           <div className="flex items-center mb-4">
             <Users className="w-5 h-5 text-green-500 mr-2" />
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Community</h2>
+            <h2 className="text-lg font-semibold">Community</h2>
           </div>
 
           <div className="space-y-3">
             <div className="flex justify-between">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Community Name</span>
-              <span className="text-sm text-gray-900 dark:text-white">{community.name}</span>
+              <span className="text-sm font-medium">Community Name</span>
+              <span className="text-sm">{community.name}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Members</span>
-              <span className="text-sm text-gray-900 dark:text-white">{community.memberCount}</span>
+              <span className="text-sm font-medium">Members</span>
+              <span className="text-sm">{community.memberCount}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Joined</span>
-              <span className="text-sm text-gray-900 dark:text-white">
+              <span className="text-sm font-medium">Joined</span>
+              <span className="text-sm">
                 {new Date(community.createdAt).toLocaleDateString()}
               </span>
             </div>
@@ -176,15 +176,15 @@ export default function UserSettings() {
       )}
 
       {/* Profile Settings */}
-      <div className={`p-6 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+      <div className={`p-6 rounded-xl border ${isDark ? 'bg-transparent border-slate-700' : 'bg-transparent border-slate-200'}`}>
         <div className="flex items-center mb-4">
           <User className="w-5 h-5 text-blue-500 mr-2" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Profile</h2>
+          <h2 className="text-lg font-semibold">Profile</h2>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Profile Picture</label>
+            <label className="block text-sm font-medium mb-2">Profile Picture</label>
             <div className="flex items-center space-x-4">
               <div className="relative">
                 <img
@@ -206,43 +206,45 @@ export default function UserSettings() {
                 </label>
               </div>
               {uploading && (
-                <div className="text-sm text-gray-500 dark:text-gray-400">Uploading...</div>
+                <div className="text-sm">Uploading...</div>
               )}
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Name</label>
+            <label className="block text-sm font-medium mb-2">Name</label>
             <input
               type="text"
               value={settings.name}
               onChange={(e) => setSettings({ ...settings, name: e.target.value })}
-              className={`w-full px-3 py-2 rounded-lg border ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-white border-slate-300'}`}
+              className={`w-full px-3 py-2 rounded-lg border ${isDark ? 'bg-transparent border-slate-600' : 'bg-transparent border-slate-300'}`}
+              style={{ color: isDark ? 'white' : 'black' }}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
+            <label className="block text-sm font-medium mb-2">Email</label>
             <input
               type="email"
               value={settings.email}
               disabled
-              className={`w-full px-3 py-2 rounded-lg border opacity-50 ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-white border-slate-300'}`}
+              className={`w-full px-3 py-2 rounded-lg border opacity-50 ${isDark ? 'bg-transparent border-slate-600' : 'bg-transparent border-slate-300'}`}
+              style={{ color: isDark ? 'white' : 'black' }}
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Email cannot be changed</p>
+            <p className="text-xs mt-1">Email cannot be changed</p>
           </div>
         </div>
       </div>
 
       {/* Notification Settings */}
-      <div className={`p-6 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+      <div className={`p-6 rounded-xl border ${isDark ? 'bg-transparent border-slate-700' : 'bg-transparent border-slate-200'}`}>
         <div className="flex items-center mb-4">
           <Bell className="w-5 h-5 text-yellow-500 mr-2" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Notifications</h2>
+          <h2 className="text-lg font-semibold">Notifications</h2>
         </div>
 
         <div className="space-y-4">
           {Object.entries(settings.notifications).map(([key, value]) => (
             <div key={key} className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
+              <span className="text-sm font-medium capitalize">
                 {key.replace(/([A-Z])/g, ' $1').trim()}
               </span>
               <label className="relative inline-flex items-center cursor-pointer">
@@ -263,16 +265,16 @@ export default function UserSettings() {
       </div>
 
       {/* Privacy Settings */}
-      <div className={`p-6 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+      <div className={`p-6 rounded-xl border ${isDark ? 'bg-transparent border-slate-700' : 'bg-transparent border-slate-200'}`}>
         <div className="flex items-center mb-4">
           <Shield className="w-5 h-5 text-purple-500 mr-2" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Privacy</h2>
+          <h2 className="text-lg font-semibold">Privacy</h2>
         </div>
 
         <div className="space-y-4">
           {Object.entries(settings.privacy).map(([key, value]) => (
             <div key={key} className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
+              <span className="text-sm font-medium capitalize">
                 {key.replace(/([A-Z])/g, ' $1').trim()}
               </span>
               <label className="relative inline-flex items-center cursor-pointer">

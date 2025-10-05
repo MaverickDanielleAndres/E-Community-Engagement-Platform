@@ -120,7 +120,7 @@ export default function SubmitFeedback() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className={`max-w-2xl mx-auto space-y-6 ${isDark ? 'text-white bg-slate-900' : 'text-black bg-white'}`}>
       {toast && (
         <Toast
           message={toast.message}
@@ -130,10 +130,10 @@ export default function SubmitFeedback() {
       )}
 
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+        <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
           {template.title || 'Submit Feedback'}
         </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
+        <p className={`mt-1 ${isDark ? 'text-white' : 'text-black'}`}>
           {template.subtitle || 'Share your thoughts about the community'}
         </p>
       </div>
@@ -142,7 +142,7 @@ export default function SubmitFeedback() {
         <div className={`p-6 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
                 This feedback is for
               </label>
               <input
@@ -155,7 +155,7 @@ export default function SubmitFeedback() {
             </div>
             {template.fields.map((field: FormField) => (
               <div key={field.id}>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
                   {field.label} {field.required && <span className="text-red-500">*</span>}
                 </label>
                 {field.type === 'rating' ? (
@@ -207,7 +207,7 @@ export default function SubmitFeedback() {
                       className="w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600"
                       required={field.required}
                     />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">
+                    <span className={`text-sm ${isDark ? 'text-white' : 'text-black'}`}>
                       {field.label}
                     </span>
                   </label>
@@ -231,7 +231,7 @@ export default function SubmitFeedback() {
                   />
                 )}
                 {field.description && (
-                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{field.description}</p>
+                  <p className={`mt-1 text-sm ${isDark ? 'text-white' : 'text-black'}`}>{field.description}</p>
                 )}
               </div>
             ))}
@@ -242,7 +242,7 @@ export default function SubmitFeedback() {
           <button
             type="button"
             onClick={() => router.back()}
-            className={`px-4 py-2 border rounded-lg ${isDark ? 'border-slate-600 hover:bg-slate-700' : 'border-slate-300 hover:bg-gray-50'}`}
+            className={`px-4 py-2 border rounded-lg ${isDark ? 'border-slate-600 hover:bg-slate-700 text-white' : 'border-slate-300 hover:bg-gray-50 text-black'}`}
             disabled={loading}
           >
             Cancel

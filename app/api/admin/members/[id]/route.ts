@@ -67,6 +67,19 @@ export async function PUT(
         details: { new_role: role }
       })
 
+    // Create notification for the affected user
+    const notifications = [{
+      user_id: id,
+      type: 'role_changed',
+      title: 'Your role has been updated',
+      body: `Your role in the community has been changed to ${role}.`,
+      link_url: '/main/user',
+      is_read: false,
+      created_at: new Date().toISOString()
+    }]
+
+    await supabase.from('notifications').insert(notifications)
+
     return NextResponse.json({ message: 'Member role updated successfully' })
   } catch (error) {
     console.error('Server error:', error)

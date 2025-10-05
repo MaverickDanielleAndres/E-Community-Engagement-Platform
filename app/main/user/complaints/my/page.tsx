@@ -15,6 +15,7 @@ interface Complaint {
   status: string
   created_at: string
   resolution_message?: string
+  media_urls?: string[]
 }
 
 export default function MyComplaints() {
@@ -28,7 +29,7 @@ export default function MyComplaints() {
   const fetchComplaints = async (pageNumber: number) => {
     setLoading(true)
     try {
-      const response = await fetch(`/api/user/complaints?my=true&page=${pageNumber}&limit=${limit}`)
+      const response = await fetch(`/api/complaints?my=true&page=${pageNumber}&limit=${limit}`)
       if (response.ok) {
         const data = await response.json()
         setComplaints(data.complaints || [])
@@ -73,8 +74,46 @@ export default function MyComplaints() {
       header: 'Complaint',
       render: (value: string, row: Complaint) => (
         <div>
-          <div className="font-medium text-gray-900 dark:text-white">{value}</div>
-          <div className="text-sm text-gray-500 dark:text-gray-400 capitalize">{row.category}</div>
+          <div className={`font-medium ${isDark ? 'text-white' : 'text-black'}`}>{value}</div>
+          <div className={`text-sm capitalize ${isDark ? 'text-white' : 'text-black'}`}>{row.category}</div>
+        </div>
+      )
+    },
+    {
+      key: 'media_urls' as const,
+      header: 'Media',
+      render: (value: string[]) => (
+        <div className="flex flex-wrap gap-1 max-w-xs">
+          {value && value.length > 0 ? (
+            value.slice(0, 3).map((url, index) => {
+              const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(url)
+              const isVideo = /\.(mp4|webm|ogg)$/i.test(url)
+              return (
+                <div key={index} className="relative">
+                  {isImage ? (
+                    <img
+                      src={url}
+                      alt={`Media ${index + 1}`}
+                      className="w-8 h-8 object-cover rounded border"
+                    />
+                  ) : isVideo ? (
+                    <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center border">
+                      <span className="text-white text-xs font-bold">VID</span>
+                    </div>
+                  ) : (
+                    <div className="w-8 h-8 bg-gray-500 rounded flex items-center justify-center border">
+                      <span className="text-white text-xs">FILE</span>
+                    </div>
+                  )}
+                </div>
+              )
+            })
+          ) : (
+            <span className={`text-xs ${isDark ? 'text-white' : 'text-black'}`}>-</span>
+          )}
+          {value && value.length > 3 && (
+            <span className={`text-xs ${isDark ? 'text-white' : 'text-black'}`}>+{value.length - 3}</span>
+          )}
         </div>
       )
     },
@@ -82,7 +121,7 @@ export default function MyComplaints() {
       key: 'resolution_message' as const,
       header: 'Admin Resolution',
       render: (value: string) => (
-        <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap max-w-xs">
+        <div className={`text-sm whitespace-pre-wrap max-w-xs ${isDark ? 'text-white' : 'text-black'}`}>
           {value || '-'}
         </div>
       )
@@ -100,8 +139,8 @@ export default function MyComplaints() {
       key: 'created_at' as const,
       header: 'Submitted',
       render: (value: string) => (
-        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-          <Calendar className="w-4 h-4 mr-1" />
+        <div className={`flex items-center text-sm ${isDark ? 'text-white' : 'text-black'}`}>
+          <Calendar className={`w-4 h-4 mr-1 ${isDark ? 'text-white' : 'text-black'}`} />
           {new Date(value).toLocaleDateString()}
         </div>
       )
@@ -117,13 +156,13 @@ export default function MyComplaints() {
   const totalPages = Math.ceil(total / limit)
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${isDark ? 'text-white bg-slate-900' : 'text-black bg-white'}`}>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">
+          <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
             My Complaints
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className={`mt-1 ${isDark ? 'text-slate-400' : 'text-black'}`}>
             Track the status of your submitted complaints
           </p>
         </div>
@@ -133,11 +172,11 @@ export default function MyComplaints() {
           title="Refresh complaints"
           className={`p-2 rounded-md transition-colors ${
             isDark
-              ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700'
-              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+              ? 'text-white hover:text-slate-200 hover:bg-slate-700'
+              : 'text-black hover:text-gray-700 hover:bg-gray-100'
           } ${loading ? 'animate-spin' : ''}`}
         >
-          <ArrowPathIcon className="w-5 h-5" />
+          <ArrowPathIcon className={`w-5 h-5 ${isDark ? 'text-white' : 'text-black'}`} />
         </button>
       </div>
 
@@ -159,8 +198,8 @@ export default function MyComplaints() {
               disabled={loading || pageNum === page}
               className={`px-3 py-1 rounded-md border ${
                 pageNum === page
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-blue-600 border-blue-600 hover:bg-blue-100'
+                  ? `bg-blue-600 ${isDark ? 'text-white' : 'text-white'} border-blue-600`
+                  : `${isDark ? 'bg-slate-800 text-white border-slate-600 hover:bg-slate-700' : 'bg-white text-blue-600 border-blue-600 hover:bg-blue-100'}`
               }`}
             >
               {pageNum}

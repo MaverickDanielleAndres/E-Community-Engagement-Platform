@@ -126,6 +126,7 @@ CREATE TABLE public.complaints (
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   resolution_message text,
+  media_urls jsonb DEFAULT '[]'::jsonb,
   CONSTRAINT complaints_pkey PRIMARY KEY (id),
   CONSTRAINT complaints_community_id_fkey FOREIGN KEY (community_id) REFERENCES public.communities(id),
   CONSTRAINT complaints_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)

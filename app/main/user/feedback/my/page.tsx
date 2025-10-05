@@ -60,13 +60,13 @@ export default function MyFeedback() {
       return (
         <div className="flex items-center space-x-2">
           <span className="text-2xl">{emojis[rating - 1] || '⭐'}</span>
-          <span className="text-sm text-gray-600 dark:text-gray-400">
+          <span className={`text-sm ${isDark ? 'text-white' : 'text-black'}`}>
             {rating}/5
           </span>
         </div>
       )
     }
-    
+
     // Fallback to old rating structure
     if (feedback.rating) {
       return (
@@ -80,8 +80,8 @@ export default function MyFeedback() {
         </div>
       )
     }
-    
-    return <span className="text-gray-400">No rating</span>
+
+    return <span className={`text-gray-400 ${isDark ? 'text-white' : 'text-black'}`}>No rating</span>
   }
 
   const renderDetails = (feedback: Feedback) => {
@@ -96,23 +96,23 @@ export default function MyFeedback() {
 
     // Use resolved_details if available
     if (feedback.resolved_details) {
-      return feedback.resolved_details
+      return <span className={`${isDark ? 'text-white' : 'text-black'}`}>{feedback.resolved_details}</span>
     }
 
     // Handle new form_data structure
     if (feedback.form_data) {
-      const commentField = Object.entries(feedback.form_data).find(([key, value]) => 
+      const commentField = Object.entries(feedback.form_data).find(([key, value]) =>
         key.toLowerCase().includes('comment') && typeof value === 'string' && value.length > 0
       )
       if (commentField) {
-        return commentField[1]
+        return <span className={`${isDark ? 'text-white' : 'text-black'}`}>{commentField[1]}</span>
       }
-      
+
       // Show other form fields as structured data, filtering out UUIDs
       const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
-      
+
       const otherFields = Object.entries(feedback.form_data)
-        .filter(([key, value]) => 
+        .filter(([key, value]) =>
           !key.toLowerCase().includes('rating') &&
           typeof value === 'string' &&
           value.length > 0 &&
@@ -120,12 +120,12 @@ export default function MyFeedback() {
         )
         .map(([key, value]) => `${keyLabelMap[key] || key.charAt(0).toUpperCase() + key.slice(1)}: ${value}`)
         .join(', ');
-      
-      return otherFields || <span className="italic text-gray-400">Form data submitted</span>
+
+      return otherFields || <span className={`italic text-gray-400 ${isDark ? 'text-white' : 'text-black'}`}>Form data submitted</span>
     }
-    
+
     // Fallback to old comment structure
-    return feedback.comment || <span className="italic text-gray-400">No comment</span>
+    return feedback.comment ? <span className={`${isDark ? 'text-white' : 'text-black'}`}>{feedback.comment}</span> : <span className={`italic text-gray-400 ${isDark ? 'text-white' : 'text-black'}`}>No comment</span>
   }
 
   const columns = [
@@ -143,8 +143,8 @@ export default function MyFeedback() {
       key: 'created_at' as const,
       header: 'Date',
       render: (value: string) => (
-        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-          <Calendar className="w-4 h-4 mr-1" />
+        <div className={`flex items-center text-sm ${isDark ? 'text-white' : 'text-black'}`}>
+          <Calendar className={`w-4 h-4 mr-1 ${isDark ? 'text-white' : 'text-black'}`} />
           {new Date(value).toLocaleDateString()}
         </div>
       )
@@ -154,11 +154,15 @@ export default function MyFeedback() {
   const totalPages = Math.ceil(total / limit)
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${isDark ? 'text-white bg-slate-900' : 'text-black bg-white'}`}>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">My Feedback</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">View your submitted feedback history</p>
+          <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+            My Feedback
+          </h1>
+          <p className={`mt-1 ${isDark ? 'text-slate-400' : 'text-black'}`}>
+            View your submitted feedback history
+          </p>
         </div>
         <button
           onClick={refreshFeedback}
@@ -166,11 +170,11 @@ export default function MyFeedback() {
           title="Refresh feedback"
           className={`p-2 rounded-md transition-colors ${
             isDark
-              ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700'
-              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+              ? 'text-white hover:text-slate-200 hover:bg-slate-700'
+              : 'text-black hover:text-gray-700 hover:bg-gray-100'
           } ${loading ? 'animate-spin' : ''}`}
         >
-          <ArrowPathIcon className="w-5 h-5" />
+          <ArrowPathIcon className={`w-5 h-5 ${isDark ? 'text-white' : 'text-black'}`} />
         </button>
       </div>
 
@@ -192,8 +196,8 @@ export default function MyFeedback() {
               disabled={loading || pageNum === page}
               className={`px-3 py-1 rounded-md border ${
                 pageNum === page
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-blue-600 border-blue-600 hover:bg-blue-100'
+                  ? `bg-blue-600 ${isDark ? 'text-white' : 'text-white'} border-blue-600`
+                  : `${isDark ? 'bg-slate-800 text-white border-slate-600 hover:bg-slate-700' : 'bg-white text-blue-600 border-blue-600 hover:bg-blue-100'}`
               }`}
             >
               {pageNum}

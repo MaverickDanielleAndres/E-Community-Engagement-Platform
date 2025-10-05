@@ -7,6 +7,7 @@ import { ChartCard, EmptyState, ConfirmDialog } from '@/components/mainapp/compo
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { PieChart, Calendar, Users, AlertTriangle, CheckCircle, FileText, MessageSquare } from 'lucide-react'
 import { useTheme } from '@/components/ThemeContext'
+import { useToast } from '@/components/ToastContext'
 
 interface PollQuestion {
   id: string
@@ -38,6 +39,7 @@ export default function PollDetails() {
   const [loading, setLoading] = useState(true)
   const [closeDialog, setCloseDialog] = useState(false)
   const { isDark } = useTheme()
+  const { showToast } = useToast()
 
   useEffect(() => {
     const fetchPoll = async () => {
@@ -60,6 +62,7 @@ export default function PollDetails() {
   }, [pollId])
 
   const handleClosePoll = async () => {
+    setCloseDialog(false) // Close modal immediately on confirm
     try {
       const response = await fetch(`/api/polls/${pollId}`, {
         method: 'PUT',
@@ -75,12 +78,17 @@ export default function PollDetails() {
         if (updatedResponse.ok) {
           const data = await updatedResponse.json()
           setPoll(data.poll)
+          showToast('Poll closed successfully', 'success')
+        } else {
+          showToast('Failed to refresh poll data after closing', 'error')
         }
+      } else {
+        showToast('Failed to close poll', 'error')
       }
     } catch (error) {
       console.error('Failed to close poll:', error)
+      showToast('An error occurred while closing the poll', 'error')
     }
-    setCloseDialog(false)
   }
 
   if (loading) {
@@ -256,11 +264,11 @@ export default function PollDetails() {
 
             {question.type === 'text' && (
               <div className="space-y-3">
-                <h4 className="text-sm font-medium text-gray-900 dark:text-white">Text Responses:</h4>
+                <h4 className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>Text Responses:</h4>
                 {responses.length > 0 ? (
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {responses.slice(0, 10).map((response: string, index: number) => (
-                      <div key={index} className="p-3 bg-gray-50 dark:bg-slate-700 rounded-lg">
+                      <div key={index} className={`p-3 ${isDark ? 'bg-slate-700' : 'bg-gray-50'} rounded-lg`}>
                         <p className={`text-sm ${isDark ? 'text-white' : 'text-black'}`}>{response || 'No response'}</p>
                       </div>
                     ))}

@@ -114,7 +114,7 @@ export default function UserPollDetails() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${isDark ? 'border-blue-400' : 'border-blue-600'}`}></div>
       </div>
     )
   }
@@ -133,15 +133,15 @@ export default function UserPollDetails() {
   const isExpired = poll.deadline && new Date(poll.deadline) < new Date()
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 bg-[#0f172a] ${isDark ? 'text-white' : 'text-black'}`}>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
+      <div className={`flex flex-col sm:flex-row sm:items-start sm:justify-between ${isDark ? 'bg-[#0f172a]' : 'bg-[#0f172a]'}`}>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
             {poll.title}
           </h1>
           {poll.description && (
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
+            <p className={`${isDark ? 'text-gray-400' : 'text-gray-600'} mt-2`}>
               {poll.description}
             </p>
           )}
@@ -150,14 +150,14 @@ export default function UserPollDetails() {
         <div className="mt-4 sm:mt-0 sm:ml-6">
           <div className="flex items-center space-x-2">
             {isExpired && (
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                <Clock className="w-4 h-4 mr-1" />
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${isDark ? 'bg-red-900 text-red-200' : 'bg-red-100 text-red-800'}`}>
+                <Clock className={`w-4 h-4 mr-1 ${isDark ? 'text-white' : 'text-black'}`} />
                 Expired
               </span>
             )}
             {poll.user_voted && (
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                <CheckCircle className="w-4 h-4 mr-1" />
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${isDark ? 'bg-green-900 text-green-200' : 'bg-green-100 text-green-800'}`}>
+                <CheckCircle className={`w-4 h-4 mr-1 ${isDark ? 'text-white' : 'text-black'}`} />
                 You've responded
               </span>
             )}
@@ -167,34 +167,34 @@ export default function UserPollDetails() {
 
       {/* Poll Info */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+        <div className={`${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'} rounded-xl border border-slate-200 dark:border-slate-700 p-6`}>
           <div className="flex items-center">
-            <Users className="w-6 h-6 text-blue-500 mr-3" />
+            <Users className={`w-6 h-6 mr-3 ${isDark ? 'text-blue-400' : 'text-blue-500'}`} />
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Questions</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{poll.questions.length}</p>
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Questions</p>
+              <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{poll.questions.length}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+        <div className={`${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'} rounded-xl border border-slate-200 dark:border-slate-700 p-6`}>
           <div className="flex items-center">
-            <Calendar className="w-6 h-6 text-green-500 mr-3" />
+            <Calendar className={`w-6 h-6 mr-3 ${isDark ? 'text-green-400' : 'text-green-500'}`} />
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Created</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Created</p>
+              <p className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 {new Date(poll.created_at).toLocaleDateString()}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+        <div className={`${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'} rounded-xl border border-slate-200 dark:border-slate-700 p-6`}>
           <div className="flex items-center">
-            <Clock className="w-6 h-6 text-orange-500 mr-3" />
+            <Clock className={`w-6 h-6 mr-3 ${isDark ? 'text-orange-400' : 'text-orange-500'}`} />
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Deadline</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Deadline</p>
+              <p className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 {poll.deadline ? new Date(poll.deadline).toLocaleDateString() : 'No deadline'}
               </p>
             </div>
@@ -205,7 +205,7 @@ export default function UserPollDetails() {
       {/* Response Form */}
       {canRespond && !poll.user_voted && !isExpired && (
         <div className={`p-6 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+          <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'} mb-6`}>
             Answer the Questions
           </h2>
 
@@ -213,13 +213,13 @@ export default function UserPollDetails() {
             {poll.questions.map((question, index) => (
               <div key={question.id} className="space-y-3">
                 <div className="flex items-start">
-                  <span className="text-sm font-medium text-gray-900 dark:text-white mr-2">
+                  <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'} mr-2`}>
                     {index + 1}.
                   </span>
                   <div className="flex-1">
-                    <h3 className="text-base font-medium text-gray-900 dark:text-white">
+                    <h3 className={`text-base font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
                       {question.question}
-                      {question.required && <span className="text-red-500 ml-1">*</span>}
+                      {question.required && <span className={`ml-1 ${isDark ? 'text-red-400' : 'text-red-500'}`}>*</span>}
                     </h3>
 
                     {question.type === 'radio' && question.options && (
@@ -234,7 +234,7 @@ export default function UserPollDetails() {
                               onChange={(e) => handleResponseChange(question.id, e.target.value)}
                               className="mr-3"
                             />
-                            <span className="text-gray-700 dark:text-gray-300">{option}</span>
+                            <span className={`${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{option}</span>
                           </label>
                         ))}
                       </div>
@@ -257,7 +257,7 @@ export default function UserPollDetails() {
                               }}
                               className="mr-3"
                             />
-                            <span className="text-gray-700 dark:text-gray-300">{option}</span>
+                            <span className={`${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{option}</span>
                           </label>
                         ))}
                       </div>
@@ -268,7 +268,7 @@ export default function UserPollDetails() {
                         value={responses[question.id] || ''}
                         onChange={(e) => handleResponseChange(question.id, e.target.value)}
                         placeholder="Enter your answer..."
-                        className="mt-3 w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className={`mt-3 w-full p-3 border rounded-lg ${isDark ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'}`}
                         rows={3}
                       />
                     )}
@@ -279,19 +279,19 @@ export default function UserPollDetails() {
           </div>
 
           <div className="mt-8 flex items-center justify-between">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
               * Required questions must be answered
             </p>
 
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="inline-flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+              className={`inline-flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200`}
             >
               {submitting ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                <div className={`animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2`}></div>
               ) : (
-                <CheckCircle className="w-4 h-4 mr-2" />
+                <CheckCircle className={`w-4 h-4 mr-2 ${isDark ? 'text-white' : 'text-black'}`} />
               )}
               {submitting ? 'Submitting...' : 'Submit Response'}
             </button>
@@ -301,14 +301,14 @@ export default function UserPollDetails() {
 
       {/* Already Responded */}
       {poll.user_voted && (
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-6">
+        <div className={`border rounded-xl p-6 ${isDark ? 'bg-green-900/20 border-green-800' : 'bg-green-50 border-green-200'}`}>
           <div className="flex items-center">
-            <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400 mr-3" />
+            <CheckCircle className={`w-6 h-6 mr-3 ${isDark ? 'text-green-400' : 'text-green-600'}`} />
             <div>
-              <h3 className="text-lg font-semibold text-green-800 dark:text-green-200">
+              <h3 className={`text-lg font-semibold ${isDark ? 'text-green-200' : 'text-green-800'}`}>
                 Response Submitted
               </h3>
-              <p className="text-green-700 dark:text-green-300 mt-1">
+              <p className={`${isDark ? 'text-green-300' : 'text-green-700'} mt-1`}>
                 Thank you for participating in this poll. Your responses have been recorded.
               </p>
             </div>
@@ -318,22 +318,22 @@ export default function UserPollDetails() {
 
       {/* Footer Note */}
       {poll.footer_note && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6">
+        <div className={`border rounded-xl p-6 ${isDark ? 'bg-blue-900/20 border-blue-800' : 'bg-blue-50 border-blue-200'}`}>
           <div className="flex items-start">
-            <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400 mr-3 mt-0.5" />
+            <FileText className={`w-5 h-5 mr-3 mt-0.5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
             <div>
-              <h3 className="text-base font-semibold text-blue-800 dark:text-blue-200 mb-2">
+              <h3 className={`text-base font-semibold mb-2 ${isDark ? 'text-blue-200' : 'text-blue-800'}`}>
                 Additional Information
               </h3>
-              <p className="text-blue-700 dark:text-blue-300 whitespace-pre-wrap">
+              <p className={`whitespace-pre-wrap ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>
                 {poll.footer_note}
               </p>
               {poll.complaint_link && (
                 <a
                   href={poll.complaint_link}
-                  className="inline-flex items-center mt-3 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                  className={`inline-flex items-center mt-3 ${isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}
                 >
-                  <MessageSquare className="w-4 h-4 mr-1" />
+                  <MessageSquare className={`w-4 h-4 mr-1 ${isDark ? 'text-white' : 'text-black'}`} />
                   Submit a complaint
                 </a>
               )}
@@ -343,22 +343,22 @@ export default function UserPollDetails() {
       )}
 
       {/* Poll Settings */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+      <div className={`${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'} rounded-xl border border-slate-200 dark:border-slate-700 p-6`}>
+        <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'} mb-4`}>
           Poll Information
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div className="flex items-center">
-            <CheckCircle className={`w-4 h-4 mr-2 ${poll.is_anonymous ? 'text-green-500' : 'text-gray-400'}`} />
-            <span className="text-gray-700 dark:text-gray-300">
+            <CheckCircle className={`w-4 h-4 mr-2 ${poll.is_anonymous ? (isDark ? 'text-green-400' : 'text-green-500') : (isDark ? 'text-gray-400' : 'text-gray-400')}`} />
+            <span className={`${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
               Anonymous responses {poll.is_anonymous ? 'enabled' : 'disabled'}
             </span>
           </div>
 
           <div className="flex items-center">
-            <CheckCircle className={`w-4 h-4 mr-2 ${poll.questions.some(q => q.type === 'checkbox') ? 'text-green-500' : 'text-gray-400'}`} />
-            <span className="text-gray-700 dark:text-gray-300">
+            <CheckCircle className={`w-4 h-4 mr-2 ${poll.questions.some(q => q.type === 'checkbox') ? (isDark ? 'text-green-400' : 'text-green-500') : (isDark ? 'text-gray-400' : 'text-gray-400')}`} />
+            <span className={`${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
               Multiple choice questions {poll.questions.some(q => q.type === 'checkbox') ? 'included' : 'not included'}
             </span>
           </div>

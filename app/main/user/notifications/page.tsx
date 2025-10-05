@@ -6,6 +6,7 @@ import { DataTable } from '@/components/mainapp/components'
 import { Bell, Check, AlertTriangle, Info, CheckCircle } from 'lucide-react'
 import { ArrowPathIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { refreshHeaderAndSidebar } from '@/components/utils/refresh'
+import { useTheme } from '@/components/ThemeContext'
 
 interface Notification {
   id: string
@@ -17,6 +18,7 @@ interface Notification {
 }
 
 export default function UserNotifications() {
+  const { isDark, themeClasses } = useTheme()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedNotifications, setSelectedNotifications] = useState<string[]>([])
@@ -121,10 +123,12 @@ export default function UserNotifications() {
       header: 'Notification',
       render: (value: string, row: Notification) => (
         <div>
-          <div className={`font-medium ${row.is_read ? 'text-gray-600 dark:text-gray-400' : 'text-gray-900 dark:text-white'}`}>
+          <div className={`font-medium ${row.is_read ? themeClasses.text : themeClasses.textPrimary}`}>
             {value}
           </div>
-          <div className="text-sm text-gray-500 dark:text-gray-400">{row.body}</div>
+          <div className={`text-sm ${themeClasses.text}`}>
+            {row.body}
+          </div>
         </div>
       )
     },
@@ -141,8 +145,8 @@ export default function UserNotifications() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Notifications</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Stay updated with community activity</p>
+          <h1 className={`text-2xl font-bold ${themeClasses.textPrimary}`}>Notifications</h1>
+          <p className={`mt-1 ${isDark ? 'text-white' : 'text-black'}`}>Stay updated with community activity</p>
         </div>
         <div className="flex items-center space-x-2">
           {selectedNotifications.length > 0 && (
@@ -165,13 +169,13 @@ export default function UserNotifications() {
               </button>
               {confirmClearAll && (
                 <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50">
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-sm w-full">
-                    <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Confirm Clear All</h2>
-                    <p className="mb-6 text-gray-700 dark:text-gray-300">Are you sure you want to clear all notifications? This action cannot be undone.</p>
+                  <div className={`p-6 rounded-lg shadow-lg max-w-sm w-full ${isDark ? 'bg-black' : 'bg-white'}`}>
+                    <h2 className={`text-lg font-semibold mb-4 ${themeClasses.textPrimary}`}>Confirm Clear All</h2>
+                    <p className={`mb-6 ${themeClasses.text}`}>Are you sure you want to clear all notifications? This action cannot be undone.</p>
                     <div className="flex justify-end space-x-4">
                       <button
                         onClick={() => setConfirmClearAll(false)}
-                        className="px-4 py-2 rounded bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-white hover:bg-gray-400 dark:hover:bg-gray-700"
+                        className={`px-4 py-2 rounded ${isDark ? 'bg-gray-600 text-white hover:bg-gray-700' : 'bg-gray-300 text-gray-800 hover:bg-gray-400'}`}
                       >
                         Cancel
                       </button>
@@ -193,14 +197,14 @@ export default function UserNotifications() {
             title="Refresh notifications"
             className={`p-2 rounded-md transition-colors ${
               loading ? 'animate-spin' : ''
-            } text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-700`}
+            } ${themeClasses.text} ${themeClasses.hover}`}
           >
             <ArrowPathIcon className="w-5 h-5" />
           </button>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div className={`rounded-xl border overflow-hidden ${isDark ? 'bg-black border-slate-700' : 'bg-white border-slate-200'}`}>
         <DataTable
           data={notifications}
           columns={columns}
@@ -210,7 +214,7 @@ export default function UserNotifications() {
       </div>
 
       {unreadCount > 0 && (
-        <div className="text-sm text-gray-600 dark:text-gray-400">
+        <div className={`text-sm ${themeClasses.text}`}>
           {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
         </div>
       )}

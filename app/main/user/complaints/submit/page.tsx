@@ -76,12 +76,12 @@ export default function SubmitComplaint() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className={`max-w-2xl mx-auto space-y-6 ${isDark ? 'text-white' : 'text-black'}`}>
       <div>
-        <h1 className="text-2xl font-bold text-white">
+        <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
           Submit Complaint
         </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
+        <p className={`${isDark ? 'text-white' : 'text-black'} mt-1`}>
           Report issues or concerns to the community administrators
         </p>
       </div>
@@ -90,7 +90,7 @@ export default function SubmitComplaint() {
         <div className={`p-6 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className={`block text-sm font-medium ${isDark ? 'text-white' : 'text-black'} mb-2`}>
                 Title *
               </label>
               <input
@@ -98,19 +98,19 @@ export default function SubmitComplaint() {
                 required
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className={`w-full px-3 py-2 rounded-lg border ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-white border-slate-300'}`}
+                className={`w-full px-3 py-2 rounded-lg border ${isDark ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-300 text-black'}`}
                 placeholder="Brief description of the issue"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className={`block text-sm font-medium ${isDark ? 'text-white' : 'text-black'} mb-2`}>
                 Category
               </label>
               <select
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className={`w-full px-3 py-2 rounded-lg border ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-white border-slate-300'}`}
+                className={`w-full px-3 py-2 rounded-lg border ${isDark ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-300 text-black'}`}
               >
                 <option value="maintenance">Maintenance</option>
                 <option value="governance">Governance</option>
@@ -119,7 +119,7 @@ export default function SubmitComplaint() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className={`block text-sm font-medium ${isDark ? 'text-white' : 'text-black'} mb-2`}>
                 Description *
               </label>
               <textarea
@@ -127,13 +127,13 @@ export default function SubmitComplaint() {
                 rows={6}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className={`w-full px-3 py-2 rounded-lg border ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-white border-slate-300'}`}
+                className={`w-full px-3 py-2 rounded-lg border ${isDark ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-300 text-black'}`}
                 placeholder="Provide detailed information about your complaint..."
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className={`block text-sm font-medium ${isDark ? 'text-white' : 'text-black'} mb-2`}>
                 Media (Images/Videos)
               </label>
               <div
@@ -141,8 +141,8 @@ export default function SubmitComplaint() {
                   dragActive
                     ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                     : isDark
-                    ? 'border-slate-600 hover:border-slate-500'
-                    : 'border-slate-300 hover:border-slate-400'
+                    ? 'border-slate-600 hover:border-slate-500 bg-slate-800'
+                    : 'border-slate-300 hover:border-slate-400 bg-white'
                 }`}
                 onDragEnter={(e) => {
                   e.preventDefault()
@@ -166,8 +166,8 @@ export default function SubmitComplaint() {
                   handleFiles(droppedFiles)
                 }}
               >
-                <Upload className={`mx-auto h-12 w-12 ${isDark ? 'text-slate-400' : 'text-slate-400'}`} />
-                <p className={`mt-2 text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                <Upload className={`mx-auto h-12 w-12 ${isDark ? 'text-white' : 'text-black'}`} />
+                <p className={`mt-2 text-sm ${isDark ? 'text-white' : 'text-black'}`}>
                   Drag and drop images or videos here, or{' '}
                   <label className="text-blue-500 hover:text-blue-600 cursor-pointer">
                     browse
@@ -183,7 +183,7 @@ export default function SubmitComplaint() {
                     />
                   </label>
                 </p>
-                <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
+                <p className={`text-xs mt-1 ${isDark ? 'text-white' : 'text-black'}`}>
                   Supported formats: JPG, PNG, GIF, MP4, MOV (max 10MB each)
                 </p>
               </div>
@@ -210,10 +210,10 @@ export default function SubmitComplaint() {
                           </div>
                         )}
                         <div>
-                          <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>
                             {file.name}
                           </p>
-                          <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                          <p className={`text-xs ${isDark ? 'text-white' : 'text-black'}`}>
                             {(file.size / 1024 / 1024).toFixed(2)} MB
                           </p>
                         </div>
@@ -237,7 +237,7 @@ export default function SubmitComplaint() {
           <button
             type="button"
             onClick={() => router.back()}
-            className={`px-4 py-2 border rounded-lg ${isDark ? 'border-slate-600 hover:bg-slate-700' : 'border-slate-300 hover:bg-gray-50'}`}
+            className={`px-4 py-2 border rounded-lg ${isDark ? 'border-slate-600 hover:bg-slate-700 text-white' : 'border-slate-300 hover:bg-gray-50 text-black'}`}
           >
             Cancel
           </button>

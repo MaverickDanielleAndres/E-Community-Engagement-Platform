@@ -3,6 +3,7 @@
 
 import { SessionProvider } from 'next-auth/react'
 import { motion } from 'framer-motion'
+import { ToastProvider } from '@/components/ToastContext'
 
 interface ProvidersProps {
   children: React.ReactNode
@@ -18,13 +19,15 @@ export function Providers({ children }: ProvidersProps) {
       // Refetch session when user comes back online
       refetchWhenOffline={false}
     >
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
-      >
-        {children}
-      </motion.div>
+      <ToastProvider>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          {children}
+        </motion.div>
+      </ToastProvider>
     </SessionProvider>
   )
 }

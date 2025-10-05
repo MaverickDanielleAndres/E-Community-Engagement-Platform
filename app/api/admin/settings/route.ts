@@ -142,6 +142,27 @@ export async function PUT(request: NextRequest) {
         details: { name, description, code, logo_url }
       })
 
+    // Create notifications for all community members
+    const { data: members } = await supabase
+      .from('community_members')
+      .select('user_id')
+      .eq('community_id', communityId)
+
+    if (members && members.length > 0) {
+      const memberIds = members.map((m: any) => m.user_id)
+      const notifications = memberIds.map((memberId: string) => ({
+        user_id: memberId,
+        type: 'settings_updated',
+        title: 'Community settings have been updated',
+        body: 'The admin has made changes to the community settings.',
+        link_url: '/main/user/settings',
+        is_read: false,
+        created_at: new Date().toISOString()
+      }))
+
+      await supabase.from('notifications').insert(notifications)
+    }
+
     return NextResponse.json({ message: 'Settings updated successfully', community: updatedCommunity })
   } catch (error) {
     console.error('Settings update error:', error)
@@ -244,6 +265,27 @@ export async function PATCH(request: NextRequest) {
         entity_id: communityId,
         details: updateData
       })
+
+    // Create notifications for all community members
+    const { data: members } = await supabase
+      .from('community_members')
+      .select('user_id')
+      .eq('community_id', communityId)
+
+    if (members && members.length > 0) {
+      const memberIds = members.map((m: any) => m.user_id)
+      const notifications = memberIds.map((memberId: string) => ({
+        user_id: memberId,
+        type: 'settings_updated',
+        title: 'Community settings have been updated',
+        body: 'The admin has made changes to the community settings.',
+        link_url: '/main/user/settings',
+        is_read: false,
+        created_at: new Date().toISOString()
+      }))
+
+      await supabase.from('notifications').insert(notifications)
+    }
 
     const response: any = { message: 'Settings updated successfully', community: updatedCommunity }
     if (logoUrl) {

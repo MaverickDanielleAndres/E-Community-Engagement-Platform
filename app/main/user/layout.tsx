@@ -12,7 +12,7 @@ function UserLayoutContent({ children }: { children: React.ReactNode }) {
   const { isDark } = useTheme()
 
   return (
-    <div className={`min-h-screen ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
+    <div className={`min-h-screen ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
       <UserSidebar />
 
       <div className={`${isCollapsed ? 'ml-[80px]' : 'ml-[320px]'} transition-all duration-300`}>

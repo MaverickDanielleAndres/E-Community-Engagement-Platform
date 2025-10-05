@@ -8,6 +8,7 @@ import { MessageSquareWarning, Eye, Calendar, User, AlertCircle, Trash2, Refresh
 import { useTheme } from '@/components/ThemeContext'
 import { Toast } from '@/components/Toast'
 import { refreshHeaderAndSidebar } from '@/components/utils/refresh'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 interface Complaint {
   id: string
@@ -30,6 +31,8 @@ export default function AdminComplaints() {
     category: '',
     search: ''
   })
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [complaintToDelete, setComplaintToDelete] = useState<string | null>(null)
   const { isDark } = useTheme()
 
   const refreshComplaints = async () => {
@@ -132,21 +135,26 @@ export default function AdminComplaints() {
     return { icon: AlertCircle, color: 'text-yellow-500', label: 'Neutral' }
   }
 
-  const handleDeleteComplaint = async (complaintId: string) => {
-    if (!confirm('Are you sure you want to delete this resolved complaint? This action cannot be undone.')) {
-      return
-    }
+  const openDeleteModal = (complaintId: string) => {
+    setComplaintToDelete(complaintId)
+    setIsDeleteModalOpen(true)
+  }
+
+  const handleDeleteComplaint = async () => {
+    if (!complaintToDelete) return
 
     try {
-      const response = await fetch(`/api/complaints/${complaintId}`, {
+      const response = await fetch(`/api/complaints/${complaintToDelete}`, {
         method: 'DELETE',
       })
 
       if (response.ok) {
-        setComplaints(complaints.filter(c => c.id !== complaintId))
+        setComplaints(complaints.filter(c => c.id !== complaintToDelete))
         setToast({ message: 'Complaint deleted successfully', type: 'success' })
         // Trigger sidebar refresh
         localStorage.setItem('sidebarRefresh', 'true')
+        setIsDeleteModalOpen(false)
+        setComplaintToDelete(null)
       } else {
         setToast({ message: 'Failed to delete complaint', type: 'error' })
       }
@@ -238,7 +246,7 @@ export default function AdminComplaints() {
           </Link>
           {row.status === 'resolved' && (
             <button
-              onClick={() => handleDeleteComplaint(value)}
+              onClick={() => openDeleteModal(value)}
               className="p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200"
               title="Delete resolved complaint"
             >
@@ -381,6 +389,21 @@ export default function AdminComplaints() {
           />
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmDialog
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false)
+          setComplaintToDelete(null)
+        }}
+        onConfirm={handleDeleteComplaint}
+        title="Delete Complaint"
+        description="Are you sure you want to delete this resolved complaint? This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="danger"
+      />
     </div>
   )
 }

@@ -410,6 +410,19 @@ export async function POST(request: NextRequest) {
               role_assigned: 'Resident'
             }
           })
+
+        // Create notification for the approved user
+        const notifications = [{
+          user_id: verification.user_id,
+          type: 'verification_approved',
+          title: 'Your ID verification has been approved',
+          body: 'Congratulations! Your ID verification has been approved and you have been added to the community.',
+          link_url: '/main/user',
+          is_read: false,
+          created_at: new Date().toISOString()
+        }]
+
+        await supabase.from('notifications').insert(notifications)
       }
 
       // If rejected, update user status to rejected
@@ -429,6 +442,19 @@ export async function POST(request: NextRequest) {
             message: 'Failed to update user status'
           }, { status: 500 })
         }
+
+        // Create notification for the rejected user
+        const notifications = [{
+          user_id: verification.user_id,
+          type: 'verification_rejected',
+          title: 'Your ID verification has been rejected',
+          body: 'Unfortunately, your ID verification request has been rejected. Please contact support for more information.',
+          link_url: '/main/user',
+          is_read: false,
+          created_at: new Date().toISOString()
+        }]
+
+        await supabase.from('notifications').insert(notifications)
       }
 
       return NextResponse.json({
