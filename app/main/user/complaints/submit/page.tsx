@@ -4,7 +4,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTheme } from '@/components/ThemeContext'
-import { Send, AlertTriangle, Upload, X } from 'lucide-react'
+import { Send, AlertTriangle, Upload, X, ArrowLeft } from 'lucide-react'
 
 export default function SubmitComplaint() {
   const router = useRouter()
@@ -77,13 +77,26 @@ export default function SubmitComplaint() {
 
   return (
     <div className={`max-w-2xl mx-auto space-y-6 ${isDark ? 'text-white' : 'text-black'}`}>
-      <div>
-        <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
-          Submit Complaint
-        </h1>
-        <p className={`${isDark ? 'text-white' : 'text-black'} mt-1`}>
-          Report issues or concerns to the community administrators
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+            Submit Complaint
+          </h1>
+          <p className={`${isDark ? 'text-slate-400' : 'text-black'} mt-1`}>
+            Report issues or concerns to the community administrators
+          </p>
+        </div>
+
+        <button
+          onClick={() => window.history.back()}
+          className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+            isDark ? 'text-white border-gray-600 hover:bg-gray-700' : 'text-gray-700'
+          }`}
+          aria-label="Back"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back
+        </button>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -233,15 +246,7 @@ export default function SubmitComplaint() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className={`px-4 py-2 border rounded-lg ${isDark ? 'border-slate-600 hover:bg-slate-700 text-white' : 'border-slate-300 hover:bg-gray-50 text-black'}`}
-          >
-            Cancel
-          </button>
-
+        <div className="flex justify-end">
           <button
             type="submit"
             disabled={loading}

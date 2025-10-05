@@ -2,10 +2,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { ChartCard, EmptyState, ConfirmDialog } from '@/components/mainapp/components'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { PieChart, Calendar, Users, AlertTriangle, CheckCircle, FileText, MessageSquare } from 'lucide-react'
+import { Button } from '@/components/Button'
+import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { useTheme } from '@/components/ThemeContext'
 import { useToast } from '@/components/ToastContext'
 
@@ -35,6 +37,7 @@ interface PollData {
 export default function PollDetails() {
   const params = useParams()
   const pollId = params.pollId as string
+  const router = useRouter()
   const [poll, setPoll] = useState<PollData | null>(null)
   const [loading, setLoading] = useState(true)
   const [closeDialog, setCloseDialog] = useState(false)
@@ -126,16 +129,28 @@ export default function PollDetails() {
             </p>
           )}
         </div>
-
-        {poll.status === 'active' && (
+        <div className="flex items-center space-x-2">
           <button
-            onClick={() => setCloseDialog(true)}
-            className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200"
+            onClick={() => window.history.back()}
+            className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+              isDark ? 'text-white border-gray-600 hover:bg-gray-700' : 'text-gray-700'
+            }`}
+            aria-label="Back"
           >
-            <AlertTriangle className="w-4 h-4 mr-2" />
-            Close Poll
+            <ArrowLeftIcon className="w-4 h-4 mr-2" />
+            Back
           </button>
-        )}
+
+          {poll.status === 'active' && (
+            <button
+              onClick={() => setCloseDialog(true)}
+              className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200"
+            >
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              Close Poll
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Poll Info */}

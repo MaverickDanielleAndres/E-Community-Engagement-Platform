@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { EmptyState } from '@/components/mainapp/components'
 import { useTheme } from '@/components/ThemeContext'
-import { MessageSquare, User, Calendar, Star, Eye } from 'lucide-react'
+import { MessageSquare, User, Calendar, Star, Eye, ArrowLeft } from 'lucide-react'
 
 interface FeedbackData {
   id: string
@@ -107,6 +107,16 @@ export default function FeedbackDetails() {
             Feedback #{feedback.id.slice(0, 8)}
           </p>
         </div>
+        <button
+          onClick={() => window.history.back()}
+          className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+            isDark ? 'text-white border-gray-600 hover:bg-gray-700' : 'text-gray-700'
+          }`}
+          aria-label="Back"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back
+        </button>
       </div>
 
       {/* Feedback Info */}
@@ -153,25 +163,31 @@ export default function FeedbackDetails() {
 
       {/* Feedback Details */}
       <div className={`p-6 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
-        <h2 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-          Feedback Details
-        </h2>
-
+        {/* Removed the "Feedback Details" header */}
         <div className="space-y-4">
           <div>
-            <h3 className={`text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-              Details
-            </h3>
-            <p className={`leading-relaxed ${isDark ? 'text-white' : 'text-gray-900'}`}>
-              {feedback.resolved_details}
-            </p>
+            {/* Removed the "Details" subheader */}
+            <div className="space-y-2">
+              {feedback.resolved_details.split('. ').filter(item => item.trim()).map((item, index) => {
+                const [label, ...valueParts] = item.split(': ');
+                const value = valueParts.join(': ');
+                return (
+                  <div key={index} className="flex flex-col sm:flex-row sm:items-start">
+                    <span className={`font-medium min-w-0 sm:min-w-[200px] ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                      {label}:
+                    </span>
+                    <span className={`leading-relaxed ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      {value}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {feedback.comment && feedback.comment !== feedback.resolved_details && (
             <div>
-              <h3 className={`text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                Additional Comment
-              </h3>
+              {/* Removed the "Additional Comment" subheader */}
               <p className={`leading-relaxed ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 {feedback.comment}
               </p>
@@ -190,39 +206,7 @@ export default function FeedbackDetails() {
         </div>
       </div>
 
-      {/* Form Data (if available) */}
-      {feedback.form_data && typeof feedback.form_data === 'object' && (
-        <div className={`p-6 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
-          <h2 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-            Form Responses
-          </h2>
 
-          <div className="space-y-3">
-            {Object.entries(feedback.form_data).map(([key, value]) => {
-              // Map keys to human-readable labels
-              const keyLabelMap: { [key: string]: string } = {
-                '1758811812392': 'Feedback For',
-                '1758901149505': 'Rating',
-                '1758901200811': 'Option Selected',
-                '1759651257753': 'Confirmation',
-                // Add more mappings as needed
-              }
-              const label = keyLabelMap[key] || key.replace(/_/g, ' ')
-
-              return (
-                <div key={key} className="flex justify-between items-start">
-                  <span className={`font-medium capitalize ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                    {label}:
-                  </span>
-                  <span className={`${isDark ? 'text-white' : 'text-gray-900'}`}>
-                    {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value)}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
     </div>
   )
 }

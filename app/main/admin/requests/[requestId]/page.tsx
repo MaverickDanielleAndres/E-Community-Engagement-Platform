@@ -68,6 +68,7 @@ export default function ViewRequestPage() {
     title: ''
   })
 
+
   const fetchRequest = async () => {
     try {
       const response = await fetch(`/api/admin/verification-requests/${requestId}`)
@@ -105,6 +106,8 @@ export default function ViewRequestPage() {
       title: ''
     })
   }
+
+
 
   useEffect(() => {
     if (requestId) {
@@ -243,6 +246,7 @@ export default function ViewRequestPage() {
             <ArrowLeftIcon className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Back to Requests</span>
           </Button>
+
           <div>
             <h1 className={`text-xl md:text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
               Verification Request

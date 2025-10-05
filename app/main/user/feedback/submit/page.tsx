@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTheme } from '@/components/ThemeContext'
-import { Star, Send, Loader2 } from 'lucide-react'
+import { Star, Send, Loader2, ArrowLeft } from 'lucide-react'
 import { Toast } from '@/components/Toast'
 import type { FormTemplate, FormField } from '@/types/feedback'
 
@@ -129,13 +129,27 @@ export default function SubmitFeedback() {
         />
       )}
 
-      <div>
-        <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
-          {template.title || 'Submit Feedback'}
-        </h1>
-        <p className={`mt-1 ${isDark ? 'text-white' : 'text-black'}`}>
-          {template.subtitle || 'Share your thoughts about the community'}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+            {template.title || 'Submit Feedback'}
+          </h1>
+          <p className={`mt-1 ${isDark ? 'text-slate-400' : 'text-black'}`}>
+            {template.subtitle || 'Share your thoughts about the community'}
+          </p>
+        </div>
+
+        <button
+          onClick={() => window.history.back()}
+          className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+            isDark ? 'text-white border-gray-600 hover:bg-gray-700' : 'text-gray-700'
+          }`}
+          aria-label="Back"
+          disabled={loading}
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back
+        </button>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -238,16 +252,7 @@ export default function SubmitFeedback() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className={`px-4 py-2 border rounded-lg ${isDark ? 'border-slate-600 hover:bg-slate-700 text-white' : 'border-slate-300 hover:bg-gray-50 text-black'}`}
-            disabled={loading}
-          >
-            Cancel
-          </button>
-
+        <div className="flex justify-end">
           <button
             type="submit"
             disabled={loading || !template}

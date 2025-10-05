@@ -59,11 +59,35 @@ export async function GET(
       return NextResponse.json({ error: 'Feedback not found' }, { status: 404 })
     }
 
-    // Enrich feedback with resolved details (same logic as main route)
+    // Fetch the template for this feedback, or active if template_id is null
+    let templateQuery = supabase
+      .from('feedback_form_templates')
+      .select('fields');
+
+    if (feedback.template_id) {
+      templateQuery = templateQuery.eq('id', feedback.template_id);
+    } else {
+      templateQuery = templateQuery.eq('community_id', communityId).eq('is_active', true);
+    }
+
+    const { data: template } = await templateQuery.single();
+
+    // Build mapping from field id to label
+    const fieldIdToLabel: Record<string, string> = {};
+    if (template?.fields && Array.isArray(template.fields)) {
+      for (const field of template.fields) {
+        if (field.id && field.label) {
+          fieldIdToLabel[field.id] = field.label;
+        }
+      }
+    }
+
+    // Enrich feedback with resolved details
     let resolved_details = ''
     if (feedback.form_data && typeof feedback.form_data === 'object') {
       // Resolve any UUID values from common entities
       for (const [key, value] of Object.entries(feedback.form_data)) {
+        const label = fieldIdToLabel[key] || key.charAt(0).toUpperCase() + key.slice(1);
         if (typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)) {
           // Try complaints first
           let resolvedText = ''
@@ -86,19 +110,12 @@ export async function GET(
             }
           }
           if (resolvedText) {
-            resolved_details += `${key.charAt(0).toUpperCase() + key.slice(1)}: ${resolvedText}. `
+            resolved_details += `${label}: ${resolvedText}. `
           }
+        } else if (typeof value === 'string' && value.length > 0) {
+          resolved_details += `${label}: ${value}. `
         }
       }
-
-      // Extract non-UUID text fields
-      const textEntries = Object.entries(feedback.form_data).filter(
-        ([key, val]) => typeof val === 'string' && val.length > 0 && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val)
-      )
-      for (const [key, val] of textEntries) {
-        resolved_details += `${key.charAt(0).toUpperCase() + key.slice(1)}: ${val}. `
-      }
-
       resolved_details = resolved_details.trim() || 'Form data submitted without details'
     } else if (feedback.comment) {
       resolved_details = feedback.comment

@@ -1,22 +1,12 @@
-# TODO: Update Close Poll Functionality
+# Feedback Details Fix
 
-## Information Gathered
-- The close poll functionality is in `app/main/admin/polls/[pollId]/page.tsx`
-- Current `handleClosePoll` function closes the dialog after the API call completes
-- Toast system is available via `useToast` hook from `ToastContext`
-- The page uses `ConfirmDialog` component for confirmation
+## Tasks
+- [x] Update app/api/feedback/[id]/route.ts to map form_data keys to human-readable labels and resolve values to text instead of IDs
+- [x] Adjust app/main/admin/feedback/[feedbackId]/page.tsx to remove or simplify keyLabelMap since labels will be resolved in backend
+- [x] Test the feedback details page to ensure text is displayed instead of IDs
 
-## Plan
-- Import `useToast` hook in the component
-- Modify `handleClosePoll` to:
-  - Close the confirmation dialog immediately on confirm
-  - Make the API call to close the poll
-  - On success: update poll state and show success toast
-  - On error: show error toast and potentially re-open dialog or handle gracefully
-
-## Dependent Files to be edited
-- `app/main/admin/polls/[pollId]/page.tsx`
-
-## Followup steps
-- Test the functionality to ensure modal closes immediately and toast appears on success
-- Verify error handling works properly
+## Progress
+- Started: [Current Date/Time]
+- API route updated to include keyLabelMap and improved resolution logic.
+- Frontend updated to remove redundant keyLabelMap.
+- Ready for testing.

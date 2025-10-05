@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { EmptyState, ChartCard } from '@/components/mainapp/components'
 import { useTheme } from '@/components/ThemeContext'
+import { Button } from '@/components/Button'
 import { PieChart, Calendar, Users, CheckCircle, Clock, FileText, MessageSquare } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 
 interface PollQuestion {
   id: string
@@ -133,40 +135,53 @@ export default function UserPollDetails() {
   const isExpired = poll.deadline && new Date(poll.deadline) < new Date()
 
   return (
-    <div className={`space-y-6 bg-[#0f172a] ${isDark ? 'text-white' : 'text-black'}`}>
+    <div className={`space-y-6 ${isDark ? 'bg-[#0f172a] text-white' : 'bg-gray-50 text-black'}`}>
       {/* Header */}
-      <div className={`flex flex-col sm:flex-row sm:items-start sm:justify-between ${isDark ? 'bg-[#0f172a]' : 'bg-[#0f172a]'}`}>
-        <div className="flex-1">
+      <div className={`flex flex-col gap-4 ${isDark ? 'bg-[#0f172a]' : 'bg-[#f9fafc]'}`}>
+        <div className="flex items-center justify-between">
+          <div>
           <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
             {poll.title}
           </h1>
           {poll.description && (
-            <p className={`${isDark ? 'text-gray-400' : 'text-gray-600'} mt-2`}>
-              {poll.description}
-            </p>
-          )}
+          <p className={`text-left ${isDark ? 'text-gray-400' : 'text-gray-600'} mt-2`}>
+            {poll.description}
+          </p>
+        )}
         </div>
 
-        <div className="mt-4 sm:mt-0 sm:ml-6">
-          <div className="flex items-center space-x-2">
-            {isExpired && (
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${isDark ? 'bg-red-900 text-red-200' : 'bg-red-100 text-red-800'}`}>
-                <Clock className={`w-4 h-4 mr-1 ${isDark ? 'text-white' : 'text-black'}`} />
-                Expired
-              </span>
-            )}
-            {poll.user_voted && (
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${isDark ? 'bg-green-900 text-green-200' : 'bg-green-100 text-green-800'}`}>
-                <CheckCircle className={`w-4 h-4 mr-1 ${isDark ? 'text-white' : 'text-black'}`} />
-                You've responded
-              </span>
-            )}
-          </div>
+          <button
+            onClick={() => window.history.back()}
+            className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+              isDark ? 'text-white border-gray-600 hover:bg-gray-700' : 'text-gray-700'
+            }`}
+            aria-label="Back"
+          >
+            <ArrowLeftIcon className="w-4 h-4 mr-2" />
+            Back
+          </button>
+        </div>
+
+
+
+        <div className="flex items-center space-x-2">
+          {isExpired && (
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${isDark ? 'bg-red-900 text-red-200' : 'bg-red-100 text-red-800'}`}>
+              <Clock className={`w-4 h-4 mr-1 ${isDark ? 'text-white' : 'text-black'}`} />
+              Expired
+            </span>
+          )}
+          {poll.user_voted && (
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${isDark ? 'bg-green-900 text-green-200' : 'bg-green-100 text-green-800'}`}>
+              <CheckCircle className={`w-4 h-4 mr-1 ${isDark ? 'text-white' : 'text-black'}`} />
+              You've responded
+            </span>
+          )}
         </div>
       </div>
 
       {/* Poll Info */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 ${isDark ? 'bg-[#0f172a]' : 'bg-[#f9fafc]'}`}>
         <div className={`${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'} rounded-xl border border-slate-200 dark:border-slate-700 p-6`}>
           <div className="flex items-center">
             <Users className={`w-6 h-6 mr-3 ${isDark ? 'text-blue-400' : 'text-blue-500'}`} />

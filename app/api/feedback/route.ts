@@ -68,21 +68,33 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch feedback' }, { status: 500 })
     }
 
-    // Fetch active feedback form template for the community
-    const { data: template } = await supabase
+    // Fetch feedback form templates for the community
+    const { data: templates } = await supabase
+      .from('feedback_form_templates')
+      .select('id, fields')
+      .eq('community_id', communityId);
+
+    // Also fetch active template for fallback
+    const { data: activeTemplate } = await supabase
       .from('feedback_form_templates')
       .select('fields')
       .eq('community_id', communityId)
       .eq('is_active', true)
       .single();
 
-    // Build mapping from field id to label
-    const fieldIdToLabel: Record<string, string> = {};
-    if (template?.fields && Array.isArray(template.fields)) {
-      for (const field of template.fields) {
-        if (field.id && field.label) {
-          fieldIdToLabel[field.id] = field.label;
+    // Build mapping from template_id to fieldIdToLabel
+    const templateFieldMaps: Record<string, Record<string, string>> = {};
+    if (templates && Array.isArray(templates)) {
+      for (const tmpl of templates) {
+        const fieldIdToLabel: Record<string, string> = {};
+        if (tmpl.fields && Array.isArray(tmpl.fields)) {
+          for (const field of tmpl.fields) {
+            if (field.id && field.label) {
+              fieldIdToLabel[field.id] = field.label;
+            }
+          }
         }
+        templateFieldMaps[tmpl.id] = fieldIdToLabel;
       }
     }
 
@@ -91,6 +103,25 @@ export async function GET(request: NextRequest) {
       (feedback || []).map(async (item: any) => {
         if (item.form_data && typeof item.form_data === 'object') {
           let details = '';
+
+          // Build fieldIdToLabel starting with active template as base
+          let fieldIdToLabel: Record<string, string> = {};
+          if (activeTemplate?.fields) {
+            for (const field of activeTemplate.fields) {
+              if (field.id && field.label) {
+                fieldIdToLabel[field.id] = field.label;
+              }
+            }
+          }
+
+          // Override with specific template labels if available
+          if (item.template_id && templateFieldMaps[item.template_id]) {
+            for (const [id, label] of Object.entries(templateFieldMaps[item.template_id])) {
+              if (label) {
+                fieldIdToLabel[id] = label;
+              }
+            }
+          }
 
           // Resolve any UUID values from common entities
           for (const [key, value] of Object.entries(item.form_data)) {
@@ -118,6 +149,9 @@ export async function GET(request: NextRequest) {
               }
               if (resolvedText) {
                 details += `${label}: ${resolvedText}. `;
+              } else {
+                // If no resolved text, fallback to original value
+                details += `${label}: ${value}. `;
               }
             } else {
               details += `${label}: ${value}. `;

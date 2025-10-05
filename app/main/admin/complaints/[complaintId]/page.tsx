@@ -8,7 +8,7 @@ import { useParams } from 'next/navigation'
 import { Dialog } from '@headlessui/react'
 import { EmptyState, ConfirmDialog } from '@/components/mainapp/components'
 import { useTheme } from '@/components/ThemeContext'
-import { MessageSquareWarning, User, Calendar, Tag, AlertTriangle, CheckCircle, Clock } from 'lucide-react'
+import { MessageSquareWarning, User, Calendar, Tag, AlertTriangle, CheckCircle, Clock, ArrowLeft, RotateCcw } from 'lucide-react'
 
 interface ComplaintData {
   id: string
@@ -73,6 +73,7 @@ export default function ComplaintDetails() {
   const [complaint, setComplaint] = useState<ComplaintData | null>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const [newStatus, setNewStatus] = useState('')
   const [resolutionMessage, setResolutionMessage] = useState('')
 
@@ -101,6 +102,26 @@ export default function ComplaintDetails() {
       fetchComplaint()
     }
   }, [complaintId])
+
+  const handleRefresh = async () => {
+    if (refreshing) return
+
+    setRefreshing(true)
+    try {
+      const response = await fetch(`/api/complaints/${complaintId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setComplaint(data.complaint)
+        setNewStatus(data.complaint?.status || '')
+      } else {
+        console.error('Failed to refresh complaint:', response.status, response.statusText)
+      }
+    } catch (error) {
+      console.error('Failed to refresh complaint:', error)
+    } finally {
+      setRefreshing(false)
+    }
+  }
 
   const handleStatusUpdate = async () => {
     if (!complaint || newStatus === complaint.status) return
@@ -197,7 +218,7 @@ export default function ComplaintDetails() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className={`text-2xl font-bold text-gray-900 ${isDark ? 'text-white' : 'text-slate-900'}`}>
             {complaint.title}
@@ -205,6 +226,30 @@ export default function ComplaintDetails() {
           <p className={`mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
             Complaint #{complaint.id.slice(0, 8)}
           </p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className={`p-2.5 rounded-xl transition-all duration-200 ${
+              isDark
+                ? 'hover:bg-slate-800 text-slate-300 hover:text-white disabled:opacity-50'
+                : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900 disabled:opacity-50'
+            }`}
+            title="Refresh complaint data"
+          >
+            <RotateCcw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+          </button>
+          <button
+            onClick={() => window.history.back()}
+            className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+              isDark ? 'text-white border-gray-600 hover:bg-gray-700' : 'text-gray-700'
+            }`}
+            aria-label="Back"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </button>
         </div>
       </div>
 
