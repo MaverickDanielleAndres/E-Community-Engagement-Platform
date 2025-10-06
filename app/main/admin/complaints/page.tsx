@@ -276,9 +276,9 @@ export default function AdminComplaints() {
       )}
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-          <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+          <h1 className={`text-xl sm:text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Manage Complaints
           </h1>
           <p className={isDark ? 'text-slate-400' : 'text-slate-600'}>
@@ -295,24 +295,45 @@ export default function AdminComplaints() {
             }))
           }}
           disabled={loading}
-          className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+          className={`hidden sm:flex items-center space-x-2 px-2 sm:px-4 py-2 rounded-lg transition-all duration-200 ${
             loading
               ? 'opacity-50 cursor-not-allowed'
               : `hover:shadow-md ${isDark ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-white hover:bg-slate-50 text-slate-900 border border-slate-200'}`
           }`}
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          <span>Refresh</span>
+          <span className="hidden sm:inline">Refresh</span>
         </button>
       </div>
 
       {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <SearchInput
-          placeholder="Search complaints..."
-          value={filters.search}
-          onChange={(value) => setFilters({ ...filters, search: value })}
-        />
+        <div className="flex items-center gap-2">
+          <SearchInput
+            placeholder="Search complaints..."
+            value={filters.search}
+            onChange={(value) => setFilters({ ...filters, search: value })}
+            className="flex-1"
+          />
+          <button
+            onClick={() => {
+              refreshComplaints()
+              localStorage.setItem('sidebarRefresh', 'true')
+              window.dispatchEvent(new StorageEvent('storage', {
+                key: 'sidebarRefresh',
+                newValue: 'true'
+              }))
+            }}
+            disabled={loading}
+            className={`sm:hidden flex items-center px-2 py-2 rounded-lg transition-all duration-200 ${
+              loading
+                ? 'opacity-50 cursor-not-allowed'
+                : `hover:shadow-md ${isDark ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-white hover:bg-slate-50 text-slate-900 border border-slate-200'}`
+            }`}
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
 
         <select
           value={filters.status}

@@ -1,4 +1,4 @@
-use'use client'n
+'use client'
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
@@ -112,8 +112,8 @@ export default function AdminAnalytics() {
         <TrendingUp className="w-12 h-12 text-slate-400 mx-auto mb-4" />
         <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
           Unable to load analytics
-        </h3>md esh
-        <p classNamre="text-slate-500 dark:text-slate-400">
+        </h3>
+        <p className="text-slate-500 dark:text-slate-400">
           Please try refreshing the page
         </p>
       </div>
@@ -144,7 +144,7 @@ export default function AdminAnalytics() {
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col sm:flex-row sm:items-center sm:justify-between"
       >
-        <div>
+        <div className="mb-4">
           <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Community Analytics
           </h1>
@@ -166,7 +166,6 @@ export default function AdminAnalytics() {
                 : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
               }
             `}
-            title="Refresh analytics data"
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>

@@ -143,8 +143,8 @@ export default function UserNotifications() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-4 sm:mb-0">
           <h1 className={`text-2xl font-bold ${themeClasses.textPrimary}`}>Notifications</h1>
           <p className={`mt-1 ${isDark ? 'text-white' : 'text-black'}`}>Stay updated with community activity</p>
         </div>

@@ -313,7 +313,7 @@ export function AdminHeader() {
           </button>
 
           {/* Theme Toggle */}
-          <ThemeToggle className="hidden sm:block" />
+          <ThemeToggle />
 
           {/* Notifications */}
           <div className="relative">

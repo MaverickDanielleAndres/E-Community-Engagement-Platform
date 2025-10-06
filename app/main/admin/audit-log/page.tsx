@@ -68,7 +68,7 @@ export default function AdminAuditLog() {
       key: 'created_at' as const,
       header: 'Timestamp',
       render: (value: string) => (
-        <div className="flex items-center text-sm text-gray-600 dark:text-white">
+        <div className={`flex items-center text-sm ${isDark ? 'text-white' : 'text-gray-600'}`}>
           <Calendar className="w-4 h-4 mr-1" />
           {new Date(value).toLocaleString()}
         </div>
@@ -78,9 +78,9 @@ export default function AdminAuditLog() {
       key: 'user_name' as const,
       header: 'User',
       render: (value: string) => (
-        <div className="flex items-center text-sm">
-          <User className={`w-4 h-4 mr-2 ${isDark ? 'text-white' : 'text-black'}`} />
-          <span className={`text-sm ${isDark ? 'text-white' : 'text-black'}`}>{value}</span>
+        <div className="flex items-center text-sm min-w-0">
+          <User className={`w-4 h-4 mr-2 flex-shrink-0 ${isDark ? 'text-white' : 'text-black'}`} />
+          <span className={`text-sm truncate ${isDark ? 'text-white' : 'text-black'}`}>{value}</span>
         </div>
       )
     },
@@ -107,7 +107,9 @@ export default function AdminAuditLog() {
       key: 'details' as const,
       header: 'Details',
       render: (value: any) => (
-        <div className="text-sm">{typeof value === 'string' ? value : JSON.stringify(value)}</div>
+        <div className="text-sm truncate max-w-xs" title={typeof value === 'string' ? value : JSON.stringify(value)}>
+          {typeof value === 'string' ? value : JSON.stringify(value)}
+        </div>
       )
     },
     {
@@ -121,7 +123,7 @@ export default function AdminAuditLog() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Audit Log</h1>
         <div className="flex items-center gap-3">
           <button
@@ -141,21 +143,21 @@ export default function AdminAuditLog() {
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
           <button
-            className="flex items-center space-x-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+            className="flex items-center space-x-2 bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 text-sm"
             onClick={deleteAllLogs}
           >
-            <Trash className="w-5 h-5" />
+            <Trash className="w-4 h-4" />
             <span>Delete All</span>
           </button>
         </div>
       </div>
 
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center">
         <SearchInput
           placeholder="Search audit log..."
           value={filter}
           onChange={setFilter}
-          className="max-w-md"
+          className="w-full sm:max-w-md"
         />
       </div>
 

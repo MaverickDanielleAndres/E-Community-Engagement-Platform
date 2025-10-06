@@ -94,15 +94,21 @@ export default function UserDashboard() {
         animate={{ opacity: 1, y: 0 }}
         className="space-y-2"
       >
-        <div className="flex items-center justify-between">
-          <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <h1 className={`text-3xl font-bold break-words ${isDark ? 'text-white' : 'text-black'}`}>
             Welcome back, {session?.user?.name || session?.user?.email?.split('@')[0] || 'Resident'}
           </h1>
-          <button
+          <p className={`${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
+          Here's what's happening in your community today
+        </p>
+          
+        </div>
+        
+        <button
             onClick={refreshDashboard}
             disabled={loading}
             title="Refresh dashboard"
-            className={`p-2 rounded-md transition-colors ${
+            className={`mt-2 sm:mt-0 p-2 rounded-md transition-colors ${
               isDark
                 ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700'
                 : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
@@ -110,10 +116,6 @@ export default function UserDashboard() {
           >
             <ArrowPathIcon className={`w-5 h-5 ${isDark ? 'text-white' : 'text-black'}`} />
           </button>
-        </div>
-        <p className={`${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
-          Here's what's happening in your community today
-        </p>
       </motion.div>
 
       {/* Stats Cards */}

@@ -190,21 +190,20 @@ export default function AdminAIInsights() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
+        <div className="mb-4">
           <h1 className={`text-2xl font-bold text-gray-900 ${isDark ? 'text-white' : 'text-slate-900'}`}>            AI Insights Dashboard
           </h1>
           <p className={isDark ? 'text-slate-400' : 'text-slate-600'}>
             AI-powered community analysis and anomaly detection
           </p>
         </div>
-        
+
         <div className="flex items-center space-x-3">
           <button
             onClick={fetchAIData}
-            className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200"
+            className="inline-flex items-center p-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200"
           >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
+            <RefreshCw className="w-4 h-4" />
           </button>
           <button className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200">
             <Bot className="w-4 h-4 mr-2" />

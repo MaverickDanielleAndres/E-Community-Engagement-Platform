@@ -218,9 +218,9 @@ export default function ComplaintDetails() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className={`text-2xl font-bold text-gray-900 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+        <div className="min-w-0 flex-1">
+          <h1 className={`text-xl sm:text-2xl font-bold text-gray-900 ${isDark ? 'text-white' : 'text-slate-900'} break-words`}>
             {complaint.title}
           </h1>
           <p className={`mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -248,7 +248,7 @@ export default function ComplaintDetails() {
             aria-label="Back"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
+            <span className="hidden sm:inline">Back</span>
           </button>
         </div>
       </div>
@@ -334,10 +334,10 @@ export default function ComplaintDetails() {
           )}
 
           <div className="flex items-center pt-4 border-t border-slate-200 dark:border-slate-700">
-            <User className="w-5 h-5 mr-2 text-gray-400" />
-            <div>
+            <User className="w-5 h-5 mr-2 text-gray-400 flex-shrink-0" />
+            <div className="min-w-0 flex-1">
               <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Submitted by</p>
-              <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              <p className={`font-medium break-words ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 {complaint.users.name} ({complaint.users.email})
               </p>
             </div>

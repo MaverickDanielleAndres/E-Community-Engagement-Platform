@@ -241,7 +241,7 @@ export default function AdminMembers() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-4 sm:space-y-0">
           <div className="flex items-center space-x-4">
             {communityInfo && (
               <img
@@ -254,7 +254,7 @@ export default function AdminMembers() {
               />
             )}
             <div>
-              <h1 className={`text-4xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              <h1 className={`text-2xl sm:text-4xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
                 Community Members
               </h1>
               <p className={isDark ? 'text-slate-400' : 'text-slate-600'}>

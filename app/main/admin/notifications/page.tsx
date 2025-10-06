@@ -248,7 +248,7 @@ export default function AdminNotifications() {
               onClick={() => confirmAction(row.id, 'mark_read')}
               className="text-blue-600 hover:text-blue-700 p-2"
             >
-              <Check className="w-4 h-4" />
+              <Check className={`w-4 h-4 ${isDark ? 'text-white' : ''}`} />
               <span className="sr-only">Mark as read</span>
             </Button>
           )}
@@ -258,7 +258,7 @@ export default function AdminNotifications() {
             onClick={() => confirmAction(row.id, 'delete')}
             className="text-red-600 hover:text-red-700 p-2"
           >
-            <TrashIcon className="w-4 h-4" />
+            <TrashIcon className={`w-4 h-4 ${isDark ? 'text-white' : ''}`} />
             <span className="sr-only">Delete</span>
           </Button>
         </div>
@@ -320,7 +320,7 @@ export default function AdminNotifications() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden max-w-full overflow-x-auto bg-slate-900 dark:bg-slate-900" style={{backgroundColor: isDark ? '#0f172a' : '#ffffff'}}>
         <DataTable
           data={notifications}
           columns={columns}

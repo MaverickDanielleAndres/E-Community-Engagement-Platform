@@ -184,14 +184,15 @@ export default function AdminFeedback() {
   const TabButton = ({ tab, label, icon: Icon }: { tab: 'responses' | 'form-editor', label: string, icon: any }) => (
     <button
       onClick={() => setActiveTab(tab)}
-      className={`flex items-center px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
+      className={`flex items-center px-3 py-2 rounded-lg font-medium transition-colors duration-200 ${
         activeTab === tab
           ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
           : `${isDark ? 'bg-slate-700 text-gray-400 hover:bg-slate-600 hover:text-gray-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'}`
       }`}
+      title={label}
     >
-      <Icon className="w-4 h-4 mr-2" />
-      {label}
+      <Icon className="w-4 h-4" />
+      <span className="hidden sm:inline ml-2">{label}</span>
     </button>
   )
 
@@ -222,17 +223,17 @@ export default function AdminFeedback() {
       )}
 
       {/* Header with Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className={`text-2xl font-bold text-gray-900 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <h1 className={`text-xl sm:text-2xl font-bold text-gray-900 ${isDark ? 'text-white' : 'text-slate-900'} break-words`}>
             Community Feedback
           </h1>
-          <p className={`${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+          <p className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm sm:text-base`}>
             Manage feedback forms and view community responses
           </p>
         </div>
 
-        <div className="flex items-center space-x-2 mt-4 sm:mt-0">
+        <div className="flex items-center space-x-2 shrink-0">
           {activeTab === 'responses' && (
             <button
               onClick={() => fetchFeedback(currentPage)}
@@ -334,11 +335,11 @@ export default function AdminFeedback() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between">
-              <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'} text-center sm:text-left`}>
                 Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalFeedback)} of {totalFeedback} feedback entries
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 justify-center sm:justify-end">
                 <button
                   onClick={handlePrevPage}
                   disabled={currentPage === 1}
@@ -350,7 +351,7 @@ export default function AdminFeedback() {
                   `}
                 >
                   <ChevronLeft className="w-4 h-4 mr-1" />
-                  Previous
+                  <span className="hidden xs:inline">Previous</span>
                 </button>
 
                 <span className={`px-3 py-2 text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
@@ -367,7 +368,7 @@ export default function AdminFeedback() {
                     }
                   `}
                 >
-                  Next
+                  <span className="hidden xs:inline">Next</span>
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </button>
               </div>

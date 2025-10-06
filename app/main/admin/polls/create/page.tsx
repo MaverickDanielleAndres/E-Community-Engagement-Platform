@@ -5,11 +5,12 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTheme } from '@/components/ThemeContext'
 import { Toast } from '@/components/Toast'
-import { 
-  Plus, X, Save, Eye, EyeOff, GripVertical, Copy, 
-  ChevronUp, ChevronDown, Trash2, Type, RadioIcon, 
+import {
+  Plus, X, Save, Eye, EyeOff, GripVertical, Copy,
+  ChevronUp, ChevronDown, Trash2, Type, RadioIcon,
   CheckSquare, Settings, Smartphone, Monitor, MessageSquare
 } from 'lucide-react'
+import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 
 interface PollQuestion {
   id: string
@@ -244,32 +245,32 @@ export default function CreatePoll() {
     return (
       <div
         key={question.id}
-        className={`border rounded-xl transition-all duration-200 ${
+        className={`border rounded-xl transition-all duration-200 overflow-hidden ${
           isDark ? 'border-slate-600 bg-slate-800/50' : 'border-slate-200 bg-white'
         } ${isExpanded ? 'ring-2 ring-blue-500/20' : 'hover:shadow-md'}`}
       >
         {/* Question Header */}
         <div
-          className="flex items-center justify-between p-4 cursor-pointer"
+          className="flex items-center justify-between p-4 cursor-pointer min-w-0"
           onClick={() => toggleQuestionExpansion(question.id)}
         >
-          <div className="flex items-center space-x-3">
-            <GripVertical className="w-4 h-4 text-slate-400 cursor-grab" />
+          <div className="flex items-center space-x-3 min-w-0 flex-1">
+            <GripVertical className="w-4 h-4 text-slate-400 cursor-grab flex-shrink-0" />
             {getQuestionIcon(question.type)}
-            <div>
-              <h4 className={`font-medium ${isDark ? 'text-white' : 'text-black'}`}>
+            <div className="min-w-0 flex-1">
+              <h4 className={`font-medium truncate ${isDark ? 'text-white' : 'text-black'}`}>
                 {question.question || `Question ${index + 1}`}
               </h4>
-              <p className={`text-sm ${isDark ? 'text-white' : 'text-black'}`}>
+              <p className={`text-sm truncate ${isDark ? 'text-white' : 'text-black'}`}>
                 {question.type === 'radio' ? 'Multiple Choice' : question.type === 'text' ? 'Short Answer' : 'Checkboxes'}
               </p>
             </div>
             {question.required && (
-              <span className="text-red-500 text-sm font-medium">*</span>
+              <span className="text-red-500 text-sm font-medium flex-shrink-0 ml-1">*</span>
             )}
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-col space-y-2 sm:flex-row sm:space-x-2 sm:space-y-0 items-center flex-shrink-0 ml-2">
             <button
               onClick={(e) => {
                 e.stopPropagation()
@@ -576,32 +577,43 @@ export default function CreatePoll() {
     <div className={`min-h-screen ${isDark ? 'bg-slate-900 text-white' : 'bg-white text-black'}`}>
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-row justify-between items-center gap-4 mb-8">
           <div>
             <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>Create Poll</h1>
             <p className={`${isDark ? 'text-white' : 'text-black'}`}>Create a new poll for your community</p>
           </div>
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => setShowPreview(!showPreview)}
-              className={`flex items-center space-x-2 px-4 py-2 border rounded-lg transition-colors ${
-                isDark
-                  ? 'border-white text-white bg-transparent hover:bg-white/10'
-                  : 'border-slate-300 text-black hover:bg-slate-50'
-              }`}
-            >
-              {showPreview ? <EyeOff className={`w-4 h-4 ${isDark ? 'text-white' : 'text-black'}`} /> : <Eye className={`w-4 h-4 ${isDark ? 'text-white' : 'text-black'}`} />}
-              <span className={`${isDark ? 'text-white' : 'text-black'}`}>{showPreview ? 'Hide' : 'Show'} Preview</span>
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-            >
-              <Save className="w-4 h-4" />
-              <span>{loading ? 'Saving...' : 'Save Poll'}</span>
-            </button>
-          </div>
+          <button
+            onClick={() => window.history.back()}
+            className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+              isDark ? 'text-white border-gray-600 hover:bg-gray-700' : 'text-gray-700'
+            }`}
+            aria-label="Back"
+          >
+            <ArrowLeftIcon className="w-4 h-4 mr-2" />
+            Back
+          </button>
+        </div>
+
+        <div className="flex flex-col space-y-2 sm:flex-row sm:space-x-4 sm:space-y-0 items-center mb-8">
+          <button
+            onClick={() => setShowPreview(!showPreview)}
+            className={`flex items-center space-x-2 px-4 py-2 border rounded-lg transition-colors ${
+              isDark
+                ? 'border-white text-white bg-transparent hover:bg-white/10'
+                : 'border-slate-300 text-black hover:bg-slate-50'
+            }`}
+          >
+            {showPreview ? <EyeOff className={`w-4 h-4 ${isDark ? 'text-white' : 'text-black'}`} /> : <Eye className={`w-4 h-4 ${isDark ? 'text-white' : 'text-black'}`} />}
+            <span className={`${isDark ? 'text-white' : 'text-black'}`}>{showPreview ? 'Hide' : 'Show'} Preview</span>
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          >
+            <Save className="w-4 h-4" />
+            <span>{loading ? 'Saving...' : 'Save Poll'}</span>
+          </button>
         </div>
 
         <div className={`grid grid-cols-1 ${showPreview ? 'lg:grid-cols-2' : ''} gap-8`}>
@@ -704,7 +716,7 @@ export default function CreatePoll() {
 
             {/* Questions Section */}
             <div className={`rounded-xl border p-6 ${isDark ? 'border-slate-600 bg-slate-800' : 'border-slate-200 bg-white'}`}>
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0 mb-4">
                 <h2 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-black'}`}>Questions</h2>
                 <div className="flex space-x-2">
                   <button

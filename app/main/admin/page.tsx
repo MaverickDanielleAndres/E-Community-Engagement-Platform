@@ -413,13 +413,13 @@ export default function AdminDashboard() {
             : 'bg-gradient-to-r from-gray-100 to-gray-200 text-black'
         }`}
       >
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold mb-2">System Status</h2>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl font-bold mb-2 truncate">System Status</h2>
             <p className={`mb-4 ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>
               All systems operational. Community engagement is {stats?.totalMembers && stats.totalMembers > 10 ? 'strong' : 'growing'} with real-time insights available.
             </p>
-            <div className="flex items-center space-x-6">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center space-x-2">
                 <CheckCircle className={`w-4 h-4 ${isDark ? 'text-slate-400' : 'text-gray-500'}`} />
                 <span className="text-sm">Database</span>
@@ -438,7 +438,7 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
-          <div className="hidden sm:block">
+          <div className="hidden sm:block flex-shrink-0">
             <Target className={`w-16 h-16 ${isDark ? 'text-slate-400' : 'text-gray-500'}`} />
           </div>
         </div>

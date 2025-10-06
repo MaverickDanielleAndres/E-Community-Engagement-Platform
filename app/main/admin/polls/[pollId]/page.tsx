@@ -99,7 +99,7 @@ export default function PollDetails() {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
-    )
+     )
   }
 
   if (!poll) {
@@ -129,7 +129,7 @@ export default function PollDetails() {
             </p>
           )}
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 mt-3 sm:mt-0">
           <button
             onClick={() => window.history.back()}
             className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${

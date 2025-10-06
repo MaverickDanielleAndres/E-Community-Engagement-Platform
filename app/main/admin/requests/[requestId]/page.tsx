@@ -315,7 +315,7 @@ export default function ViewRequestPage() {
             <div className="space-y-4 md:space-y-6">
               <div>
                 <label className={`text-sm font-medium mb-1 block ${isDark ? 'text-white' : 'text-black'}`}>Full Name</label>
-                <p className={`${isDark ? 'text-white' : 'text-black'} font-medium`}>{request.full_name}</p>
+                <p className={`${isDark ? 'text-white' : 'text-black'} font-medium break-words`}>{request.full_name}</p>
               </div>
 
               <div>
@@ -339,7 +339,7 @@ export default function ViewRequestPage() {
                   <MapPinIcon className="w-4 h-4" />
                   Address
                 </label>
-                <p className={`${isDark ? 'text-white' : 'text-black'}`}>{request.address}</p>
+                <p className={`${isDark ? 'text-white' : 'text-black'} break-words`}>{request.address}</p>
               </div>
 
               <div>
@@ -347,7 +347,7 @@ export default function ViewRequestPage() {
                   <DocumentIcon className="w-4 h-4" />
                   ID Number
                 </label>
-                <p className={`${isDark ? 'text-white' : 'text-black'} font-mono`}>{request.id_number}</p>
+                <p className={`${isDark ? 'text-white' : 'text-black'} font-mono break-all`}>{request.id_number}</p>
               </div>
 
               <div>

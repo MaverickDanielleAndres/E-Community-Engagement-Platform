@@ -77,19 +77,10 @@ export default function SubmitComplaint() {
 
   return (
     <div className={`max-w-2xl mx-auto space-y-6 ${isDark ? 'text-white' : 'text-black'}`}>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
-            Submit Complaint
-          </h1>
-          <p className={`${isDark ? 'text-slate-400' : 'text-black'} mt-1`}>
-            Report issues or concerns to the community administrators
-          </p>
-        </div>
-
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <button
           onClick={() => window.history.back()}
-          className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+          className={`self-end sm:self-auto inline-flex items-center px-3 py-1 rounded-md text-sm font-medium border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
             isDark ? 'text-white border-gray-600 hover:bg-gray-700' : 'text-gray-700'
           }`}
           aria-label="Back"
@@ -97,6 +88,14 @@ export default function SubmitComplaint() {
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
         </button>
+        <div className="mt-2 sm:mt-0">
+          <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+            Submit Complaint
+          </h1>
+          <p className={`${isDark ? 'text-slate-400' : 'text-black'} mt-1`}>
+            Report issues or concerns to the community administrators
+          </p>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">

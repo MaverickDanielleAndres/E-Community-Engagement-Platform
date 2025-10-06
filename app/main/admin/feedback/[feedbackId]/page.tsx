@@ -98,7 +98,7 @@ export default function FeedbackDetails() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
         <div>
           <h1 className={`text-2xl font-bold text-gray-900 ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Feedback Details
@@ -109,12 +109,12 @@ export default function FeedbackDetails() {
         </div>
         <button
           onClick={() => window.history.back()}
-          className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+          className={`inline-flex items-center px-3 py-2 rounded-md text-sm font-medium border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-fit ${
             isDark ? 'text-white border-gray-600 hover:bg-gray-700' : 'text-gray-700'
           }`}
           aria-label="Back"
         >
-          <ArrowLeft className="w-4 h-4 mr-2" />
+          <ArrowLeft className="w-5 h-5 mr-2" />
           Back
         </button>
       </div>
@@ -163,10 +163,9 @@ export default function FeedbackDetails() {
 
       {/* Feedback Details */}
       <div className={`p-6 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
-        {/* Removed the "Feedback Details" header */}
-        <div className="space-y-4">
+        <h2 className={`text-xl font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Details</h2>
+        <div className="space-y-4 overflow-x-auto">
           <div>
-            {/* Removed the "Details" subheader */}
             <div className="space-y-2">
               {feedback.resolved_details.split('. ').filter(item => item.trim()).map((item, index) => {
                 const [label, ...valueParts] = item.split(': ');
@@ -176,7 +175,7 @@ export default function FeedbackDetails() {
                     <span className={`font-medium min-w-0 sm:min-w-[200px] ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                       {label}:
                     </span>
-                    <span className={`leading-relaxed ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    <span className={`leading-relaxed break-words ${isDark ? 'text-white' : 'text-gray-900'}`}>
                       {value}
                     </span>
                   </div>
@@ -187,8 +186,7 @@ export default function FeedbackDetails() {
 
           {feedback.comment && feedback.comment !== feedback.resolved_details && (
             <div>
-              {/* Removed the "Additional Comment" subheader */}
-              <p className={`leading-relaxed ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              <p className={`leading-relaxed break-words ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 {feedback.comment}
               </p>
             </div>
