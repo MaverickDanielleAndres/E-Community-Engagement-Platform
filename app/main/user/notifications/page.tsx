@@ -23,10 +23,38 @@ export default function UserNotifications() {
   const [loading, setLoading] = useState(true)
   const [selectedNotifications, setSelectedNotifications] = useState<string[]>([])
   const [confirmClearAll, setConfirmClearAll] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [lastNotificationCount, setLastNotificationCount] = useState(0)
 
   useEffect(() => {
     fetchNotifications()
   }, [])
+
+  // Polling for new notifications every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch('/api/notifications')
+        if (response.ok) {
+          const data = await response.json()
+          const newCount = data.notifications?.length || 0
+          if (newCount > lastNotificationCount) {
+            // New notifications detected, refresh notifications and header/sidebar
+            await fetchNotifications()
+            refreshHeaderAndSidebar()
+            setLastNotificationCount(newCount)
+          } else if (lastNotificationCount === 0) {
+            // Initialize lastNotificationCount on first poll
+            setLastNotificationCount(newCount)
+          }
+        }
+      } catch (error) {
+        console.error('Error polling notifications:', error)
+      }
+    }, 30000) // 30 seconds
+
+    return () => clearInterval(interval)
+  }, [lastNotificationCount])
 
   const fetchNotifications = async () => {
     try {
@@ -34,6 +62,7 @@ export default function UserNotifications() {
       if (response.ok) {
         const data = await response.json()
         setNotifications(data.notifications || [])
+        setLastNotificationCount(data.notifications?.length || 0)
       }
     } catch (error) {
       console.error('Error fetching notifications:', error)
@@ -43,16 +72,18 @@ export default function UserNotifications() {
   }
 
   const refreshNotifications = async () => {
-    setLoading(true)
+    setIsRefreshing(true)
     try {
       const response = await fetch('/api/notifications')
       if (response.ok) {
         const data = await response.json()
         setNotifications(data.notifications || [])
+        setLastNotificationCount(data.notifications?.length || 0)
       }
     } catch (error) {
       console.error('Error refreshing notifications:', error)
     } finally {
+      setIsRefreshing(false)
       setLoading(false)
     }
     // Refresh header and sidebar data
@@ -143,12 +174,25 @@ export default function UserNotifications() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div className="mb-4 sm:mb-0">
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
           <h1 className={`text-2xl font-bold ${themeClasses.textPrimary}`}>Notifications</h1>
           <p className={`mt-1 ${isDark ? 'text-white' : 'text-black'}`}>Stay updated with community activity</p>
         </div>
-        <div className="flex items-center space-x-2">
+        <button
+          onClick={refreshNotifications}
+          disabled={isRefreshing}
+          title="Refresh notifications"
+          className={`p-2 rounded-md transition-colors ml-4 block sm:inline-flex ${
+            isRefreshing ? 'animate-spin' : ''
+          } ${themeClasses.text} ${themeClasses.hover}`}
+        >
+          <ArrowPathIcon className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center space-x-2 mb-4 sm:mb-0">
           {selectedNotifications.length > 0 && (
             <button
               onClick={() => markAsRead(selectedNotifications)}
@@ -191,16 +235,6 @@ export default function UserNotifications() {
               )}
             </>
           )}
-          <button
-            onClick={refreshNotifications}
-            disabled={loading}
-            title="Refresh notifications"
-            className={`p-2 rounded-md transition-colors ${
-              loading ? 'animate-spin' : ''
-            } ${themeClasses.text} ${themeClasses.hover}`}
-          >
-            <ArrowPathIcon className="w-5 h-5" />
-          </button>
         </div>
       </div>
 

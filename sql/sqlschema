@@ -27,6 +27,7 @@ CREATE TABLE public.announcements (
   created_by uuid,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  image_url text,
   CONSTRAINT announcements_pkey PRIMARY KEY (id),
   CONSTRAINT announcements_community_id_fkey FOREIGN KEY (community_id) REFERENCES public.communities(id),
   CONSTRAINT announcements_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.users(id)
@@ -56,8 +57,8 @@ CREATE TABLE public.audit_log (
   user_agent text,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT audit_log_pkey PRIMARY KEY (id),
-  CONSTRAINT audit_log_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
-  CONSTRAINT audit_log_community_id_fkey FOREIGN KEY (community_id) REFERENCES public.communities(id)
+  CONSTRAINT audit_log_community_id_fkey FOREIGN KEY (community_id) REFERENCES public.communities(id),
+  CONSTRAINT audit_log_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
 );
 CREATE TABLE public.chat_messages (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -76,8 +77,8 @@ CREATE TABLE public.chat_sessions (
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   last_activity timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT chat_sessions_pkey PRIMARY KEY (id),
-  CONSTRAINT chat_sessions_community_id_fkey FOREIGN KEY (community_id) REFERENCES public.communities(id),
-  CONSTRAINT chat_sessions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+  CONSTRAINT chat_sessions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
+  CONSTRAINT chat_sessions_community_id_fkey FOREIGN KEY (community_id) REFERENCES public.communities(id)
 );
 CREATE TABLE public.communities (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -161,8 +162,8 @@ CREATE TABLE public.events (
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT events_pkey PRIMARY KEY (id),
-  CONSTRAINT events_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.users(id),
-  CONSTRAINT events_community_id_fkey FOREIGN KEY (community_id) REFERENCES public.communities(id)
+  CONSTRAINT events_community_id_fkey FOREIGN KEY (community_id) REFERENCES public.communities(id),
+  CONSTRAINT events_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.users(id)
 );
 CREATE TABLE public.feedback (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -174,8 +175,8 @@ CREATE TABLE public.feedback (
   form_data jsonb,
   template_id uuid,
   CONSTRAINT feedback_pkey PRIMARY KEY (id),
-  CONSTRAINT feedback_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
   CONSTRAINT feedback_community_id_fkey FOREIGN KEY (community_id) REFERENCES public.communities(id),
+  CONSTRAINT feedback_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
   CONSTRAINT feedback_template_id_fkey FOREIGN KEY (template_id) REFERENCES public.feedback_form_templates(id)
 );
 CREATE TABLE public.feedback_form_templates (
@@ -208,8 +209,8 @@ CREATE TABLE public.id_verifications (
   email text,
   approved_at timestamp with time zone,
   CONSTRAINT id_verifications_pkey PRIMARY KEY (id),
-  CONSTRAINT id_verifications_reviewed_by_fkey FOREIGN KEY (reviewed_by) REFERENCES public.users(id),
-  CONSTRAINT id_verifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+  CONSTRAINT id_verifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
+  CONSTRAINT id_verifications_reviewed_by_fkey FOREIGN KEY (reviewed_by) REFERENCES public.users(id)
 );
 CREATE TABLE public.notifications (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -254,9 +255,9 @@ CREATE TABLE public.poll_votes (
   voter_id uuid NOT NULL,
   voted_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT poll_votes_pkey PRIMARY KEY (id),
+  CONSTRAINT poll_votes_poll_id_fkey FOREIGN KEY (poll_id) REFERENCES public.polls(id),
   CONSTRAINT poll_votes_option_id_fkey FOREIGN KEY (option_id) REFERENCES public.poll_options(id),
-  CONSTRAINT poll_votes_voter_id_fkey FOREIGN KEY (voter_id) REFERENCES public.users(id),
-  CONSTRAINT poll_votes_poll_id_fkey FOREIGN KEY (poll_id) REFERENCES public.polls(id)
+  CONSTRAINT poll_votes_voter_id_fkey FOREIGN KEY (voter_id) REFERENCES public.users(id)
 );
 CREATE TABLE public.polls (
   id uuid NOT NULL DEFAULT gen_random_uuid(),

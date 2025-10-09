@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { DataTable } from '@/components/mainapp/components'
-import { Bell, Check, X, AlertTriangle, Info, TrashIcon, RefreshCw } from 'lucide-react'
+import { Bell, Check, X, AlertTriangle, Info, TrashIcon, RefreshCw, Edit } from 'lucide-react'
 import { getSupabaseClient } from '@/lib/supabase'
 import { useSession } from 'next-auth/react'
 import { Button } from '@/components/Button'
@@ -39,6 +39,15 @@ export default function AdminNotifications() {
     message: '',
     action: () => {}
   })
+
+  // New state for edit modal and form data
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [editingNotification, setEditingNotification] = useState<Notification | null>(null)
+  const [formData, setFormData] = useState({
+    title: '',
+    message: ''
+  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const fetchNotifications = async () => {
     try {
@@ -169,27 +178,24 @@ export default function AdminNotifications() {
     }
   }
 
+  const [pendingAction, setPendingAction] = useState<{
+    id: string | null
+    action: 'delete' | 'clear_all' | 'mark_read' | null
+  }>({ id: null, action: null })
+
   const confirmAction = (id: string | null, action: 'delete' | 'clear_all' | 'mark_read') => {
-    const actions = {
-      delete: {
-        title: 'Delete Notification',
-        message: 'Are you sure you want to delete this notification? This action cannot be undone.'
-      },
-      clear_all: {
-        title: 'Clear All Notifications',
-        message: 'Are you sure you want to clear all notifications? This action cannot be undone.'
-      },
-      mark_read: {
-        title: 'Mark Notification as Read',
-        message: 'Mark this notification as read?'
-      }
+    const messages = {
+      delete: 'Are you sure you want to delete this notification? This action cannot be undone.',
+      clear_all: 'Are you sure you want to clear all notifications? This action cannot be undone.',
+      mark_read: 'Mark this notification as read?'
     }
 
     setConfirmDialog({
       isOpen: true,
-      title: actions[action].title,
-      message: actions[action].message,
+      title: 'Confirm Action',
+      message: messages[action],
       action: () => {
+        setConfirmDialog({ ...confirmDialog, isOpen: false })
         if (action === 'clear_all') {
           handleClearAll()
         } else if (action === 'mark_read' && id) {
@@ -197,9 +203,66 @@ export default function AdminNotifications() {
         } else if (action === 'delete' && id) {
           handleDelete(id)
         }
-        setConfirmDialog({ ...confirmDialog, isOpen: false })
+        setPendingAction({ id: null, action: null })
       }
     })
+    setPendingAction({ id, action })
+  }
+
+  // New function to handle edit button click
+  const handleEdit = (notification: Notification) => {
+    setEditingNotification(notification)
+    setFormData({
+      title: notification.title,
+      message: notification.message
+    })
+    setIsEditDialogOpen(true)
+  }
+
+  // New function to handle edit form submission
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingNotification) return
+
+    if (!formData.title.trim() || !formData.message.trim()) {
+      setToast({ message: 'Title and message are required', type: 'error' })
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const response = await fetch(`/api/admin/notifications?id=${editingNotification.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          title: formData.title,
+          message: formData.message
+        })
+      })
+
+      if (response.ok) {
+        setToast({ message: 'Notification updated successfully', type: 'success' })
+        fetchNotifications()
+        setIsEditDialogOpen(false)
+        setEditingNotification(null)
+        setFormData({ title: '', message: '' })
+      } else {
+        setToast({ message: 'Failed to update notification', type: 'error' })
+      }
+    } catch (error) {
+      console.error('Update error:', error)
+      setToast({ message: 'Network error', type: 'error' })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const closeEditModal = () => {
+    setIsEditDialogOpen(false)
+    setEditingNotification(null)
+    setFormData({ title: '', message: '' })
   }
 
   const columns = [
@@ -255,6 +318,15 @@ export default function AdminNotifications() {
           <Button
             variant="outline"
             size="sm"
+            onClick={() => handleEdit(row)}
+            className="text-green-600 hover:text-green-700 p-2"
+          >
+            <Edit className={`w-4 h-4 ${isDark ? 'text-white' : ''}`} />
+            <span className="sr-only">Edit</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => confirmAction(row.id, 'delete')}
             className="text-red-600 hover:text-red-700 p-2"
           >
@@ -275,14 +347,6 @@ export default function AdminNotifications() {
           onClose={() => setToast(null)}
         />
       )}
-
-      <ConfirmDialog
-        isOpen={confirmDialog.isOpen}
-        title={confirmDialog.title}
-        description={confirmDialog.message}
-        onConfirm={confirmDialog.action}
-        onClose={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
-      />
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -328,6 +392,88 @@ export default function AdminNotifications() {
           emptyMessage="No notifications"
         />
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        description={confirmDialog.message}
+        onConfirm={confirmDialog.action}
+        onClose={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
+        variant={pendingAction.action === 'delete' ? 'danger' : 'default'}
+      />
+
+      {/* Edit Modal */}
+      {isEditDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={closeEditModal}
+          />
+          {/* Modal */}
+          <form
+            onSubmit={handleEditSubmit}
+            className={`relative w-full max-w-lg rounded-2xl border backdrop-blur-xl p-6 z-10 ${
+              isDark
+                ? 'bg-slate-800/95 border-slate-700/50 shadow-2xl shadow-slate-900/50'
+                : 'bg-white/95 border-slate-200/50 shadow-2xl shadow-slate-200/50'
+            }`}
+          >
+            <h2 className={`text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              Edit Notification
+            </h2>
+            <div className="mb-4">
+              <label className={`block mb-1 font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                Title
+              </label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                className={`w-full px-4 py-2 border rounded-lg ${
+                  isDark
+                    ? 'bg-slate-700 border-slate-600 text-white'
+                    : 'bg-white border-slate-300 text-slate-900'
+                }`}
+                required
+              />
+            </div>
+            <div className="mb-4">
+              <label className={`block mb-1 font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                Message
+              </label>
+              <textarea
+                value={formData.message}
+                onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
+                className={`w-full px-4 py-2 border rounded-lg resize-none ${
+                  isDark
+                    ? 'bg-slate-700 border-slate-600 text-white'
+                    : 'bg-white border-slate-300 text-slate-900'
+                }`}
+                rows={4}
+                required
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={closeEditModal}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {isSubmitting ? 'Updating...' : 'Update'}
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   )
 }

@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Bot, BarChart3, Users, MessageSquareWarning,
   Smile, PlusSquare, ScrollText, Bell, Settings,
-  ChevronLeft, ChevronRight, Target, ShieldCheck
+  ChevronLeft, ChevronRight, Target, ShieldCheck, Megaphone
 } from 'lucide-react'
 
 interface NavItem {
@@ -207,16 +207,17 @@ export function AdminSidebar() {
         { label: "Analytics", href: "/main/admin/analytics", icon: BarChart3 }
       ]
     },
-    {
-      title: "Management",
-      items: [
-        { label: "Members", href: "/main/admin/members", icon: Users },
-        { label: "Requests", href: "/main/admin/requests", icon: ShieldCheck },
-        { label: "Complaints", href: "/main/admin/complaints", icon: MessageSquareWarning, badge: complaintCount },
-        { label: "Feedback", href: "/main/admin/feedback", icon: Smile },
-        { label: "Polls", href: "/main/admin/polls", icon: PlusSquare }
-      ]
-    },
+      {
+        title: "Management",
+        items: [
+          { label: "Members", href: "/main/admin/members", icon: Users },
+          { label: "Requests", href: "/main/admin/requests", icon: ShieldCheck },
+          { label: "Complaints", href: "/main/admin/complaints", icon: MessageSquareWarning, badge: complaintCount },
+          { label: "Feedback", href: "/main/admin/feedback", icon: Smile },
+          { label: "Polls", href: "/main/admin/polls", icon: PlusSquare },
+          { label: "Announcements", href: "/main/admin/announcements", icon: Megaphone }
+        ]
+      },
     {
       title: "System",
       items: [
@@ -242,11 +243,12 @@ export function AdminSidebar() {
       <Link href={item.href} onClick={handleNavClick}>
         <motion.div
           whileHover={{ x: effectiveIsCollapsed ? 4 : 2, scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           className={`
             relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 cursor-pointer group
             ${isActive
-              ? `${isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-50 text-blue-600'} shadow-sm`
-              : `${isDark ? 'text-slate-300 hover:bg-slate-800/50 hover:text-white' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`
+              ? `${isDark ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-400 shadow-lg shadow-blue-500/10' : 'bg-gradient-to-r from-blue-50 to-purple-50 text-blue-600 shadow-lg shadow-blue-500/10'} border border-blue-200/50 dark:border-blue-500/30`
+              : `${isDark ? 'text-slate-300 hover:bg-gradient-to-r hover:from-slate-800/50 hover:to-slate-700/50 hover:text-white hover:shadow-md' : 'text-slate-600 hover:bg-gradient-to-r hover:from-slate-100 hover:to-slate-50 hover:text-slate-900 hover:shadow-md'}`
             }
           `}
         >
