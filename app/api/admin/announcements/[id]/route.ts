@@ -64,7 +64,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     // Parse FormData instead of JSON
     const formData = await request.formData()
     const title = formData.get('title') as string
-    const content = formData.get('content') as string
+    const content = formData.get('body') as string
     const image = formData.get('image') as File | null
 
     // Validate required fields

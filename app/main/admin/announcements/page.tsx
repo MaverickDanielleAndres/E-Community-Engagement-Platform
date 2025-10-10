@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 import { Plus, Edit, Trash2, User, Calendar, Image as ImageIcon, Upload, X, ChevronLeft, ChevronRight, Filter } from 'lucide-react'
 import { useToast } from '@/components/ToastContext'
 import { useTheme } from '@/components/ThemeContext'
-import { LoadingSpinner, EmptyState } from '@/components/ui'
+import { LoadingSpinner, EmptyState, ConfirmDialog } from '@/components/ui'
 import { Toast } from '@/components/Toast'
 
 interface Announcement {
@@ -158,6 +158,7 @@ export default function AdminAnnouncementsPage() {
 
   // Handle edit
   const handleEdit = (announcement: Announcement) => {
+    console.log('Edit button clicked for announcement:', announcement.id)
     setEditingAnnouncement(announcement)
     setFormData({
       title: announcement.title,
@@ -167,10 +168,26 @@ export default function AdminAnnouncementsPage() {
     setIsEditDialogOpen(true)
   }
 
-  // Handle delete
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this announcement?')) return
+  // Confirmation dialog state
+  const [confirmDialog, setConfirmDialog] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    action: () => {}
+  })
 
+  // Open confirmation dialog for delete
+  const handleDelete = (id: string) => {
+    console.log('Delete button clicked for announcement:', id)
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Confirm Delete',
+      message: 'Are you sure you want to delete this announcement? This action cannot be undone.',
+      action: () => deleteAnnouncement(id)
+    })
+  }
+
+  const deleteAnnouncement = async (id: string) => {
     try {
       const response = await fetch(`/api/admin/announcements/${id}`, {
         method: 'DELETE'
@@ -185,6 +202,8 @@ export default function AdminAnnouncementsPage() {
     } catch (error) {
       console.error('Error deleting announcement:', error)
       setToast({ message: 'Error deleting announcement', type: 'error' })
+    } finally {
+      setConfirmDialog({ ...confirmDialog, isOpen: false })
     }
   }
 
@@ -241,11 +260,9 @@ export default function AdminAnnouncementsPage() {
           className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8"
         >
           <div className="flex items-center gap-3">
-            <div className={`p-3 rounded-full ${isDark ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
-              <Filter className={`w-8 h-8 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
-            </div>
+            
             <div>
-              <h1 className={`text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent`}>
+              <h1 className={`text-3xl md:text-4xl font-bold bg-slate-900 bg-clip-text text-transparent`}>
                 Manage Announcements
               </h1>
               <p className={`text-lg mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
@@ -361,7 +378,7 @@ export default function AdminAnnouncementsPage() {
                 `}
               >
                 {/* Gradient overlay for visual appeal */}
-                <div className={`absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 transition-opacity duration-300
+                <div className={`absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 transition-opacity duration-300 pointer-events-none
                   ${isDark ? 'from-blue-500/20 to-purple-500/20' : 'from-blue-500/10 to-purple-500/10'}`} />
 
                 <div className="relative p-6 md:p-8">
@@ -386,36 +403,35 @@ export default function AdminAnnouncementsPage() {
                       </div>
                     </div>
                     <div className="flex gap-2 ml-4">
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => handleEdit(announcement)}
-                        className={`p-2 rounded-lg transition-colors ${
-                          isDark
-                            ? 'text-slate-400 hover:text-blue-400 hover:bg-slate-700/50'
-                            : 'text-slate-600 hover:text-blue-600 hover:bg-slate-100'
-                        }`}
-                        aria-label="Edit Announcement"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </motion.button>
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => {
-                          if (confirm('Are you sure you want to delete this announcement?')) {
-                            handleDelete(announcement.id)
-                          }
-                        }}
-                        className={`p-2 rounded-lg transition-colors ${
-                          isDark
-                            ? 'text-slate-400 hover:text-red-400 hover:bg-slate-700/50'
-                            : 'text-slate-600 hover:text-red-600 hover:bg-slate-100'
-                        }`}
-                        aria-label="Delete Announcement"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => handleEdit(announcement)}
+                      className={`p-2 rounded-lg transition-colors ${
+                        isDark
+                          ? 'text-slate-400 hover:text-slate-300 hover:bg-slate-700/50'
+                          : 'text-slate-600 hover:text-slate-500 hover:bg-slate-100'
+                      }`}
+                      aria-label="Edit Announcement"
+                      id={`edit-btn-${announcement.id}`}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => handleDelete(announcement.id)}
+                    className={`p-2 rounded-lg transition-colors ${
+                      isDark
+                        ? 'text-slate-400 hover:text-slate-300 hover:bg-slate-700/50'
+                        : 'text-slate-600 hover:text-slate-500 hover:bg-slate-100'
+                    }`}
+                    aria-label="Delete Announcement"
+                    title="Delete Announcement"
+                    id={`delete-btn-${announcement.id}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </motion.button>
                     </div>
                   </div>
 
@@ -441,8 +457,8 @@ export default function AdminAnnouncementsPage() {
                 </div>
 
                 {/* Decorative elements */}
-                <div className={`absolute top-4 right-4 w-20 h-20 rounded-full opacity-5 ${isDark ? 'bg-blue-400' : 'bg-blue-600'} blur-xl`} />
-                <div className={`absolute bottom-4 left-4 w-16 h-16 rounded-full opacity-5 ${isDark ? 'bg-purple-400' : 'bg-purple-600'} blur-xl`} />
+                <div className={`absolute top-4 right-4 w-20 h-20 rounded-full opacity-5 pointer-events-none ${isDark ? 'bg-blue-400' : 'bg-blue-600'} blur-xl`} />
+                <div className={`absolute bottom-4 left-4 w-16 h-16 rounded-full opacity-5 pointer-events-none ${isDark ? 'bg-purple-400' : 'bg-purple-600'} blur-xl`} />
               </motion.div>
             ))}
 
@@ -507,6 +523,18 @@ export default function AdminAnnouncementsPage() {
           </div>
         )}
       </div>
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
+        onConfirm={confirmDialog.action}
+        title={confirmDialog.title}
+        description={confirmDialog.message}
+        variant="danger"
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+      />
 
       {/* Create/Edit Modal */}
       {(isCreateDialogOpen || isEditDialogOpen) && (

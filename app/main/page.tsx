@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
-import { useTheme } from '@/components/ThemeContext'
 import { 
   KPIStatCard, 
   ChartCard, 
