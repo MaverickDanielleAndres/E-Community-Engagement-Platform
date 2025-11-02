@@ -61,6 +61,7 @@ interface Message {
   isRead?: boolean
   readBy?: string[]
   isOptimistic?: boolean
+  isEdited?: boolean
 }
 
 interface TypingIndicator {
@@ -93,6 +94,7 @@ interface UseMessagingReturn {
 
   // Real-time status
   onlineUsers: Set<string>
+  refreshMessages: () => Promise<void>
 }
 
 export function useMessaging(): UseMessagingReturn {
@@ -108,6 +110,56 @@ export function useMessaging(): UseMessagingReturn {
   const supabase = getSupabaseClient()
   const channelsRef = useRef<RealtimeChannel[]>([])
   const typingTimeoutRef = useRef<NodeJS.Timeout>()
+
+  // Helper function to format message for real-time updates
+  const formatMessageForRealtime = useCallback(async (msg: any): Promise<Message> => {
+    const attachmentsWithUrls = await Promise.all((msg.message_attachments || []).map(async (att: any) => {
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+        .from('message-media')
+        .createSignedUrl(att.storage_path, 3600) // 1 hour expiry
+
+      return {
+        id: att.id,
+        name: att.file_name,
+        type: att.mime_type,
+        size: att.size_bytes,
+        url: signedUrlError ? null : signedUrlData.signedUrl
+      }
+    }))
+
+    // Group reactions by emoji
+    const reactionsMap = new Map<string, { emoji: string; count: number; users: string[] }>()
+    msg.message_reactions?.forEach((r: any) => {
+      const existing = reactionsMap.get(r.reaction)
+      if (existing) {
+        existing.count++
+        existing.users.push(r.users?.name || 'Unknown')
+      } else {
+        reactionsMap.set(r.reaction, {
+          emoji: r.reaction,
+          count: 1,
+          users: [r.users?.name || 'Unknown']
+        })
+      }
+    })
+
+    return {
+      id: msg.id,
+      content: msg.body,
+      senderId: msg.sender_id,
+      senderName: msg.users?.name || '',
+      timestamp: msg.created_at,
+      attachments: attachmentsWithUrls,
+      gif: msg.metadata?.gif || undefined,
+      reactions: Array.from(reactionsMap.values()),
+      replyTo: msg.reply_to_message ? {
+        id: msg.reply_to_message.id,
+        content: msg.reply_to_message.body,
+        senderName: msg.reply_to_message.users?.name || ''
+      } : undefined,
+      isEdited: msg.metadata?.isEdited || false
+    }
+  }, [supabase])
 
   // Cleanup function
   const cleanup = useCallback(() => {
@@ -170,6 +222,13 @@ export function useMessaging(): UseMessagingReturn {
     }
   }, [])
 
+  // Refresh messages
+  const refreshMessages = useCallback(async () => {
+    if (selectedConversation) {
+      await fetchMessages(selectedConversation.id)
+    }
+  }, [selectedConversation, fetchMessages])
+
   // Set up real-time subscriptions
   const setupRealtimeSubscriptions = useCallback(() => {
     if (!session?.user?.id) return
@@ -184,18 +243,70 @@ export function useMessaging(): UseMessagingReturn {
         schema: 'public',
         table: 'messages',
         filter: `conversation_id=in.(${conversations.map(c => c.id).join(',') || 'null'})`
-      }, (payload) => {
+      }, async (payload) => {
         console.log('Message change:', payload)
         if (payload.eventType === 'INSERT' && selectedConversation) {
-          // Only fetch if the new message is for the selected conversation
+          // Only update if the new message is for the selected conversation
           if (payload.new.conversation_id === selectedConversation.id) {
-            fetchMessages(selectedConversation.id)
+            // Fetch the complete message with relations directly
+            try {
+              const { data: newMessage, error } = await supabase
+                .from('messages')
+                .select(`
+                  id,
+                  body,
+                  type,
+                  reply_to_message_id,
+                  created_at,
+                  metadata,
+                  sender_id,
+                  users!sender_id(id, name, image),
+                  message_attachments(id, storage_path, file_name, mime_type, size_bytes, thumbnail_path),
+                  message_reactions(id, user_id, reaction, created_at, users!user_id(name)),
+                  reply_to_message:reply_to_message_id(id, body, type, sender_id, users!sender_id(name))
+                `)
+                .eq('id', payload.new.id)
+                .single()
+
+              if (!error && newMessage) {
+                // Format the message to match the expected structure
+                const formattedMessage = await formatMessageForRealtime(newMessage)
+                setMessages(prev => [...prev, formattedMessage])
+              }
+            } catch (err) {
+              console.error('Error fetching new message:', err)
+              // Fallback to fetching all messages
+              fetchMessages(selectedConversation.id)
+            }
           }
           fetchConversations()
-        } else if (payload.eventType === 'UPDATE') {
-          setMessages(prev => prev.map(msg =>
-            msg.id === payload.new.id ? { ...msg, ...payload.new } : msg
-          ))
+        } else if (payload.eventType === 'UPDATE' && selectedConversation) {
+          // Handle message edits
+          if (payload.new.conversation_id === selectedConversation.id) {
+            setMessages(prev => prev.map(msg =>
+              msg.id === payload.new.id ? {
+                ...msg,
+                content: payload.new.body,
+                isEdited: true
+              } : msg
+            ))
+          }
+        } else if (payload.eventType === 'DELETE' && selectedConversation) {
+          // Handle message deletions
+          if (payload.old.conversation_id === selectedConversation.id) {
+            setMessages(prev => prev.filter(msg => msg.id !== payload.old.id))
+          }
+        }
+      })
+      .subscribe()
+
+    // Refresh channel for real-time updates
+    const refreshChannel = supabase
+      .channel('refresh')
+      .on('broadcast', { event: 'refresh' }, (payload) => {
+        if (payload.payload.conversationId === selectedConversation?.id) {
+          // Automatically refresh messages when changes are detected
+          refreshMessages()
         }
       })
       .subscribe()
@@ -301,8 +412,8 @@ export function useMessaging(): UseMessagingReturn {
       })
       .subscribe()
 
-    channelsRef.current = [messagesChannel, reactionsChannel, conversationsChannel, presenceChannel, typingChannel]
-  }, [session?.user?.id, conversations, selectedConversation, fetchMessages, fetchConversations, cleanup])
+    channelsRef.current = [messagesChannel, refreshChannel, reactionsChannel, conversationsChannel, presenceChannel, typingChannel]
+  }, [session?.user?.id, conversations, selectedConversation, fetchMessages, fetchConversations, cleanup, formatMessageForRealtime, refreshMessages])
 
   // Clean up typing indicators after 3 seconds
   useEffect(() => {
@@ -393,6 +504,15 @@ export function useMessaging(): UseMessagingReturn {
         setMessages(prev => prev.filter(msg => msg.id !== tempId))
         fetchMessages(selectedConversation.id)
         fetchConversations()
+
+        // Broadcast refresh event to other users in the conversation
+        supabase.channel('refresh').send({
+          type: 'broadcast',
+          event: 'refresh',
+          payload: {
+            conversationId: selectedConversation.id
+          }
+        })
       } else {
         // Remove optimistic message on error
         setMessages(prev => prev.filter(msg => msg.id !== tempId))
@@ -603,6 +723,7 @@ export function useMessaging(): UseMessagingReturn {
     deleteMessage,
     editMessage,
     deleteConversation,
-    onlineUsers
+    onlineUsers,
+    refreshMessages
   }
 }

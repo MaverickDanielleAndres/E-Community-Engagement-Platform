@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Users, MoreVertical } from 'lucide-react'
+import { Users, MoreVertical, RefreshCw } from 'lucide-react'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { MessageItem } from '@/components/ui/MessageItem'
@@ -64,6 +64,7 @@ interface ConversationViewProps {
   onReply: (messageId: string, replyTo: Message) => void
   onDelete?: (messageId: string) => void
   onEdit?: (messageId: string, newContent: string) => void
+  onRefreshMessages?: () => void
   loading?: boolean
   replyTo?: { id: string; content: string; senderName: string } | null
 }
@@ -77,6 +78,7 @@ export function ConversationView({
   onReply,
   onDelete,
   onEdit,
+  onRefreshMessages,
   loading = false,
   replyTo: propReplyTo
 }: ConversationViewProps) {
@@ -122,7 +124,7 @@ export function ConversationView({
 
   return (
     <div className="flex-1 flex flex-col">
-      <ConversationHeader conversation={conversation} />
+      <ConversationHeader conversation={conversation} onRefreshMessages={onRefreshMessages} />
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -167,10 +169,12 @@ export function ConversationView({
 
 export function ConversationHeader({
   conversation,
-  onDeleteConversation
+  onDeleteConversation,
+  onRefreshMessages
 }: {
   conversation: Conversation | null
   onDeleteConversation?: (conversationId: string) => void
+  onRefreshMessages?: () => void
 }) {
   const { isDark } = useTheme()
   const [showMenu, setShowMenu] = useState(false)
@@ -219,23 +223,32 @@ export function ConversationHeader({
             </p>
           </div>
         </div>
-        <div className="relative">
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => setShowMenu(!showMenu)}
+            onClick={onRefreshMessages}
             className={`p-2 rounded-lg transition-colors hover:bg-${isDark ? 'white/10' : 'slate-100'}`}
+            title="Refresh messages"
           >
-            <MoreVertical className="w-5 h-5" />
+            <RefreshCw className="w-5 h-5" />
           </button>
-          {showMenu && (
-            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-md shadow-lg border border-slate-200 dark:border-slate-700 z-10">
-              <button
-                onClick={handleDeleteConversation}
-                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
-              >
-                Delete Conversation
-              </button>
-            </div>
-          )}
+          <div className="relative">
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              className={`p-2 rounded-lg transition-colors hover:bg-${isDark ? 'white/10' : 'slate-100'}`}
+            >
+              <MoreVertical className="w-5 h-5" />
+            </button>
+            {showMenu && (
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-md shadow-lg border border-slate-200 dark:border-slate-700 z-10">
+                <button
+                  onClick={handleDeleteConversation}
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                >
+                  Delete Conversation
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

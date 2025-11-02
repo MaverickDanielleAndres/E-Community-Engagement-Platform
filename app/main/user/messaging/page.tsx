@@ -60,7 +60,8 @@ export default function MessagingPage() {
     createConversation,
     deleteMessage,
     editMessage,
-    onlineUsers
+    onlineUsers,
+    refreshMessages
   } = useMessaging()
 
   // Update conversations with online status and typing indicators
@@ -158,6 +159,7 @@ export default function MessagingPage() {
           onReply={handleReply}
           onDelete={handleDelete}
           onEdit={handleEdit}
+          onRefreshMessages={refreshMessages}
           loading={false}
           replyTo={replyTo}
         />
