@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseClient } from '@/lib/supabase'
+import { getSupabaseServerClient } from '@/lib/supabase'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const supabase = getSupabaseClient()
+    const supabase = getSupabaseServerClient()
 
     // Fetch all verification requests from id_verifications table
     const { data: history, error } = await supabase

@@ -38,3 +38,5 @@ export function getSupabaseServerClient() {
   }
   return supabaseServerClient
 }
+
+export { createClient }

@@ -13,7 +13,7 @@ import { getSupabaseClient } from '@/lib/supabase'
 import {
   LayoutDashboard, Bot, Users, MessageSquareWarning,
   Smile, PlusSquare, Bell, Settings,
-  ChevronLeft, ChevronRight, Target, FileText, Megaphone
+  ChevronLeft, ChevronRight, Target, FileText, Megaphone, MessageCircle
 } from 'lucide-react'
 
 interface NavItem {
@@ -199,6 +199,7 @@ export function UserSidebar() {
     {
       title: "Community",
       items: [
+        { label: "Messaging", href: "/main/user/messaging", icon: MessageCircle },
         { label: "Announcements", href: "/main/user/announcements", icon: Megaphone },
         { label: "My Complaints", href: "/main/user/complaints/my", icon: MessageSquareWarning },
         { label: "Submit Complaint", href: "/main/user/complaints/submit", icon: PlusSquare },

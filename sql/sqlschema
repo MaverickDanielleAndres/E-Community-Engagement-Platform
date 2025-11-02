@@ -60,6 +60,16 @@ CREATE TABLE public.audit_log (
   CONSTRAINT audit_log_community_id_fkey FOREIGN KEY (community_id) REFERENCES public.communities(id),
   CONSTRAINT audit_log_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
 );
+CREATE TABLE public.audit_logs (
+  id bigint NOT NULL DEFAULT nextval('audit_logs_id_seq'::regclass),
+  actor_id uuid,
+  action text NOT NULL,
+  target_table text,
+  target_id text,
+  payload jsonb,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT audit_logs_pkey PRIMARY KEY (id)
+);
 CREATE TABLE public.chat_messages (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   session_id uuid NOT NULL,
@@ -131,6 +141,41 @@ CREATE TABLE public.complaints (
   CONSTRAINT complaints_pkey PRIMARY KEY (id),
   CONSTRAINT complaints_community_id_fkey FOREIGN KEY (community_id) REFERENCES public.communities(id),
   CONSTRAINT complaints_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.conversation_participants (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  conversation_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  role_in_conversation text,
+  joined_at timestamp with time zone NOT NULL DEFAULT now(),
+  muted_until timestamp with time zone,
+  CONSTRAINT conversation_participants_pkey PRIMARY KEY (id),
+  CONSTRAINT conversation_participants_conversation_id_fkey FOREIGN KEY (conversation_id) REFERENCES public.conversations(id),
+  CONSTRAINT conversation_participants_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.conversation_settings (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  conversation_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  custom_title text,
+  is_muted boolean NOT NULL DEFAULT false,
+  mute_until timestamp with time zone,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT conversation_settings_pkey PRIMARY KEY (id),
+  CONSTRAINT conversation_settings_conversation_id_fkey FOREIGN KEY (conversation_id) REFERENCES public.conversations(id),
+  CONSTRAINT conversation_settings_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.conversations (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  community_id uuid NOT NULL,
+  is_group boolean NOT NULL DEFAULT false,
+  title text,
+  created_by uuid NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  last_message_at timestamp with time zone,
+  CONSTRAINT conversations_pkey PRIMARY KEY (id),
+  CONSTRAINT conversations_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.users(id)
 );
 CREATE TABLE public.email_verifications (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -212,6 +257,63 @@ CREATE TABLE public.id_verifications (
   CONSTRAINT id_verifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
   CONSTRAINT id_verifications_reviewed_by_fkey FOREIGN KEY (reviewed_by) REFERENCES public.users(id)
 );
+CREATE TABLE public.message_attachments (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  message_id uuid NOT NULL,
+  storage_path text NOT NULL,
+  file_name text,
+  mime_type text,
+  size_bytes bigint NOT NULL,
+  thumbnail_path text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT message_attachments_pkey PRIMARY KEY (id),
+  CONSTRAINT message_attachments_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.messages(id)
+);
+CREATE TABLE public.message_reactions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  message_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  reaction text NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT message_reactions_pkey PRIMARY KEY (id),
+  CONSTRAINT message_reactions_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.messages(id),
+  CONSTRAINT message_reactions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.message_reads (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  message_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  read_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT message_reads_pkey PRIMARY KEY (id),
+  CONSTRAINT message_reads_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.messages(id),
+  CONSTRAINT message_reads_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.message_status (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  message_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  status text NOT NULL DEFAULT 'delivered'::text CHECK (status = ANY (ARRAY['delivered'::text, 'read'::text])),
+  status_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT message_status_pkey PRIMARY KEY (id),
+  CONSTRAINT message_status_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.messages(id),
+  CONSTRAINT message_status_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.messages (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  conversation_id uuid NOT NULL,
+  sender_id uuid NOT NULL,
+  body text,
+  type text NOT NULL DEFAULT 'text'::text,
+  reply_to_message_id uuid,
+  deleted_at timestamp with time zone,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  metadata jsonb,
+  message_type text DEFAULT 'text'::text CHECK (message_type = ANY (ARRAY['text'::text, 'file'::text, 'image'::text, 'video'::text, 'voice'::text, 'gif'::text])),
+  CONSTRAINT messages_pkey PRIMARY KEY (id),
+  CONSTRAINT messages_conversation_id_fkey FOREIGN KEY (conversation_id) REFERENCES public.conversations(id),
+  CONSTRAINT messages_reply_to_message_id_fkey FOREIGN KEY (reply_to_message_id) REFERENCES public.messages(id),
+  CONSTRAINT messages_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES public.users(id)
+);
 CREATE TABLE public.notifications (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
@@ -229,6 +331,17 @@ CREATE TABLE public.otp_attempts (
   email text NOT NULL,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT otp_attempts_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.pinned_messages (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  conversation_id uuid NOT NULL,
+  message_id uuid NOT NULL,
+  pinned_by uuid NOT NULL,
+  pinned_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT pinned_messages_pkey PRIMARY KEY (id),
+  CONSTRAINT pinned_messages_conversation_id_fkey FOREIGN KEY (conversation_id) REFERENCES public.conversations(id),
+  CONSTRAINT pinned_messages_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.messages(id),
+  CONSTRAINT pinned_messages_pinned_by_fkey FOREIGN KEY (pinned_by) REFERENCES public.users(id)
 );
 CREATE TABLE public.poll_options (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -340,5 +453,5 @@ CREATE TABLE public.verification_tokens (
   identifier text NOT NULL,
   token text NOT NULL,
   expires timestamp with time zone NOT NULL,
-  CONSTRAINT verification_tokens_pkey PRIMARY KEY (token, identifier)
+  CONSTRAINT verification_tokens_pkey PRIMARY KEY (identifier, token)
 );
