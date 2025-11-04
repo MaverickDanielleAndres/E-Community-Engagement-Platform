@@ -165,25 +165,39 @@ export async function PUT(
       updateData.deadline = new Date(Date.now() - 5000).toISOString() // 5 seconds ago to ensure closed
       console.log('Closing poll, setting deadline to:', updateData.deadline)
 
-      // Create notification for community members
-      const { data: members } = await supabase
-        .from('community_members')
-        .select('user_id')
-        .eq('community_id', pollData.community_id)
+      // Get response count for the poll
+      const { count: responseCount } = await supabase
+        .from('poll_responses')
+        .select('*', { count: 'exact', head: true })
+        .eq('poll_id', pollId)
 
-      if (members && members.length > 0) {
-        const memberIds = members.map((m: any) => m.user_id)
-        const notifications = memberIds.map((memberId: string) => ({
-          user_id: memberId,
-          type: 'poll_closed',
+      // Create notification for all admin users
+      const { data: adminUsers, error: adminError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('role', 'Admin')
+
+      if (adminError) {
+        console.error('Error fetching admin users:', adminError)
+      } else if (adminUsers && adminUsers.length > 0) {
+        // Create notifications for all admin users
+        const notifications = adminUsers.map(admin => ({
+          user_id: admin.id,
           title: `Poll "${pollData.title}" has been closed`,
-          body: 'The poll is no longer accepting responses.',
-          link_url: `/main/user/polls/${pollId}`,
-          is_read: false,
-          created_at: new Date().toISOString()
+          body: `The poll has been manually closed with ${responseCount || 0} responses.`,
+          type: 'info',
+          link_url: `/main/admin/polls/${pollId}`,
+          is_read: false
         }))
 
-        await supabase.from('notifications').insert(notifications)
+        const { error: notificationError } = await supabase
+          .from('notifications')
+          .insert(notifications)
+
+        if (notificationError) {
+          console.error('Notification creation error:', notificationError)
+          // Don't fail the request, just log
+        }
       }
     }
 

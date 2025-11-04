@@ -1,113 +1,36 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Calendar, User, Image as ImageIcon, Megaphone, X, RefreshCw } from 'lucide-react'
 import { useTheme } from '@/components/ThemeContext'
 import { LoadingSpinner, EmptyState } from '@/components/ui'
 import { refreshHeaderAndSidebar } from '@/components/utils/refresh'
-
-interface Announcement {
-  id: string
-  title: string
-  body?: string
-  image_url?: string
-  created_at: string
-  updated_at: string
-  created_by: string
-  creator: {
-    id: string
-    name: string
-    email: string
-  }
-}
+import { useAnnouncements } from '@/lib/hooks/useAnnouncements'
 
 export default function UserAnnouncementsPage() {
-  const { data: session } = useSession()
   const { isDark } = useTheme()
-
-  const [announcements, setAnnouncements] = useState<Announcement[]>([])
-  const [loading, setLoading] = useState(true)
-  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null)
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<any | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [totalItems, setTotalItems] = useState(0)
   const itemsPerPage = 4
 
-  // Date filter state
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
+  const {
+    announcements,
+    isLoading,
+    totalItems,
+    currentPage,
+    totalPages,
+    dateFrom,
+    dateTo,
+    setCurrentPage,
+    setDateFrom,
+    setDateTo,
+    refreshAnnouncements
+  } = useAnnouncements()
 
-  // Refresh state
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [lastAnnouncementCount, setLastAnnouncementCount] = useState(0)
-
-  // Fetch announcements with pagination and date filter
-  const fetchAnnouncements = async () => {
-    setLoading(true)
-    try {
-      const params = new URLSearchParams()
-      params.append('page', currentPage.toString())
-      params.append('limit', itemsPerPage.toString())
-      if (dateFrom) params.append('dateFrom', dateFrom)
-      if (dateTo) params.append('dateTo', dateTo)
-
-      const response = await fetch(`/api/user/announcements?${params.toString()}`)
-      if (response.ok) {
-        const data = await response.json()
-        setAnnouncements(data.announcements || [])
-        setTotalItems(data.total || 0)
-        setTotalPages(Math.ceil((data.total || 0) / itemsPerPage))
-      }
-    } catch (error) {
-      console.error('Error fetching announcements:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Refetch announcements when page or date filter changes
-  useEffect(() => {
-    fetchAnnouncements()
-  }, [currentPage, dateFrom, dateTo])
-
-  // Polling for new announcements every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        const params = new URLSearchParams()
-        params.append('page', '1')
-        params.append('limit', '1') // only need count, so limit 1
-        if (dateFrom) params.append('dateFrom', dateFrom)
-        if (dateTo) params.append('dateTo', dateTo)
-
-        const response = await fetch(`/api/user/announcements?${params.toString()}`)
-        if (response.ok) {
-          const data = await response.json()
-          const newCount = data.total || 0
-          if (newCount > lastAnnouncementCount) {
-            // New announcements detected, refresh announcements and header/sidebar
-            await fetchAnnouncements()
-            refreshHeaderAndSidebar()
-            setLastAnnouncementCount(newCount)
-          } else if (lastAnnouncementCount === 0) {
-            // Initialize lastAnnouncementCount on first poll
-            setLastAnnouncementCount(newCount)
-          }
-        }
-      } catch (error) {
-        console.error('Error polling announcements:', error)
-      }
-    }, 30000) // 30 seconds
-
-    return () => clearInterval(interval)
-  }, [dateFrom, dateTo, lastAnnouncementCount])
-
-  const openModal = (announcement: Announcement) => {
+  const openModal = (announcement: any) => {
     setSelectedAnnouncement(announcement)
     setIsModalOpen(true)
   }
@@ -117,7 +40,7 @@ export default function UserAnnouncementsPage() {
     setSelectedAnnouncement(null)
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <LoadingSpinner />
@@ -149,7 +72,7 @@ export default function UserAnnouncementsPage() {
             <button
               onClick={async () => {
                 setIsRefreshing(true)
-                await fetchAnnouncements()
+                await refreshAnnouncements()
                 setIsRefreshing(false)
               }}
               disabled={isRefreshing}
@@ -178,7 +101,7 @@ export default function UserAnnouncementsPage() {
               <button
               onClick={async () => {
                 setIsRefreshing(true)
-                await fetchAnnouncements()
+                await refreshAnnouncements()
                 setIsRefreshing(false)
               }}
               disabled={isRefreshing}

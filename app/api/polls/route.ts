@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch polls' }, { status: 500 })
     }
 
-    return NextResponse.json({ polls: pollsWithResponses })
+    return NextResponse.json({ polls: pollsWithResponses, communityId })
   } catch (error) {
     console.error('Server error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -185,26 +185,7 @@ export async function POST(request: NextRequest) {
         details: { title, questions_count: questions.length }
       })
 
-    // Create notifications for all community members
-    const { data: members } = await supabase
-      .from('community_members')
-      .select('user_id')
-      .eq('community_id', communityId)
 
-    if (members && members.length > 0) {
-      const memberIds = members.map((m: any) => m.user_id)
-      const notifications = memberIds.map((memberId: string) => ({
-        user_id: memberId,
-        type: 'poll_created',
-        title: `New poll: "${title}"`,
-        body: 'A new poll has been created. Check it out and share your opinion!',
-        link_url: `/main/user/polls/${poll.id}`,
-        is_read: false,
-        created_at: new Date().toISOString()
-      }))
-
-      await supabase.from('notifications').insert(notifications)
-    }
 
     return NextResponse.json({ poll, message: 'Poll created successfully' })
   } catch (error) {

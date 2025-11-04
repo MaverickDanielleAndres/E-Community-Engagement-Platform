@@ -1,24 +1,31 @@
-# Real-Time Messaging Update Plan
+# Admin Notification Refinement TODO
 
-## Current Issue
-- Real-time subscriptions are set up but trigger API fetches instead of direct state updates
-- Users need to refresh to see new messages, causing poor UX
+## Current State Analysis
+- Admins currently receive notifications for:
+  - New complaint submissions ✓ (keep)
+  - New ID verification requests ✓ (keep)
+  - Poll creation (to community members, not admins) ❌ (remove)
+  - Poll closure (to community members) ❌ (change to admins with count)
 
-## Tasks
-- [x] Modify messages subscription in setupRealtimeSubscriptions to directly update messages state on INSERT events
-- [x] Handle UPDATE events for message edits to update state immediately
-- [x] Handle DELETE events for message deletions to update state immediately
-- [x] Ensure proper message formatting for real-time updates
-- [ ] Test that messages appear instantly without refresh
-- [ ] Verify message ordering and scrolling behavior
-- [ ] Update conversation list with latest message info in real-time
+- Admins do NOT receive notifications for:
+  - Feedback submissions ❌ (add)
 
-## Files to Modify
-- lib/hooks/useMessaging.ts (main changes)
-- Potentially update message formatting logic if needed
+## Required Changes
+1. **Add admin notification for feedback submission**
+   - File: `app/api/feedback/route.ts`
+   - Add notification creation in POST method after feedback is created ✓
+
+2. **Remove poll creation notifications**
+   - File: `app/api/polls/route.ts`
+   - Remove the notification creation block in POST method ✓
+
+3. **Change poll closure notifications**
+   - File: `app/api/polls/[pollId]/route.ts`
+   - Change notification recipients from community members to admins
+   - Include number of submissions in notification body ✓
 
 ## Testing
-- Send messages between users and verify instant appearance
-- Edit messages and verify immediate updates
-- Delete messages and verify immediate removal
-- Check that scrolling and message ordering work correctly
+- Test feedback submission notification ✓
+- Test poll creation (should not notify anyone) ✓
+- Test poll closure notification to admins with count ✓
+- Verify complaint and ID verification notifications still work ✓

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { motion } from 'framer-motion'
@@ -10,6 +10,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { KPICard } from '@/components/mainapp/components'
 import { useTheme } from '@/components/ThemeContext'
 import { refreshHeaderAndSidebar } from '@/components/utils/refresh'
+import { useDashboard } from '@/lib/hooks/useDashboard'
 
 interface DashboardStats {
   activePolls: number
@@ -28,36 +29,13 @@ interface RecentActivity {
 export default function UserDashboard() {
   const { data: session } = useSession()
   const { isDark } = useTheme()
-  const [stats, setStats] = useState<DashboardStats>({
-    activePolls: 0,
-    openComplaints: 0,
-    recentFeedback: 0,
-    unreadNotifications: 0,
-    communityMembers: 0
-  })
-  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
-  const [loading, setLoading] = useState(true)
+  const { stats, recentActivity, isLoading: loading, refreshDashboard } = useDashboard()
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      if (!session?.user?.email) return
-
-      try {
-        const response = await fetch('/api/user/dashboard')
-        if (response.ok) {
-          const { stats: fetchedStats, recentActivity: fetchedActivity } = await response.json()
-          setStats(fetchedStats)
-          setRecentActivity(fetchedActivity)
-        }
-      } catch (error) {
-        console.error('Failed to fetch dashboard data:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchDashboardData()
-  }, [session?.user?.email])
+  const handleRefreshDashboard = async () => {
+    await refreshDashboard()
+    // Refresh header and sidebar data
+    refreshHeaderAndSidebar()
+  }
 
   if (loading) {
     return (
@@ -65,25 +43,6 @@ export default function UserDashboard() {
         <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${isDark ? 'border-blue-400' : 'border-blue-600'}`}></div>
       </div>
     )
-  }
-
-  const refreshDashboard = async () => {
-    setLoading(true)
-    try {
-      if (!session?.user?.email) return
-      const response = await fetch('/api/user/dashboard')
-      if (response.ok) {
-        const { stats: fetchedStats, recentActivity: fetchedActivity } = await response.json()
-        setStats(fetchedStats)
-        setRecentActivity(fetchedActivity)
-      }
-    } catch (error) {
-      console.error('Failed to refresh dashboard data:', error)
-    } finally {
-      setLoading(false)
-    }
-    // Refresh header and sidebar data
-    refreshHeaderAndSidebar()
   }
 
   return (
@@ -105,7 +64,7 @@ export default function UserDashboard() {
         </div>
         
         <button
-            onClick={refreshDashboard}
+            onClick={handleRefreshDashboard}
             disabled={loading}
             title="Refresh dashboard"
             className={`mt-2 sm:mt-0 p-2 rounded-md transition-colors ${

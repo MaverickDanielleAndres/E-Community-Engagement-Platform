@@ -49,7 +49,11 @@ export async function GET(
         form_data,
         template_id,
         created_at,
-        users(name, email)
+        admin_response,
+        admin_response_at,
+        admin_response_by,
+        users(name, email),
+        admin_user:admin_response_by(name)
       `)
       .eq('id', id)
       .eq('community_id', communityId)
@@ -211,6 +215,126 @@ export async function DELETE(
       })
 
     return NextResponse.json({ message: 'Feedback deleted successfully' })
+  } catch (error) {
+    console.error('Server error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession()
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { id } = params
+    const body = await request.json()
+    const { admin_response } = body
+
+    if (!admin_response || typeof admin_response !== 'string' || admin_response.trim().length === 0) {
+      return NextResponse.json({ error: 'Admin response is required' }, { status: 400 })
+    }
+
+    // Get user and check if admin
+    const { data: user } = await supabase
+      .from('users')
+      .select(`
+        id,
+        community_members(
+          community_id,
+          role
+        )
+      `)
+      .eq('email', session.user.email)
+      .single()
+
+    if (!user || !user.community_members?.[0]) {
+      return NextResponse.json({ error: 'Community membership required' }, { status: 403 })
+    }
+
+    const communityId = user.community_members[0].community_id
+    const isAdmin = user.community_members[0].role?.toLowerCase() === 'admin'
+
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    }
+
+    // Check if feedback exists
+    const { data: existingFeedback } = await supabase
+      .from('feedback')
+      .select('id, user_id')
+      .eq('id', id)
+      .eq('community_id', communityId)
+      .single()
+
+    if (!existingFeedback) {
+      return NextResponse.json({ error: 'Feedback not found' }, { status: 404 })
+    }
+
+    // Update feedback with admin response
+    const { data: updatedFeedback, error: updateError } = await supabase
+      .from('feedback')
+      .update({
+        admin_response: admin_response.trim(),
+        admin_response_at: new Date().toISOString(),
+        admin_response_by: user.id
+      })
+      .eq('id', id)
+      .eq('community_id', communityId)
+      .select(`
+        id,
+        rating,
+        comment,
+        form_data,
+        template_id,
+        created_at,
+        admin_response,
+        admin_response_at,
+        admin_response_by,
+        users(name, email),
+        admin_user:admin_response_by(name)
+      `)
+      .single()
+
+    if (updateError) {
+      console.error('Feedback update error:', updateError)
+      return NextResponse.json({ error: 'Failed to update feedback' }, { status: 500 })
+    }
+
+    // Create notification for the user who submitted the feedback
+    const { error: notificationError } = await supabase
+      .from('notifications')
+      .insert({
+        user_id: existingFeedback.user_id,
+        type: 'feedback_response',
+        title: 'Admin Response to Your Feedback',
+        body: `An admin has responded to your feedback: "${admin_response.substring(0, 100)}${admin_response.length > 100 ? '...' : ''}"`,
+        link_url: `/main/feedback/my/${id}`
+      })
+
+    if (notificationError) {
+      console.error('Notification creation error:', notificationError)
+      // Don't fail the request if notification fails
+    }
+
+    // Log audit trail
+    await supabase
+      .from('audit_log')
+      .insert({
+        community_id: communityId,
+        user_id: user.id,
+        action_type: 'respond_to_feedback',
+        entity_type: 'feedback',
+        entity_id: id,
+        details: { response_length: admin_response.length }
+      })
+
+    return NextResponse.json({ feedback: updatedFeedback, message: 'Response added successfully' })
   } catch (error) {
     console.error('Server error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

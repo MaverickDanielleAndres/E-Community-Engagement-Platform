@@ -7,6 +7,7 @@ import { MessageSquareWarning, Calendar } from 'lucide-react'
 import { ArrowPathIcon } from '@heroicons/react/24/outline'
 import { useTheme } from '@/components/ThemeContext'
 import { refreshHeaderAndSidebar } from '@/components/utils/refresh'
+import { useComplaints } from '@/lib/hooks/useComplaints'
 
 interface Complaint {
   id: string
@@ -20,44 +21,17 @@ interface Complaint {
 
 export default function MyComplaints() {
   const { isDark } = useTheme()
-  const [complaints, setComplaints] = useState<Complaint[]>([])
-  const [loading, setLoading] = useState(true)
+  const { complaints, isLoading: loading, refreshComplaints } = useComplaints()
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
   const limit = 10
 
-  const fetchComplaints = async (pageNumber: number) => {
-    setLoading(true)
-    try {
-      const response = await fetch(`/api/complaints?my=true&page=${pageNumber}&limit=${limit}`)
-      if (response.ok) {
-        const data = await response.json()
-        setComplaints(data.complaints || [])
-        setTotal(data.total || 0)
-        setPage(data.page || 1)
-      }
-    } catch (error) {
-      console.error('Failed to fetch complaints:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
+  // For pagination, we still need to handle page state
+  // But since the hook handles real-time updates, we don't need manual fetching
   useEffect(() => {
-    fetchComplaints(page)
-  }, [page])
-
-  // Listen for sidebar refresh flag to refresh complaints list automatically
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'sidebarRefresh' && e.newValue === 'true') {
-        localStorage.removeItem('sidebarRefresh')
-        fetchComplaints(page)
-      }
-    }
-    window.addEventListener('storage', handleStorageChange)
-    return () => window.removeEventListener('storage', handleStorageChange)
-  }, [page])
+    // Update total count for pagination
+    setTotal(complaints.length)
+  }, [complaints])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -147,8 +121,8 @@ export default function MyComplaints() {
     }
   ]
 
-  const refreshComplaints = async () => {
-    fetchComplaints(page)
+  const handleRefreshComplaints = async () => {
+    await refreshComplaints()
     // Refresh header and sidebar data
     refreshHeaderAndSidebar()
   }
@@ -167,7 +141,7 @@ export default function MyComplaints() {
           </p>
         </div>
         <button
-          onClick={refreshComplaints}
+          onClick={handleRefreshComplaints}
           disabled={loading}
           title="Refresh complaints"
           className={`p-2 rounded-md transition-colors ${

@@ -7,6 +7,7 @@ import { Star, Calendar } from 'lucide-react'
 import { ArrowPathIcon } from '@heroicons/react/24/outline'
 import { useTheme } from '@/components/ThemeContext'
 import { refreshHeaderAndSidebar } from '@/components/utils/refresh'
+import { useFeedback } from '@/lib/hooks/useFeedback'
 
 interface Feedback {
   id: string
@@ -15,39 +16,30 @@ interface Feedback {
   form_data?: Record<string, any>
   resolved_details?: string
   created_at: string
+  admin_response?: string
+  admin_response_at?: string
+  admin_response_by?: string
+  admin_user?: {
+    name: string
+  }
 }
 
 export default function MyFeedback() {
   const { isDark } = useTheme()
-  const [feedback, setFeedback] = useState<Feedback[]>([])
-  const [loading, setLoading] = useState(true)
+  const { feedback, isLoading: loading, refreshFeedback } = useFeedback()
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
   const limit = 10
 
-  const fetchFeedback = async (pageNumber: number) => {
-    setLoading(true)
-    try {
-      const response = await fetch(`/api/feedback?my=true&page=${pageNumber}&limit=${limit}`)
-      if (response.ok) {
-        const data = await response.json()
-        setFeedback(data.feedback || [])
-        setTotal(data.total || 0)
-        setPage(data.page || 1)
-      }
-    } catch (error) {
-      console.error('Failed to fetch feedback:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
+  // For pagination, we still need to handle page state
+  // But since the hook handles real-time updates, we don't need manual fetching
   useEffect(() => {
-    fetchFeedback(page)
-  }, [page])
+    // Update total count for pagination
+    setTotal(feedback.length)
+  }, [feedback])
 
-  const refreshFeedback = async () => {
-    fetchFeedback(page)
+  const handleRefreshFeedback = async () => {
+    await refreshFeedback()
     // Refresh header and sidebar data
     refreshHeaderAndSidebar()
   }
@@ -128,6 +120,26 @@ export default function MyFeedback() {
     return feedback.comment ? <span className={`${isDark ? 'text-white' : 'text-black'}`}>{feedback.comment}</span> : <span className={`italic text-gray-400 ${isDark ? 'text-white' : 'text-black'}`}>No comment</span>
   }
 
+  const renderAdminResponse = (feedback: Feedback) => {
+    if (!feedback.admin_response) {
+      return <span className={`text-gray-400 italic ${isDark ? 'text-white' : 'text-black'}`}>No response yet</span>
+    }
+
+    return (
+      <div className={`p-3 rounded-lg border ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-blue-50 border-blue-200'}`}>
+        <div className={`text-sm font-medium mb-1 ${isDark ? 'text-white' : 'text-black'}`}>
+          Admin Response {feedback.admin_user?.name && `by ${feedback.admin_user.name}`}
+        </div>
+        <p className={`${isDark ? 'text-slate-300' : 'text-gray-700'}`}>{feedback.admin_response}</p>
+        {feedback.admin_response_at && (
+          <div className={`text-xs mt-2 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+            Responded on {new Date(feedback.admin_response_at).toLocaleDateString()}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   const columns = [
     {
       key: 'rating' as const,
@@ -138,6 +150,11 @@ export default function MyFeedback() {
       key: 'comment' as const,
       header: 'Details',
       render: (_: any, feedback: Feedback) => renderDetails(feedback)
+    },
+    {
+      key: 'admin_response' as const,
+      header: 'Admin Response',
+      render: (_: any, feedback: Feedback) => renderAdminResponse(feedback)
     },
     {
       key: 'created_at' as const,
@@ -165,7 +182,7 @@ export default function MyFeedback() {
           </p>
         </div>
         <button
-          onClick={refreshFeedback}
+          onClick={handleRefreshFeedback}
           disabled={loading}
           title="Refresh feedback"
           className={`p-2 rounded-md transition-colors ${

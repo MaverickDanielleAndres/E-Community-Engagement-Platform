@@ -700,10 +700,131 @@ export function useMessaging(): UseMessagingReturn {
     }
   }, [selectedConversation])
 
-  // Cleanup on unmount
+  // Real-time subscriptions
   useEffect(() => {
-    return cleanup
-  }, [cleanup])
+    if (!session?.user?.id || !selectedConversation?.id) return
+
+    const channel = supabase
+      .channel(`conversation_${selectedConversation.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${selectedConversation.id}`
+        },
+        (payload: any) => {
+          console.log('Message change detected:', payload)
+
+          if (payload.eventType === 'INSERT') {
+            // New message added
+            const newMessage = {
+              id: payload.new.id,
+              content: payload.new.body,
+              senderId: payload.new.sender_id,
+              senderName: payload.new.users?.name || 'Unknown',
+              timestamp: payload.new.created_at,
+              attachments: payload.new.message_attachments?.map((att: any) => ({
+                id: att.id,
+                name: att.file_name,
+                type: att.mime_type,
+                size: att.size_bytes,
+                url: att.thumbnail_path || null
+              })) || [],
+              reactions: payload.new.message_reactions?.map((reaction: any) => ({
+                emoji: reaction.reaction,
+                count: 1,
+                users: [reaction.users?.name || 'Unknown']
+              })) || [],
+              replyTo: payload.new.reply_to_message ? {
+                id: payload.new.reply_to_message.id,
+                content: payload.new.reply_to_message.body,
+                senderName: payload.new.reply_to_message.users?.name || 'Unknown'
+              } : undefined,
+              isRead: false,
+              readBy: []
+            }
+
+            setMessages(prev => {
+              // Check if message already exists (avoid duplicates)
+              if (prev.some(msg => msg.id === newMessage.id)) {
+                return prev
+              }
+              return [...prev, newMessage]
+            })
+
+            // Update conversation last message if it's a new message
+            if (payload.new.sender_id !== session.user.id) {
+              fetchConversations()
+            }
+          } else if (payload.eventType === 'UPDATE') {
+            // Message updated (edited)
+            setMessages(prev => prev.map(msg =>
+              msg.id === payload.new.id
+                ? { ...msg, content: payload.new.body, isEdited: true }
+                : msg
+            ))
+          } else if (payload.eventType === 'DELETE') {
+            // Message deleted
+            setMessages(prev => prev.filter(msg => msg.id !== payload.old.id))
+            fetchConversations()
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'message_reactions',
+          filter: `conversation_id=eq.${selectedConversation.id}`
+        },
+        (payload: any) => {
+          console.log('Reaction change detected:', payload)
+
+          // Update message reactions
+          setMessages(prev => prev.map(msg => {
+            if (msg.id === payload.new?.message_id || msg.id === payload.old?.message_id) {
+              // Re-fetch reactions for this message
+              fetchMessages(selectedConversation.id)
+            }
+            return msg
+          }))
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'message_reads',
+          filter: `conversation_id=eq.${selectedConversation.id}`
+        },
+        (payload: any) => {
+          console.log('Read status change detected:', payload)
+
+          // Update read status
+          setMessages(prev => prev.map(msg => {
+            if (msg.id === payload.new?.message_id) {
+              return {
+                ...msg,
+                isRead: true,
+                readBy: [...(msg.readBy || []), payload.new.user_id]
+              }
+            }
+            return msg
+          }))
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [session?.user?.id, selectedConversation?.id, supabase, fetchMessages, fetchConversations])
+
+
 
   return {
     conversations,

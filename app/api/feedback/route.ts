@@ -199,6 +199,7 @@ export async function POST(request: NextRequest) {
       .from('users')
       .select(`
         id,
+        name,
         community_members(
           community_id,
           role
@@ -265,12 +266,41 @@ export async function POST(request: NextRequest) {
         action_type: 'create_feedback',
         entity_type: 'feedback',
         entity_id: feedback.id,
-        details: { 
+        details: {
           has_form_data: !!form_data,
           has_rating: !!feedbackData.rating,
-          has_comment: !!feedbackData.comment 
+          has_comment: !!feedbackData.comment
         }
       })
+
+    // Notify all admin users
+    const { data: adminUsers, error: adminError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('role', 'Admin')
+
+    if (adminError) {
+      console.error('Error fetching admin users:', adminError)
+    } else if (adminUsers && adminUsers.length > 0) {
+      // Create notifications for all admin users
+      const notifications = adminUsers.map(admin => ({
+        user_id: admin.id,
+        title: 'New Feedback Submitted',
+        body: `New feedback has been submitted by ${user.name || 'a user'}.`,
+        type: 'info',
+        link_url: '/main/admin/feedback',
+        is_read: false
+      }))
+
+      const { error: notificationError } = await supabase
+        .from('notifications')
+        .insert(notifications)
+
+      if (notificationError) {
+        console.error('Notification creation error:', notificationError)
+        // Don't fail the request, just log
+      }
+    }
 
     return NextResponse.json({ feedback, message: 'Feedback submitted successfully' })
   } catch (error) {

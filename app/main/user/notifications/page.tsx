@@ -1,138 +1,50 @@
 // @/app/main/user/notifications/page.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { DataTable } from '@/components/mainapp/components'
 import { Bell, Check, AlertTriangle, Info, CheckCircle } from 'lucide-react'
 import { ArrowPathIcon, TrashIcon } from '@heroicons/react/24/outline'
-import { refreshHeaderAndSidebar } from '@/components/utils/refresh'
-import { useTheme } from '@/components/ThemeContext'
 
-interface Notification {
-  id: string
-  type: 'info' | 'warning' | 'success'
-  title: string
-  body: string
-  created_at: string
-  is_read: boolean
-}
+import { useTheme } from '@/components/ThemeContext'
+import { useNotifications } from '@/lib/hooks/useNotifications'
 
 export default function UserNotifications() {
   const { isDark, themeClasses } = useTheme()
-  const [notifications, setNotifications] = useState<Notification[]>([])
-  const [loading, setLoading] = useState(true)
   const [selectedNotifications, setSelectedNotifications] = useState<string[]>([])
   const [confirmClearAll, setConfirmClearAll] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [lastNotificationCount, setLastNotificationCount] = useState(0)
 
-  useEffect(() => {
-    fetchNotifications()
-  }, [])
+  const {
+    notifications,
+    unreadCount,
+    isLoading,
+    markAsRead,
+    markAllAsRead,
+    clearAll,
+    refreshNotifications
+  } = useNotifications()
 
-  // Polling for new notifications every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        const response = await fetch('/api/notifications')
-        if (response.ok) {
-          const data = await response.json()
-          const newCount = data.notifications?.length || 0
-          if (newCount > lastNotificationCount) {
-            // New notifications detected, refresh notifications and header/sidebar
-            await fetchNotifications()
-            refreshHeaderAndSidebar()
-            setLastNotificationCount(newCount)
-          } else if (lastNotificationCount === 0) {
-            // Initialize lastNotificationCount on first poll
-            setLastNotificationCount(newCount)
-          }
-        }
-      } catch (error) {
-        console.error('Error polling notifications:', error)
-      }
-    }, 30000) // 30 seconds
-
-    return () => clearInterval(interval)
-  }, [lastNotificationCount])
-
-  const fetchNotifications = async () => {
-    try {
-      const response = await fetch('/api/notifications')
-      if (response.ok) {
-        const data = await response.json()
-        setNotifications(data.notifications || [])
-        setLastNotificationCount(data.notifications?.length || 0)
-      }
-    } catch (error) {
-      console.error('Error fetching notifications:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const refreshNotifications = async () => {
+  const handleRefreshNotifications = async () => {
     setIsRefreshing(true)
-    try {
-      const response = await fetch('/api/notifications')
-      if (response.ok) {
-        const data = await response.json()
-        setNotifications(data.notifications || [])
-        setLastNotificationCount(data.notifications?.length || 0)
-      }
-    } catch (error) {
-      console.error('Error refreshing notifications:', error)
-    } finally {
-      setIsRefreshing(false)
-      setLoading(false)
-    }
-    // Refresh header and sidebar data
-    refreshHeaderAndSidebar()
+    await refreshNotifications()
+    setIsRefreshing(false)
   }
 
-  const markAsRead = async (notificationIds: string[]) => {
-    try {
-      const response = await fetch('/api/notifications', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notificationIds }),
-      })
-
-      if (response.ok) {
-        setNotifications(prev =>
-          prev.map(notification =>
-            notificationIds.includes(notification.id)
-              ? { ...notification, is_read: true }
-              : notification
-          )
-        )
-        setSelectedNotifications([])
-        // Trigger sidebar refresh
-        localStorage.setItem('sidebarRefresh', Date.now().toString())
-        window.dispatchEvent(new CustomEvent('sidebarRefresh'))
-      }
-    } catch (error) {
-      console.error('Error marking notifications as read:', error)
-    }
+  const handleMarkAsRead = async (notificationIds: string[]) => {
+    await markAsRead(notificationIds)
+    setSelectedNotifications([])
+    // Trigger sidebar refresh
+    localStorage.setItem('sidebarRefresh', Date.now().toString())
+    window.dispatchEvent(new CustomEvent('sidebarRefresh'))
   }
 
-  const clearAllNotifications = async () => {
-    try {
-      const response = await fetch('/api/notifications?clear=true', {
-        method: 'DELETE',
-      })
-      if (response.ok) {
-        setNotifications([])
-        setConfirmClearAll(false)
-        // Trigger sidebar refresh
-        localStorage.setItem('sidebarRefresh', Date.now().toString())
-        window.dispatchEvent(new CustomEvent('sidebarRefresh'))
-      } else {
-        console.error('Failed to clear notifications')
-      }
-    } catch (error) {
-      console.error('Error clearing notifications:', error)
-    }
+  const handleClearAllNotifications = async () => {
+    await clearAll()
+    setConfirmClearAll(false)
+    // Trigger sidebar refresh
+    localStorage.setItem('sidebarRefresh', Date.now().toString())
+    window.dispatchEvent(new CustomEvent('sidebarRefresh'))
   }
 
   const getTypeIcon = (type: string) => {
@@ -152,7 +64,7 @@ export default function UserNotifications() {
     {
       key: 'title' as const,
       header: 'Notification',
-      render: (value: string, row: Notification) => (
+      render: (value: string, row: any) => (
         <div>
           <div className={`font-medium ${row.is_read ? themeClasses.text : themeClasses.textPrimary}`}>
             {value}
@@ -170,7 +82,7 @@ export default function UserNotifications() {
     }
   ]
 
-  const unreadCount = notifications.filter(n => !n.is_read).length
+
 
   return (
     <div className="space-y-6">
@@ -180,7 +92,7 @@ export default function UserNotifications() {
           <p className={`mt-1 ${isDark ? 'text-white' : 'text-black'}`}>Stay updated with community activity</p>
         </div>
         <button
-          onClick={refreshNotifications}
+          onClick={handleRefreshNotifications}
           disabled={isRefreshing}
           title="Refresh notifications"
           className={`p-2 rounded-md transition-colors ml-4 block sm:inline-flex ${
@@ -195,7 +107,7 @@ export default function UserNotifications() {
         <div className="flex items-center space-x-2 mb-4 sm:mb-0">
           {selectedNotifications.length > 0 && (
             <button
-              onClick={() => markAsRead(selectedNotifications)}
+              onClick={() => handleMarkAsRead(selectedNotifications)}
               className="inline-flex items-center px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
               <Check className="w-3 h-3 mr-1.5" />
@@ -224,7 +136,7 @@ export default function UserNotifications() {
                         Cancel
                       </button>
                       <button
-                        onClick={clearAllNotifications}
+                        onClick={() => handleClearAllNotifications()}
                         className="px-4 py-2 rounded bg-gray-600 text-white hover:bg-gray-700"
                       >
                         Clear All
@@ -242,7 +154,7 @@ export default function UserNotifications() {
         <DataTable
           data={notifications}
           columns={columns}
-          loading={loading}
+          loading={isLoading}
           emptyMessage="No notifications"
         />
       </div>
