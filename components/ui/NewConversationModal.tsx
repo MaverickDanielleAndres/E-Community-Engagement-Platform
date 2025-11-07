@@ -116,7 +116,7 @@ export function NewConversationModal({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="fixed inset-4 md:inset-8 lg:inset-16 bg-white dark:bg-slate-800 rounded-lg shadow-xl z-50 flex flex-col"
+            className={`fixed inset-4 md:inset-8 lg:inset-16 ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-900'} rounded-lg shadow-xl z-50 flex flex-col`}
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
@@ -126,7 +126,7 @@ export function NewConversationModal({
               </h2>
               <button
                 onClick={onClose}
-                className={`p-2 rounded-lg transition-colors hover:bg-${isDark ? 'white/10' : 'slate-100'}`}
+                className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -141,7 +141,7 @@ export function NewConversationModal({
                   placeholder="Search members..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full pl-10 pr-4 py-3 rounded-lg border border-slate-200 dark:border-slate-600 ${isDark ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-white hover:bg-slate-50 text-slate-900'} focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 />
               </div>
             </div>
@@ -166,7 +166,7 @@ export function NewConversationModal({
                       className={`flex items-center gap-3 p-3 rounded-lg border transition-colors cursor-pointer ${
                         selectedMembers.has(member.id)
                           ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700'
-                          : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
+                          : `border-slate-200 dark:border-slate-700 ${isDark ? 'hover:bg-white/10' : 'hover:bg-slate-50'}`
                       }`}
                       onClick={() => {
                         if (member.has_conversation) {
