@@ -43,6 +43,32 @@ export function ConversationList({
 }: ConversationListProps) {
   const { isDark } = useTheme()
   const [searchQuery, setSearchQuery] = useState('')
+  const [conversationNames, setConversationNames] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key?.startsWith('conversationName_')) {
+        const conversationId = e.key.replace('conversationName_', '')
+        setConversationNames(prev => ({
+          ...prev,
+          [conversationId]: e.newValue || ''
+        }))
+      }
+    }
+
+    // Load initial names
+    const initialNames: Record<string, string> = {}
+    conversations.forEach(conv => {
+      const storedName = localStorage.getItem(`conversationName_${conv.id}`)
+      if (storedName) {
+        initialNames[conv.id] = storedName
+      }
+    })
+    setConversationNames(initialNames)
+
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
+  }, [conversations])
 
   const filteredConversations = conversations.filter(conv =>
     conv.participants.some(p =>
@@ -147,9 +173,10 @@ export function ConversationList({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <p className="font-medium text-sm truncate">
-                      {conversation.participants.length === 2 && currentUserId
-                        ? conversation.participants.find(p => p.id !== currentUserId)?.name || conversation.participants.map(p => p.name).join(', ')
-                        : conversation.participants.map(p => p.name).join(', ')}
+                      {conversationNames[conversation.id] ||
+                        (conversation.participants.length === 2 && currentUserId
+                          ? conversation.participants.find(p => p.id !== currentUserId)?.name || conversation.participants.map(p => p.name).join(', ')
+                          : conversation.participants.map(p => p.name).join(', '))}
                     </p>
 
                   </div>

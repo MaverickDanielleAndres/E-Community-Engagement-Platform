@@ -6,7 +6,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { MessageItem } from '@/components/ui/MessageItem'
 import { Composer } from '@/components/ui/Composer'
-import { ConfirmationModal } from '@/components/ui/ConfirmationModal'
+
 import { useTheme } from '@/components/ThemeContext'
 
 interface Conversation {
@@ -181,6 +181,46 @@ export function ConversationHeader({
 }) {
   const { isDark } = useTheme()
   const [showMenu, setShowMenu] = useState(false)
+  const [conversationName, setConversationName] = useState('')
+  const [sentMessageColor, setSentMessageColor] = useState('#3b82f6')
+  const [receivedMessageColor, setReceivedMessageColor] = useState('#374151')
+  const [showNicknameModal, setShowNicknameModal] = useState(false)
+  const [showThemeModal, setShowThemeModal] = useState(false)
+  const [newConversationName, setNewConversationName] = useState('')
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!conversation) return
+
+    const storedName = localStorage.getItem(`conversationName_${conversation.id}`)
+    if (storedName) {
+      setConversationName(storedName)
+    } else {
+      // Default to other participant's name or group name
+      const defaultName = conversation.participants.length === 2 && currentUserId
+        ? conversation.participants.find(p => p.id !== currentUserId)?.name || conversation.participants.map(p => p.name).join(', ')
+        : conversation.participants.map(p => p.name).join(', ')
+      setConversationName(defaultName)
+    }
+
+    const storedSentColor = localStorage.getItem('sentMessageColor')
+    if (storedSentColor) setSentMessageColor(storedSentColor)
+
+    const storedReceivedColor = localStorage.getItem('receivedMessageColor')
+    if (storedReceivedColor) setReceivedMessageColor(storedReceivedColor)
+
+    // Close menus when clicking outside
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [conversation, currentUserId])
 
   if (!conversation) return null
 
@@ -238,9 +278,7 @@ export function ConversationHeader({
           )}
           <div>
             <h2 className="font-semibold">
-              {conversation.participants.length === 2 && currentUserId
-                ? conversation.participants.find(p => p.id !== currentUserId)?.name || conversation.participants.map(p => p.name).join(', ')
-                : conversation.participants.map(p => p.name).join(', ')}
+              {conversationName}
             </h2>
             <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2">
               {conversation.participants.length === 2 && currentUserId
@@ -275,10 +313,29 @@ export function ConversationHeader({
               <MoreVertical className="w-5 h-5" />
             </button>
             {showMenu && (
-              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-md shadow-lg border border-slate-200 dark:border-slate-700 z-10">
+              <div ref={menuRef} className={`absolute right-0 mt-2 w-56 ${isDark ? 'bg-slate-800' : 'bg-white'} rounded-md shadow-lg border ${isDark ? 'border-slate-700' : 'border-slate-200'} z-10`}>
+                <button
+                  onClick={() => {
+                    setNewConversationName(conversationName)
+                    setShowNicknameModal(true)
+                    setShowMenu(false)
+                  }}
+                  className={`w-full text-left px-4 py-2 text-sm ${isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'} transition-colors`}
+                >
+                  Change Conversation Name
+                </button>
+                <button
+                  onClick={() => {
+                    setShowThemeModal(true)
+                    setShowMenu(false)
+                  }}
+                  className={`w-full text-left px-4 py-2 text-sm ${isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'} transition-colors`}
+                >
+                  Change Message Colors
+                </button>
                 <button
                   onClick={handleDeleteConversation}
-                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                  className={`w-full text-left px-4 py-2 text-sm text-red-600 ${isDark ? 'hover:bg-red-900/20' : 'hover:bg-red-50'} transition-colors`}
                 >
                   Delete Conversation
                 </button>
@@ -289,16 +346,112 @@ export function ConversationHeader({
       </div>
 
       {/* Delete Conversation Modal */}
-      <ConfirmationModal
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        onConfirm={confirmDeleteConversation}
-        title="Delete Conversation"
-        message="Are you sure you want to delete this conversation? This action cannot be undone."
-        confirmText="Delete"
-        cancelText="Cancel"
-        type="danger"
-      />
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className={`p-6 rounded-lg shadow-lg max-w-md w-full mx-4 ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-900'}`}>
+            <h3 className="text-lg font-semibold mb-4">Delete Conversation</h3>
+            <p className="text-sm mb-6">Are you sure you want to delete this conversation? This action cannot be undone.</p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className={`px-4 py-2 rounded-md ${isDark ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-900'} transition-colors`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteConversation}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change Conversation Name Modal */}
+      {showNicknameModal && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className={`p-6 rounded-lg shadow-lg max-w-md w-full mx-4 ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-900'}`}>
+            <h3 className="text-lg font-semibold mb-4">Change Conversation Name</h3>
+            <input
+              type="text"
+              value={newConversationName}
+              onChange={(e) => setNewConversationName(e.target.value)}
+              className={`w-full px-3 py-2 border rounded-md mb-4 ${isDark ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-300 text-slate-900'}`}
+              placeholder="Enter new conversation name"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowNicknameModal(false)}
+                className={`px-4 py-2 rounded-md ${isDark ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-900'} transition-colors`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (newConversationName.trim()) {
+                    setConversationName(newConversationName.trim())
+                    localStorage.setItem(`conversationName_${conversation.id}`, newConversationName.trim())
+                    // Trigger storage event to update sidebar
+                    window.dispatchEvent(new StorageEvent('storage', {
+                      key: `conversationName_${conversation.id}`,
+                      newValue: newConversationName.trim()
+                    }))
+                  }
+                  setShowNicknameModal(false)
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change Message Colors Modal */}
+      {showThemeModal && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className={`p-6 rounded-lg shadow-lg max-w-md w-full mx-4 ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-900'}`}>
+            <h3 className="text-lg font-semibold mb-4">Change Message Colors</h3>
+            <div className="space-y-4">
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Sent Message Color</label>
+                <input
+                  type="color"
+                  value={sentMessageColor}
+                  onChange={(e) => {
+                    setSentMessageColor(e.target.value)
+                    localStorage.setItem('sentMessageColor', e.target.value)
+                  }}
+                  className="w-full h-10 rounded-md border cursor-pointer"
+                />
+              </div>
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Received Message Color</label>
+                <input
+                  type="color"
+                  value={receivedMessageColor}
+                  onChange={(e) => {
+                    setReceivedMessageColor(e.target.value)
+                    localStorage.setItem('receivedMessageColor', e.target.value)
+                  }}
+                  className="w-full h-10 rounded-md border cursor-pointer"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => setShowThemeModal(false)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

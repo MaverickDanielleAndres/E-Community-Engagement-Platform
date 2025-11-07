@@ -91,6 +91,10 @@ export function MessageItem({
   const isRead = hasReads && message.readBy!.some(read => read.userId !== currentUserId)
   const readCount = hasReads ? message.readBy!.filter(read => read.userId !== currentUserId).length : 0
 
+  // Get message colors from localStorage
+  const sentMessageColor = localStorage.getItem('sentMessageColor') || '#3b82f6'
+  const receivedMessageColor = localStorage.getItem('receivedMessageColor') || '#374151'
+
   // Close menus when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -187,9 +191,12 @@ export function MessageItem({
         <div
           className={`relative px-4 py-2 rounded-lg group cursor-pointer ${
             isOwnMessage
-              ? 'bg-slate-600 dark:bg-slate-800 text-white'
-              : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100'
+              ? `text-white`
+              : 'text-slate-900 dark:text-slate-100'
           }`}
+          style={{
+            backgroundColor: isOwnMessage ? sentMessageColor : receivedMessageColor
+          }}
           onClick={() => setShowTimestamp(!showTimestamp)}
         >
           {/* Message content */}

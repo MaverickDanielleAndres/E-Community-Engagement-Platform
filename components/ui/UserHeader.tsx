@@ -49,12 +49,26 @@ export function UserHeader() {
     fetchUserData()
   }, [session])
 
+  // Load nickname from localStorage
+  useEffect(() => {
+    const storedNickname = localStorage.getItem('userNickname')
+    if (storedNickname) {
+      setNickname(storedNickname)
+    }
+  }, [])
+
 
 
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isNicknameModalOpen, setIsNicknameModalOpen] = useState(false)
+  const [isThemeModalOpen, setIsThemeModalOpen] = useState(false)
+  const [newNickname, setNewNickname] = useState('')
+  const [sentMessageColor, setSentMessageColor] = useState('#3b82f6')
+  const [receivedMessageColor, setReceivedMessageColor] = useState('#374151')
+  const [nickname, setNickname] = useState('')
 
   const notificationsRef = useRef<HTMLDivElement>(null)
   const profileRef = useRef<HTMLDivElement>(null)
@@ -406,7 +420,7 @@ export function UserHeader() {
                 <span className={`hidden sm:inline text-sm font-medium ${
                   isDark ? 'text-white' : 'text-slate-900'
                 }`}>
-                  {user?.name || user?.email?.split('@')[0] || 'User'}
+                  {nickname || user?.name || user?.email?.split('@')[0] || 'User'}
                 </span>
               )}
               <ChevronDown className={`w-4 h-4 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
@@ -435,6 +449,41 @@ export function UserHeader() {
                   <Settings className="w-4 h-4 mr-3" />
                   Profile Settings
                 </Link>
+                <div className={`px-4 py-2 text-sm ${
+                  isDark ? 'text-slate-400' : 'text-slate-600'
+                }`}>
+                  <span className="font-medium">Current Nickname:</span> {nickname || user?.name || user?.email?.split('@')[0] || 'User'}
+                </div>
+                <button
+                  onClick={() => {
+                    setIsProfileOpen(false)
+                    setIsNicknameModalOpen(true)
+                  }}
+                  className={`w-full flex items-center px-4 py-2 text-sm transition-colors ${
+                    isDark
+                      ? 'text-slate-300 hover:bg-slate-700/50'
+                      : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <User className="w-4 h-4 mr-3" />
+                  Change Nickname
+                </button>
+                <button
+                  onClick={() => {
+                    setIsProfileOpen(false)
+                    setIsThemeModalOpen(true)
+                  }}
+                  className={`w-full flex items-center px-4 py-2 text-sm transition-colors ${
+                    isDark
+                      ? 'text-slate-300 hover:bg-slate-700/50'
+                      : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z" />
+                  </svg>
+                  Theme
+                </button>
                 <hr className={`my-1 ${
                   isDark ? 'border-slate-700' : 'border-slate-200'
                 }`} />
@@ -457,6 +506,168 @@ export function UserHeader() {
           </div>
         </div>
       </div>
+
+      {/* Nickname Change Modal */}
+      <AnimatePresence>
+        {isNicknameModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            onClick={() => setIsNicknameModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className={`w-96 p-6 rounded-xl shadow-xl ${
+                isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
+              } border`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className={`text-lg font-semibold mb-4 ${
+                isDark ? 'text-white' : 'text-slate-900'
+              }`}>
+                Change Nickname
+              </h3>
+              <input
+                type="text"
+                value={newNickname}
+                onChange={(e) => setNewNickname(e.target.value)}
+                placeholder="Enter new nickname"
+                className={`w-full px-3 py-2 rounded-lg border mb-4 ${
+                  isDark
+                    ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400'
+                    : 'bg-white border-slate-300 text-slate-900 placeholder-slate-500'
+                }`}
+              />
+              <div className="flex justify-end space-x-2">
+                <button
+                  onClick={() => setIsNicknameModalOpen(false)}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    isDark
+                      ? 'text-slate-300 hover:bg-slate-700'
+                      : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (newNickname.trim()) {
+                      localStorage.setItem('userNickname', newNickname.trim())
+                      setNickname(newNickname.trim())
+                      setIsNicknameModalOpen(false)
+                      setNewNickname('')
+                      showToast('Nickname updated successfully!', 'success')
+                      // Trigger refresh to update display
+                      handleRefresh()
+                    }
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Save
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Theme Modal */}
+      <AnimatePresence>
+        {isThemeModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            onClick={() => setIsThemeModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className={`w-96 p-6 rounded-xl shadow-xl ${
+                isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
+              } border`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className={`text-lg font-semibold mb-4 ${
+                isDark ? 'text-white' : 'text-slate-900'
+              }`}>
+                Message Theme
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDark ? 'text-slate-300' : 'text-slate-700'
+                  }`}>
+                    Sent Message Color
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="color"
+                      value={sentMessageColor}
+                      onChange={(e) => setSentMessageColor(e.target.value)}
+                      className="w-12 h-8 rounded border border-slate-300 cursor-pointer"
+                    />
+                    <span className={`text-sm ${
+                      isDark ? 'text-slate-400' : 'text-slate-600'
+                    }`}>
+                      {sentMessageColor}
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDark ? 'text-slate-300' : 'text-slate-700'
+                  }`}>
+                    Received Message Color
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="color"
+                      value={receivedMessageColor}
+                      onChange={(e) => setReceivedMessageColor(e.target.value)}
+                      className="w-12 h-8 rounded border border-slate-300 cursor-pointer"
+                    />
+                    <span className={`text-sm ${
+                      isDark ? 'text-slate-400' : 'text-slate-600'
+                    }`}>
+                      {receivedMessageColor}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end space-x-2 mt-6">
+                <button
+                  onClick={() => setIsThemeModalOpen(false)}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    isDark
+                      ? 'text-slate-300 hover:bg-slate-700'
+                      : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    localStorage.setItem('sentMessageColor', sentMessageColor)
+                    localStorage.setItem('receivedMessageColor', receivedMessageColor)
+                    setIsThemeModalOpen(false)
+                    showToast('Message theme updated!', 'success')
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Save
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.header>
   )
 }
