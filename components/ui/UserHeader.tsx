@@ -1,7 +1,7 @@
 // @/components/ui/UserHeader.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useTheme } from '@/components/ThemeContext'
 import { useToast } from '@/components/ToastContext'
@@ -55,6 +55,9 @@ export function UserHeader() {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+
+  const notificationsRef = useRef<HTMLDivElement>(null)
+  const profileRef = useRef<HTMLDivElement>(null)
 
   // Refresh function to refetch header data and trigger sidebar refresh
   const handleRefresh = async () => {
@@ -165,6 +168,23 @@ export function UserHeader() {
     return () => window.removeEventListener('storage', handleStorageChange)
   }, [])
 
+  // Close menus when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+        setIsNotificationsOpen(false)
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setIsProfileOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
+
   return (
     <motion.header
       initial={{ y: -100 }}
@@ -186,16 +206,12 @@ export function UserHeader() {
               className="w-8 h-8 rounded-lg object-cover hidden md:block"
             />
           )}
-
-
-
-          
         </div>
 
         {/* Right: User Actions */}
         <div className="flex items-center space-x-4">
           {/* Notifications */}
-          <div className="relative">
+          <div className="relative" ref={notificationsRef}>
           <button
             onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
             className={`relative p-2 transition-colors hover:bg-${isDark ? 'white/10' : 'slate-100'} ${
@@ -217,8 +233,8 @@ export function UserHeader() {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: 10 }}
                   className={`absolute right-0 mt-2 w-80 rounded-xl shadow-lg border py-2 z-50 ${
-                    isDark 
-                      ? 'bg-slate-800 border-slate-700' 
+                    isDark
+                      ? 'bg-slate-800 border-slate-700'
                       : 'bg-white border-slate-200'
                   }`}
                 >
@@ -366,7 +382,7 @@ export function UserHeader() {
           </button>
 
           {/* User Profile */}
-          <div className="relative">
+          <div className="relative" ref={profileRef}>
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               className={`flex items-center space-x-2 p-2 transition-colors rounded-lg hover:bg-${isDark ? 'white/10' : 'slate-100'} ${
@@ -402,8 +418,8 @@ export function UserHeader() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
                 className={`absolute right-0 mt-2 w-48 rounded-xl shadow-lg border py-1 z-50 ${
-                  isDark 
-                    ? 'bg-slate-800 border-slate-700' 
+                  isDark
+                    ? 'bg-slate-800 border-slate-700'
                     : 'bg-white border-slate-200'
                 }`}
               >

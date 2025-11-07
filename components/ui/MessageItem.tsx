@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Reply, Heart, Smile, MoreVertical, Trash2, Edit, Check, CheckCheck, Clock, Eye } from 'lucide-react'
+import { Reply, Heart, Smile, MoreVertical, Trash2, Edit } from 'lucide-react'
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal'
 import { ImageModal } from '@/components/ui/ImageModal'
 import { useTheme } from '@/components/ThemeContext'
@@ -77,6 +77,10 @@ export function MessageItem({
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showImageModal, setShowImageModal] = useState(false)
   const [selectedImageUrl, setSelectedImageUrl] = useState('')
+  const [showTimestamp, setShowTimestamp] = useState(false)
+
+  const menuRef = useRef<HTMLDivElement>(null)
+  const reactionsRef = useRef<HTMLDivElement>(null)
 
   const isOwnMessage = message.senderId === currentUserId
   const canEdit = isOwnMessage && onEdit
@@ -86,6 +90,23 @@ export function MessageItem({
   const hasReads = message.readBy && message.readBy.length > 0
   const isRead = hasReads && message.readBy!.some(read => read.userId !== currentUserId)
   const readCount = hasReads ? message.readBy!.filter(read => read.userId !== currentUserId).length : 0
+
+  // Close menus when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false)
+      }
+      if (reactionsRef.current && !reactionsRef.current.contains(event.target as Node)) {
+        setShowReactions(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
 
   const handleReaction = (emoji: string) => {
     const existingReaction = message.reactions?.find(r => r.emoji === emoji)
@@ -124,36 +145,17 @@ export function MessageItem({
 
   const commonEmojis = ['👍', '❤️', '😂', '😮', '😢', '😡']
 
-  // Read status indicator component
-  const ReadStatusIndicator = () => {
-    if (!isOwnMessage) return null
+  // Edited indicator component
+  const EditedIndicator = () => {
+    if (!message.isEdited) return null
 
     return (
-      <div className="flex items-center gap-0.5 ml-1">
-        {isRead ? (
-          <div className="relative">
-            <CheckCheck className="w-3 h-3 text-blue-500" />
-            {readCount > 1 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-blue-500 text-white text-[8px] rounded-full w-3 h-3 flex items-center justify-center">
-                {readCount}
-              </span>
-            )}
-          </div>
-        ) : message.isDelivered ? (
-          <Check className="w-3 h-3 text-slate-400" />
-        ) : (
-          <Clock className="w-3 h-3 text-slate-400" />
-        )}
-
-        {/* Read details tooltip */}
-        {hasReads && (
-          <button
-            onClick={() => setShowReadDetails(!showReadDetails)}
-            className="text-[10px] text-slate-400 hover:text-slate-600 transition-colors"
-          >
-            <Eye className="w-2.5 h-2.5" />
-          </button>
-        )}
+      <div className={`text-xs ${
+        isOwnMessage ? 'text-white' : 'text-slate-500 dark:text-slate-400'
+      } ${
+        isOwnMessage ? 'text-right' : 'text-left'
+      }`}>
+        edited
       </div>
     )
   }
@@ -183,11 +185,12 @@ export function MessageItem({
 
         {/* Message bubble */}
         <div
-          className={`relative px-4 py-2 rounded-lg group ${
+          className={`relative px-4 py-2 rounded-lg group cursor-pointer ${
             isOwnMessage
               ? 'bg-slate-600 dark:bg-slate-800 text-white'
               : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100'
           }`}
+          onClick={() => setShowTimestamp(!showTimestamp)}
         >
           {/* Message content */}
           {isEditing ? (
@@ -379,16 +382,22 @@ export function MessageItem({
           {/* Action buttons */}
           <div className={`absolute top-1/2 -translate-y-1/2 ${
             isOwnMessage ? 'left-0 -translate-x-full mr-2' : 'right-0 translate-x-full ml-2'
-          } flex gap-0.5 p-1 opacity-0 group-hover:opacity-100 transition-opacity z-50`}>
+          } flex gap-0.5 p-1 opacity-0 group-hover:opacity-100 ${showTimestamp ? 'opacity-100' : ''} transition-opacity z-50`}>
             <button
-              onClick={() => setShowReactions(!showReactions)}
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowReactions(!showReactions)
+              }}
               className="p-1 rounded transition-transform text-slate-600 dark:text-slate-400 hover:scale-110"
               title="Add reaction"
             >
               <Smile className="w-3 h-3" />
             </button>
             <button
-              onClick={() => onReply(message.id, message)}
+              onClick={(e) => {
+                e.stopPropagation()
+                onReply(message.id, message)
+              }}
               className="p-1 rounded transition-transform text-slate-600 dark:text-slate-400 hover:scale-110"
               title="Reply to message"
             >
@@ -396,7 +405,10 @@ export function MessageItem({
             </button>
             {(canEdit || canDelete) && (
               <button
-                onClick={() => setShowMenu(!showMenu)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowMenu(!showMenu)
+                }}
                 className="p-1 rounded transition-transform text-slate-600 dark:text-slate-400 hover:scale-110"
                 title="More options"
               >
@@ -408,6 +420,7 @@ export function MessageItem({
           {/* Reaction picker */}
           {showReactions && (
             <motion.div
+              ref={reactionsRef}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
@@ -432,6 +445,7 @@ export function MessageItem({
           {/* Menu */}
           {showMenu && (
             <motion.div
+              ref={menuRef}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
@@ -494,12 +508,17 @@ export function MessageItem({
           )}
         </div>
 
-        {/* Read status below the message */}
-        <div className={`flex items-center justify-end mt-1 ${
-          isOwnMessage ? 'justify-end' : 'justify-start'
-        }`}>
-          <ReadStatusIndicator />
-        </div>
+        {/* Timestamp */}
+        {showTimestamp && (
+          <div className={`text-xs text-slate-500 dark:text-slate-400 mt-1 ${
+            isOwnMessage ? 'text-right' : 'text-left'
+          }`}>
+            {new Date(message.timestamp).toLocaleString()}
+          </div>
+        )}
+
+        {/* Edited indicator */}
+        <EditedIndicator />
       </div>
 
       {/* Delete Confirmation Modal */}
