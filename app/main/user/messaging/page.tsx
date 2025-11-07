@@ -7,6 +7,8 @@ import { ConversationView } from '@/components/ui/ConversationView'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { NewConversationModal } from '@/components/ui/NewConversationModal'
 import { useMessaging } from '@/lib/hooks/useMessaging'
+import { Menu, X } from 'lucide-react'
+import { useTheme } from '@/components/ThemeContext'
 
 interface Attachment {
   id: string
@@ -41,8 +43,10 @@ interface Message {
 
 export default function MessagingPage() {
   const { data: session } = useSession()
+  const { isDark } = useTheme()
   const [showNewConversationModal, setShowNewConversationModal] = useState(false)
   const [replyTo, setReplyTo] = useState<{ id: string; content: string; senderName: string } | null>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const {
     conversations,
     selectedConversation,
@@ -129,6 +133,13 @@ export default function MessagingPage() {
     }
   }
 
+  const handleSelectConversation = (conversation: any) => {
+    const original = conversations.find(c => c.id === conversation.id)
+    selectConversation(original || null)
+    // Auto-close sidebar on mobile when conversation is selected
+    setSidebarOpen(false)
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -139,37 +150,73 @@ export default function MessagingPage() {
 
   return (
     <>
-      <div className="h-[calc(100vh-8rem)] flex">
-        <ConversationList
-          conversations={enhancedConversations}
-          selectedConversation={selectedConversation}
-          onSelectConversation={(conversation) => {
-            const original = conversations.find(c => c.id === conversation.id)
-            selectConversation(original || null)
-          }}
-          onNewConversation={handleNewConversation}
-          loading={isLoading}
-          currentUserId={session?.user?.id || ''}
-        />
-        <ConversationView
-          conversation={selectedConversation ? {
-            ...selectedConversation,
-            participants: selectedConversation.participants.map(p => ({
-              ...p,
-              online: onlineUsers.has(p.id)
-            }))
-          } : null}
-          messages={messages}
-          currentUserId={session?.user?.id || ''}
-          onSendMessage={handleSendMessage}
-          onReaction={handleReaction}
-          onReply={handleReply}
-          onDelete={handleDelete}
-          onEdit={handleEdit}
-          onRefreshMessages={refreshMessages}
-          loading={false}
-          replyTo={replyTo}
-        />
+      <div className="h-[calc(100vh-8rem)] flex relative">
+
+        {/* Sidebar */}
+        <div className={`
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          md:translate-x-0
+          fixed md:relative
+          top-0 left-0
+          h-full
+          z-40 md:z-auto
+          transition-transform duration-300 ease-in-out
+          w-80
+        `}>
+          <ConversationList
+            conversations={enhancedConversations}
+            selectedConversation={selectedConversation}
+            onSelectConversation={handleSelectConversation}
+            onNewConversation={handleNewConversation}
+            loading={isLoading}
+            currentUserId={session?.user?.id || ''}
+            isMobile={sidebarOpen}
+            onCloseMobile={() => setSidebarOpen(false)}
+          />
+        </div>
+
+        {/* Backdrop for mobile */}
+        {sidebarOpen && (
+          <div
+            className="md:hidden fixed inset-0 bg-black/50 z-30"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* Main Content */}
+        <div className="flex-1 md:ml-0 relative">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className={`absolute left-4 top-4 z-10 p-2 rounded-lg transition-colors md:hidden ${
+              isDark
+                ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                : 'bg-white text-slate-700 hover:bg-slate-100'
+            } shadow-lg`}
+            title="Toggle sidebar"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <ConversationView
+            conversation={selectedConversation ? {
+              ...selectedConversation,
+              participants: selectedConversation.participants.map(p => ({
+                ...p,
+                online: onlineUsers.has(p.id)
+              }))
+            } : null}
+            messages={messages}
+            currentUserId={session?.user?.id || ''}
+            onSendMessage={handleSendMessage}
+            onReaction={handleReaction}
+            onReply={handleReply}
+            onDelete={handleDelete}
+            onEdit={handleEdit}
+            onRefreshMessages={refreshMessages}
+            loading={false}
+            replyTo={replyTo}
+            onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          />
+        </div>
       </div>
 
       <NewConversationModal

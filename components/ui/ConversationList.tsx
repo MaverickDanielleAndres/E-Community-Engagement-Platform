@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Users, Search, Plus } from 'lucide-react'
+import { Users, Search, Plus, X } from 'lucide-react'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useTheme } from '@/components/ThemeContext'
 
@@ -31,6 +31,8 @@ interface ConversationListProps {
   onNewConversation: () => void
   loading?: boolean
   currentUserId?: string
+  isMobile?: boolean
+  onCloseMobile?: () => void
 }
 
 export function ConversationList({
@@ -39,7 +41,9 @@ export function ConversationList({
   onSelectConversation,
   onNewConversation,
   loading = false,
-  currentUserId
+  currentUserId,
+  isMobile = false,
+  onCloseMobile
 }: ConversationListProps) {
   const { isDark } = useTheme()
   const [searchQuery, setSearchQuery] = useState('')
@@ -77,19 +81,33 @@ export function ConversationList({
   )
 
   return (
-    <div className="w-80 border-r border-slate-200 dark:border-slate-700 flex flex-col">
+    <div className={`
+      w-80 border-r border-slate-200 dark:border-slate-700 flex flex-col
+      ${isMobile ? 'h-full' : 'h-[calc(100vh-8rem)]'}
+      ${isDark ? 'bg-slate-900' : 'bg-white'}
+    `}>
       {/* Header */}
       <div className="p-4 border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-semibold flex items-center gap-2">
             Messages
           </h1>
-          <button
-            onClick={onNewConversation}
-            className={`p-2 rounded-lg transition-colors hover:bg-${isDark ? 'white/10' : 'slate-100'}`}
-          >
-            <Plus className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {isMobile && onCloseMobile && (
+              <button
+                onClick={onCloseMobile}
+                className={`p-2 rounded-lg transition-colors hover:bg-${isDark ? 'white/10' : 'slate-100'}`}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
+            <button
+              onClick={onNewConversation}
+              className={`p-2 rounded-lg transition-colors hover:bg-${isDark ? 'white/10' : 'slate-100'}`}
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Search */}

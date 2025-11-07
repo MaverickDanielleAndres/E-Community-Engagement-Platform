@@ -1,7 +1,8 @@
 // @/app/api/polls/route.ts - Updated for multi-question polls
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
+import { getServerSession } from 'next-auth/next'
 import { createClient } from '@supabase/supabase-js'
+import { authOptions } from '@/lib/auth'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,7 +19,7 @@ interface PollQuestion {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
 
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -84,12 +85,20 @@ export async function GET(request: NextRequest) {
       })
     )
 
+    // Filter by status if provided
+    const { searchParams } = new URL(request.url)
+    const statusFilter = searchParams.get('status')
+    let filteredPolls = pollsWithResponses
+    if (statusFilter) {
+      filteredPolls = pollsWithResponses.filter(poll => poll.status === statusFilter)
+    }
+
     if (error) {
       console.error('Database error:', error)
       return NextResponse.json({ error: 'Failed to fetch polls' }, { status: 500 })
     }
 
-    return NextResponse.json({ polls: pollsWithResponses, communityId })
+    return NextResponse.json({ polls: filteredPolls, communityId })
   } catch (error) {
     console.error('Server error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -98,7 +107,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
 
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Send, Paperclip, Mic, Smile, X, Image, Images } from 'lucide-react'
+import { Send, Paperclip, Mic, Smile, X, Image, Images, MoreVertical } from 'lucide-react'
 import EmojiPicker from 'emoji-picker-react'
 import { GifPicker } from './GifPicker'
 import { useTheme } from '@/components/ThemeContext'
@@ -45,6 +45,7 @@ export function Composer({
   const [isRecording, setIsRecording] = useState(false)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [showGifPicker, setShowGifPicker] = useState(false)
+  const [showAttachMenu, setShowAttachMenu] = useState(false)
   const [recordingTime, setRecordingTime] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
@@ -339,13 +340,117 @@ export function Composer({
 
       {/* Message Input */}
       <div className="flex items-center gap-2">
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className={`p-2 rounded-lg transition-colors hover:bg-${isDark ? 'white/10' : 'slate-100'}`}
-          disabled={disabled}
-        >
-          <Paperclip className="w-5 h-5" />
-        </button>
+        {/* Attach Menu Button - Desktop */}
+        <div className="relative hidden md:block">
+          <button
+            onClick={() => setShowAttachMenu(!showAttachMenu)}
+            className={`p-2 rounded-lg transition-colors hover:bg-${isDark ? 'white/10' : 'slate-100'}`}
+            disabled={disabled}
+            title="Attach"
+          >
+            <Paperclip className="w-5 h-5" />
+          </button>
+          {showAttachMenu && (
+            <div className={`absolute bottom-full left-0 mb-2 w-48 ${isDark ? 'bg-slate-800' : 'bg-white'} rounded-md shadow-lg border ${isDark ? 'border-slate-700' : 'border-slate-200'} z-[9999]`}>
+              <button
+                onClick={() => {
+                  fileInputRef.current?.click()
+                  setShowAttachMenu(false)
+                }}
+                className={`w-full text-left px-4 py-2 text-sm ${isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'} transition-colors flex items-center gap-2`}
+              >
+                <Paperclip className="w-4 h-4" />
+                Send File
+              </button>
+              <button
+                onClick={() => {
+                  handleVoiceRecord()
+                  setShowAttachMenu(false)
+                }}
+                className={`w-full text-left px-4 py-2 text-sm ${isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'} transition-colors flex items-center gap-2`}
+              >
+                <Mic className="w-4 h-4" />
+                Voice Record
+              </button>
+              <button
+                onClick={() => {
+                  imageInputRef.current?.click()
+                  setShowAttachMenu(false)
+                }}
+                className={`w-full text-left px-4 py-2 text-sm ${isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'} transition-colors flex items-center gap-2`}
+              >
+                <Images className="w-4 h-4" />
+                Image/Video
+              </button>
+              <button
+                onClick={() => {
+                  setShowGifPicker(!showGifPicker)
+                  setShowAttachMenu(false)
+                }}
+                className={`w-full text-left px-4 py-2 text-sm ${isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'} transition-colors flex items-center gap-2`}
+              >
+                <Smile className="w-4 h-4" />
+                GIF
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Attach Menu Button - Mobile/Tablet */}
+        <div className="relative md:hidden">
+          <button
+            onClick={() => setShowAttachMenu(!showAttachMenu)}
+            className={`p-2 rounded-lg transition-colors hover:bg-${isDark ? 'white/10' : 'slate-100'}`}
+            disabled={disabled}
+            title="Attach"
+          >
+            <Paperclip className="w-5 h-5" />
+          </button>
+          {showAttachMenu && (
+            <div className={`absolute bottom-full left-0 mb-2 w-48 ${isDark ? 'bg-slate-800' : 'bg-white'} rounded-md shadow-lg border ${isDark ? 'border-slate-700' : 'border-slate-200'} z-[9999]`}>
+              <button
+                onClick={() => {
+                  fileInputRef.current?.click()
+                  setShowAttachMenu(false)
+                }}
+                className={`w-full text-left px-4 py-2 text-sm ${isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'} transition-colors flex items-center gap-2`}
+              >
+                <Paperclip className="w-4 h-4" />
+                Send File
+              </button>
+              <button
+                onClick={() => {
+                  handleVoiceRecord()
+                  setShowAttachMenu(false)
+                }}
+                className={`w-full text-left px-4 py-2 text-sm ${isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'} transition-colors flex items-center gap-2`}
+              >
+                <Mic className="w-4 h-4" />
+                Voice Record
+              </button>
+              <button
+                onClick={() => {
+                  imageInputRef.current?.click()
+                  setShowAttachMenu(false)
+                }}
+                className={`w-full text-left px-4 py-2 text-sm ${isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'} transition-colors flex items-center gap-2`}
+              >
+                <Images className="w-4 h-4" />
+                Image/Video
+              </button>
+              <button
+                onClick={() => {
+                  setShowGifPicker(!showGifPicker)
+                  setShowAttachMenu(false)
+                }}
+                className={`w-full text-left px-4 py-2 text-sm ${isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'} transition-colors flex items-center gap-2`}
+              >
+                <Smile className="w-4 h-4" />
+                GIF
+              </button>
+            </div>
+          )}
+        </div>
 
         <div className="flex-1 relative">
           <textarea
@@ -376,9 +481,10 @@ export function Composer({
           </div>
         </div>
 
+        {/* Desktop buttons - hidden on mobile/tablet */}
         <button
           onClick={handleVoiceRecord}
-          className={`p-2 rounded-lg transition-colors ${
+          className={`hidden md:flex p-2 rounded-lg transition-colors ${
             isRecording
               ? 'bg-red-500 text-white hover:bg-red-600'
               : `hover:bg-${isDark ? 'white/10' : 'slate-100'}`
@@ -390,14 +496,14 @@ export function Composer({
 
         <button
           onClick={() => imageInputRef.current?.click()}
-          className={`p-2 rounded-lg transition-colors hover:bg-${isDark ? 'white/10' : 'slate-100'}`}
+          className={`hidden md:flex p-2 rounded-lg transition-colors hover:bg-${isDark ? 'white/10' : 'slate-100'}`}
           disabled={disabled}
           title="Image/Video"
         >
           <Images className="w-5 h-5" />
         </button>
 
-        <div className="relative">
+        <div className="relative hidden md:block">
           <button
             onClick={() => setShowGifPicker(!showGifPicker)}
             className={`px-3 py-2 rounded-lg transition-colors text-sm font-medium hover:bg-${isDark ? 'white/10' : 'slate-100'}`}

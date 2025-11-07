@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Users, MoreVertical, RefreshCw } from 'lucide-react'
+import { Users, MoreVertical, RefreshCw, Menu } from 'lucide-react'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { MessageItem } from '@/components/ui/MessageItem'
@@ -68,6 +68,8 @@ interface ConversationViewProps {
   onRefreshMessages?: () => void
   loading?: boolean
   replyTo?: { id: string; content: string; senderName: string } | null
+  isSidebarOpen?: boolean
+  onToggleSidebar?: () => void
 }
 
 export function ConversationView({
@@ -81,7 +83,8 @@ export function ConversationView({
   onEdit,
   onRefreshMessages,
   loading = false,
-  replyTo: propReplyTo
+  replyTo: propReplyTo,
+  isSidebarOpen = false
 }: ConversationViewProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [replyTo, setReplyTo] = useState<{ id: string; content: string; senderName: string } | null>(null)
@@ -111,59 +114,63 @@ export function ConversationView({
     setReplyTo(null)
   }
 
-  if (!conversation) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <EmptyState
-          icon={Users}
-          title="Select a conversation"
-          description="Choose a conversation from the list to start messaging"
-        />
-      </div>
-    )
+  function onToggleSidebar(): void {
+    throw new Error('Function not implemented.')
   }
 
   return (
     <div className="flex-1 flex flex-col">
-      <ConversationHeader conversation={conversation} currentUserId={currentUserId} onRefreshMessages={onRefreshMessages} />
+      <ConversationHeader conversation={conversation} currentUserId={currentUserId} onRefreshMessages={onRefreshMessages} onToggleSidebar={onToggleSidebar} />
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <LoadingSpinner />
+      {!conversation ? (
+        <div className="flex-1 flex items-center justify-center">
+          <EmptyState
+            icon={Users}
+            title="Select a conversation"
+            description="Choose a conversation from the list to start messaging"
+          />
+        </div>
+      ) : (
+        <>
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[calc(100vh-16rem)] scroll-smooth">
+            {loading ? (
+              <div className="flex items-center justify-center h-full">
+                <LoadingSpinner />
+              </div>
+            ) : messages.length === 0 ? (
+              <div className="flex items-center justify-center h-full">
+                <EmptyState
+                  icon={Users}
+                  title="No messages yet"
+                  description="Start the conversation!"
+                />
+              </div>
+            ) : (
+              messages.map((message) => (
+                <MessageItem
+                  key={message.id}
+                  message={message}
+                  currentUserId={currentUserId}
+                  onReaction={onReaction}
+                  onReply={handleReply}
+                  onDelete={onDelete}
+                  onEdit={onEdit}
+                />
+              ))
+            )}
+            <div ref={messagesEndRef} />
           </div>
-        ) : messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <EmptyState
-              icon={Users}
-              title="No messages yet"
-              description="Start the conversation!"
-            />
-          </div>
-        ) : (
-          messages.map((message) => (
-            <MessageItem
-              key={message.id}
-              message={message}
-              currentUserId={currentUserId}
-              onReaction={onReaction}
-              onReply={handleReply}
-              onDelete={onDelete}
-              onEdit={onEdit}
-            />
-          ))
-        )}
-        <div ref={messagesEndRef} />
-      </div>
 
-      {/* Message Input */}
-      <Composer
-        onSendMessage={(content, attachments, gif, replyToParam) => onSendMessage(content, attachments, gif, replyToParam)}
-        placeholder="Type a message..."
-        replyTo={replyTo}
-        onCancelReply={handleCancelReply}
-      />
+          {/* Message Input */}
+          <Composer
+            onSendMessage={(content, attachments, gif, replyToParam) => onSendMessage(content, attachments, gif, replyToParam)}
+            placeholder="Type a message..."
+            replyTo={replyTo}
+            onCancelReply={handleCancelReply}
+          />
+        </>
+      )}
     </div>
   )
 }
@@ -172,12 +179,14 @@ export function ConversationHeader({
   conversation,
   currentUserId,
   onDeleteConversation,
-  onRefreshMessages
+  onRefreshMessages,
+  onToggleSidebar
 }: {
   conversation: Conversation | null
   currentUserId: string
   onDeleteConversation?: (conversationId: string) => void
   onRefreshMessages?: () => void
+  onToggleSidebar?: () => void
 }) {
   const { isDark } = useTheme()
   const [showMenu, setShowMenu] = useState(false)
@@ -187,6 +196,7 @@ export function ConversationHeader({
   const [showNicknameModal, setShowNicknameModal] = useState(false)
   const [showThemeModal, setShowThemeModal] = useState(false)
   const [newConversationName, setNewConversationName] = useState('')
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -223,8 +233,6 @@ export function ConversationHeader({
   }, [conversation, currentUserId])
 
   if (!conversation) return null
-
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   const handleDeleteConversation = async () => {
     setShowDeleteModal(true)
@@ -298,13 +306,6 @@ export function ConversationHeader({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={onRefreshMessages}
-            className={`p-2 rounded-lg transition-colors hover:bg-${isDark ? 'white/10' : 'slate-100'}`}
-            title="Refresh messages"
-          >
-            <RefreshCw className="w-5 h-5" />
-          </button>
           <div className="relative">
             <button
               onClick={() => setShowMenu(!showMenu)}
@@ -314,6 +315,16 @@ export function ConversationHeader({
             </button>
             {showMenu && (
               <div ref={menuRef} className={`absolute right-0 mt-2 w-56 ${isDark ? 'bg-slate-800' : 'bg-white'} rounded-md shadow-lg border ${isDark ? 'border-slate-700' : 'border-slate-200'} z-10`}>
+                <button
+                  onClick={() => {
+                    onRefreshMessages?.()
+                    setShowMenu(false)
+                  }}
+                  className={`w-full text-left px-4 py-2 text-sm ${isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'} transition-colors flex items-center gap-2`}
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Refresh
+                </button>
                 <button
                   onClick={() => {
                     setNewConversationName(conversationName)
