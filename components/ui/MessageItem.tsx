@@ -41,7 +41,8 @@ interface Message {
     content: string
     senderName: string
   }
-  reads?: Array<{
+  isRead?: boolean
+  readBy?: Array<{
     userId: string
     userName: string
     readAt: string
@@ -82,9 +83,9 @@ export function MessageItem({
   const canDelete = isOwnMessage && onDelete
 
   // Read status logic
-  const hasReads = message.reads && message.reads.length > 0
-  const isRead = hasReads && message.reads!.some(read => read.userId !== currentUserId)
-  const readCount = hasReads ? message.reads!.filter(read => read.userId !== currentUserId).length : 0
+  const hasReads = message.readBy && message.readBy.length > 0
+  const isRead = hasReads && message.readBy!.some(read => read.userId !== currentUserId)
+  const readCount = hasReads ? message.readBy!.filter(read => read.userId !== currentUserId).length : 0
 
   const handleReaction = (emoji: string) => {
     const existingReaction = message.reactions?.find(r => r.emoji === emoji)
@@ -476,7 +477,7 @@ export function MessageItem({
                 Read by ({readCount})
               </h4>
               <div className="space-y-1 max-h-32 overflow-y-auto">
-                {message.reads
+                {message.readBy
                   ?.filter(read => read.userId !== currentUserId)
                   .map((read) => (
                     <div key={read.userId} className="flex justify-between items-center text-xs">
@@ -493,28 +494,10 @@ export function MessageItem({
           )}
         </div>
 
-        {/* Timestamp and read status below the message */}
-        <div className={`flex items-center justify-between mt-1 ${
+        {/* Read status below the message */}
+        <div className={`flex items-center justify-end mt-1 ${
           isOwnMessage ? 'justify-end' : 'justify-start'
         }`}>
-          <div className="flex items-center gap-1">
-            <p className={`text-xs ${
-              isOwnMessage
-                ? 'text-slate-300'
-                : 'text-slate-500 dark:text-slate-400'
-            }`}>
-              {new Date(message.timestamp).toLocaleDateString()} {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </p>
-            {message.isEdited && (
-              <span className={`text-xs ${
-                isOwnMessage
-                  ? 'text-slate-400'
-                  : 'text-slate-600 dark:text-slate-500'
-              }`}>
-                (edited)
-              </span>
-            )}
-          </div>
           <ReadStatusIndicator />
         </div>
       </div>

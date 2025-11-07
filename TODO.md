@@ -1,31 +1,13 @@
-# Admin Notification Refinement TODO
+# Messaging UI Updates
 
-## Current State Analysis
-- Admins currently receive notifications for:
-  - New complaint submissions ✓ (keep)
-  - New ID verification requests ✓ (keep)
-  - Poll creation (to community members, not admins) ❌ (remove)
-  - Poll closure (to community members) ❌ (change to admins with count)
-
-- Admins do NOT receive notifications for:
-  - Feedback submissions ❌ (add)
-
-## Required Changes
-1. **Add admin notification for feedback submission**
-   - File: `app/api/feedback/route.ts`
-   - Add notification creation in POST method after feedback is created ✓
-
-2. **Remove poll creation notifications**
-   - File: `app/api/polls/route.ts`
-   - Remove the notification creation block in POST method ✓
-
-3. **Change poll closure notifications**
-   - File: `app/api/polls/[pollId]/route.ts`
-   - Change notification recipients from community members to admins
-   - Include number of submissions in notification body ✓
-
-## Testing
-- Test feedback submission notification ✓
-- Test poll creation (should not notify anyone) ✓
-- Test poll closure notification to admins with count ✓
-- Verify complaint and ID verification notifications still work ✓
+## Tasks
+- [x] Update ConversationView.tsx ConversationHeader to show "active" or "inactive" instead of unread count
+- [x] Remove unread count badge (red circle) from ConversationList.tsx
+- [x] Remove read status icons (CheckCheck/Circle) from ConversationList.tsx
+- [x] Remove unread count text from ConversationList.tsx
+- [x] Remove unused imports (CheckCheck, Circle) from ConversationList.tsx
+- [x] Test active/inactive status updates in real-time (app running on localhost:3001)
+- [x] Add blue circle for active status and gray circle for inactive status in conversation header
+- [x] Fix active/inactive status to properly reflect real-time online status
+- [x] Add console logging to debug presence events
+- [x] Pass online status from messaging hook to conversation view

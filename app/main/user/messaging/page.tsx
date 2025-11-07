@@ -149,9 +149,16 @@ export default function MessagingPage() {
           }}
           onNewConversation={handleNewConversation}
           loading={isLoading}
+          currentUserId={session?.user?.id || ''}
         />
         <ConversationView
-          conversation={selectedConversation}
+          conversation={selectedConversation ? {
+            ...selectedConversation,
+            participants: selectedConversation.participants.map(p => ({
+              ...p,
+              online: onlineUsers.has(p.id)
+            }))
+          } : null}
           messages={messages}
           currentUserId={session?.user?.id || ''}
           onSendMessage={handleSendMessage}

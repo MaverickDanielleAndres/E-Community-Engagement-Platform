@@ -15,6 +15,7 @@ interface Conversation {
     id: string
     name: string
     avatar?: string
+    online?: boolean
   }>
   lastMessage?: {
     content: string
@@ -124,7 +125,7 @@ export function ConversationView({
 
   return (
     <div className="flex-1 flex flex-col">
-      <ConversationHeader conversation={conversation} onRefreshMessages={onRefreshMessages} />
+      <ConversationHeader conversation={conversation} currentUserId={currentUserId} onRefreshMessages={onRefreshMessages} />
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -169,10 +170,12 @@ export function ConversationView({
 
 export function ConversationHeader({
   conversation,
+  currentUserId,
   onDeleteConversation,
   onRefreshMessages
 }: {
   conversation: Conversation | null
+  currentUserId: string
   onDeleteConversation?: (conversationId: string) => void
   onRefreshMessages?: () => void
 }) {
@@ -211,15 +214,48 @@ export function ConversationHeader({
     <div className="p-4 border-b border-slate-200 dark:border-slate-700">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-            <Users className="w-5 h-5 text-white" />
-          </div>
+          {conversation.participants.length === 2 && currentUserId ? (
+            (() => {
+              const otherParticipant = conversation.participants.find(p => p.id !== currentUserId)
+              return otherParticipant?.avatar ? (
+                <img
+                  src={otherParticipant.avatar}
+                  alt={otherParticipant.name}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                  <span className="text-white font-medium text-sm">
+                    {otherParticipant?.name?.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )
+            })()
+          ) : (
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+              <Users className="w-5 h-5 text-white" />
+            </div>
+          )}
           <div>
             <h2 className="font-semibold">
-              {conversation.participants.map(p => p.name).join(', ')}
+              {conversation.participants.length === 2 && currentUserId
+                ? conversation.participants.find(p => p.id !== currentUserId)?.name || conversation.participants.map(p => p.name).join(', ')
+                : conversation.participants.map(p => p.name).join(', ')}
             </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              {conversation.participants.length} members
+            <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2">
+              {conversation.participants.length === 2 && currentUserId
+                ? (() => {
+                    const otherParticipant = conversation.participants.find(p => p.id !== currentUserId)
+                    const isOnline = otherParticipant?.online
+                    return (
+                      <>
+                        <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-blue-500' : 'bg-gray-400'}`}></span>
+                        {isOnline ? 'active' : 'inactive'}
+                      </>
+                    )
+                  })()
+                : 'group chat'
+              }
             </p>
           </div>
         </div>

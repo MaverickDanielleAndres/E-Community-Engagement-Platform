@@ -59,7 +59,11 @@ interface Message {
     senderName: string
   }
   isRead?: boolean
-  readBy?: string[]
+  readBy?: Array<{
+    userId: string
+    userName: string
+    readAt: string
+  }>
   isOptimistic?: boolean
   isEdited?: boolean
 }
@@ -83,6 +87,7 @@ interface UseMessagingReturn {
   selectConversation: (conversation: Conversation | null) => void
   sendMessage: (content: string, attachments?: Attachment[], replyTo?: { id: string; content: string; senderName: string }, gif?: any) => Promise<void>
   markMessageAsRead: (messageId: string) => Promise<void>
+  markMessagesAsRead: (conversationId: string) => Promise<void>
   addReaction: (messageId: string, emoji: string) => Promise<void>
   removeReaction: (messageId: string, emoji: string) => Promise<void>
   startTyping: () => void
@@ -358,17 +363,23 @@ export function useMessaging(): UseMessagingReturn {
             onlineUserIds.add(presence.user_id)
           })
         })
+        console.log('Presence sync - online users:', Array.from(onlineUserIds))
         setOnlineUsers(onlineUserIds)
       })
       .on('presence', { event: 'join' }, ({ key, newPresences }) => {
         console.log('User joined:', key, newPresences)
-        setOnlineUsers(prev => new Set([...prev, key]))
+        setOnlineUsers(prev => {
+          const newSet = new Set([...prev, key])
+          console.log('Updated online users after join:', Array.from(newSet))
+          return newSet
+        })
       })
       .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
         console.log('User left:', key, leftPresences)
         setOnlineUsers(prev => {
           const newSet = new Set(prev)
           newSet.delete(key)
+          console.log('Updated online users after leave:', Array.from(newSet))
           return newSet
         })
       })
@@ -444,10 +455,12 @@ export function useMessaging(): UseMessagingReturn {
   }, [conversations, setupRealtimeSubscriptions, cleanup])
 
   // Select conversation
-  const selectConversation = useCallback((conversation: Conversation | null) => {
+  const selectConversation = useCallback(async (conversation: Conversation | null) => {
     setSelectedConversation(conversation)
     if (conversation) {
-      fetchMessages(conversation.id)
+      await fetchMessages(conversation.id)
+      // Mark messages as read when viewing conversation
+      await markMessagesAsRead(conversation.id)
     } else {
       setMessages([])
     }
@@ -700,6 +713,23 @@ export function useMessaging(): UseMessagingReturn {
     }
   }, [selectedConversation])
 
+  // Mark messages as read for a conversation
+  const markMessagesAsRead = useCallback(async (conversationId: string) => {
+    try {
+      const response = await fetch(`/api/messaging/conversations/${conversationId}/read`, {
+        method: 'POST'
+      })
+
+      if (response.ok) {
+        // Update local messages to mark as read
+        setMessages(prev => prev.map(msg => ({ ...msg, isRead: true })))
+        fetchConversations() // Update unread counts
+      }
+    } catch (err) {
+      console.error('Error marking messages as read:', err)
+    }
+  }, [fetchConversations])
+
   // Real-time subscriptions
   useEffect(() => {
     if (!session?.user?.id || !selectedConversation?.id) return
@@ -836,6 +866,7 @@ export function useMessaging(): UseMessagingReturn {
     selectConversation,
     sendMessage,
     markMessageAsRead,
+    markMessagesAsRead,
     addReaction,
     removeReaction,
     startTyping,

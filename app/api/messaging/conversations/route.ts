@@ -31,7 +31,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User not in community' }, { status: 403 })
     }
 
-    // Get conversations where user is a participant
+    // Get conversation IDs where user is a participant
+    const { data: userConversations, error: userConvError } = await supabase
+      .from('conversation_participants')
+      .select('conversation_id')
+      .eq('user_id', session.user.id)
+
+    if (userConvError) {
+      console.error('Error fetching user conversations:', userConvError)
+      return NextResponse.json({ error: 'Failed to fetch conversations' }, { status: 500 })
+    }
+
+    const conversationIds = userConversations?.map((c: any) => c.conversation_id) || []
+
+    if (conversationIds.length === 0) {
+      return NextResponse.json({ conversations: [] })
+    }
+
+    // Get conversations with all participants
     const { data: conversations, error: convError } = await supabase
       .from('conversations')
       .select(`
@@ -40,11 +57,11 @@ export async function GET(request: NextRequest) {
         is_group,
         created_at,
         last_message_at,
-        conversation_participants!inner(user_id, users(id, name, image, status)),
+        conversation_participants(user_id, users(id, name, image, status)),
         messages(id, body, created_at, sender_id, users!messages_sender_id_fkey(name, image))
       `)
       .eq('community_id', (userCommunity as any).community_id)
-      .eq('conversation_participants.user_id', session.user.id)
+      .in('id', conversationIds)
       .order('last_message_at', { ascending: false, nullsFirst: false })
 
     if (convError) {
@@ -52,12 +69,33 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch conversations' }, { status: 500 })
     }
 
+    // Calculate unread counts for each conversation
+    const conversationsWithUnreadCounts = await Promise.all((conversations || []).map(async (conv: any) => {
+      // Count unread messages: messages not sent by user and not in message_reads
+      const { count: unreadCount, error: unreadError } = await supabase
+        .from('messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('conversation_id', conv.id)
+        .neq('sender_id', session.user.id)
+        .not('message_reads', 'cs', `{"user_id": "${session.user.id}"}`)
+
+      if (unreadError) {
+        console.error('Error fetching unread count for conversation:', conv.id, unreadError)
+      }
+
+      return {
+        ...conv,
+        unreadCount: unreadCount || 0
+      }
+    }))
+
     // Format the response
-    const formattedConversations = conversations?.map((conv: any) => ({
+    const formattedConversations = conversationsWithUnreadCounts?.map((conv: any) => ({
       id: conv.id,
       title: conv.title,
       isGroup: conv.is_group,
       lastMessageAt: conv.last_message_at,
+      unreadCount: conv.unreadCount,
       participants: conv.conversation_participants?.map((p: any) => ({
         id: p.users.id,
         name: p.users.name,

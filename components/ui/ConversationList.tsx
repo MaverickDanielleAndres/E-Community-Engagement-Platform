@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Users, Search, Plus, CheckCheck, Circle } from 'lucide-react'
+import { Users, Search, Plus } from 'lucide-react'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useTheme } from '@/components/ThemeContext'
 
@@ -30,6 +30,7 @@ interface ConversationListProps {
   onSelectConversation: (conversation: Conversation) => void
   onNewConversation: () => void
   loading?: boolean
+  currentUserId?: string
 }
 
 export function ConversationList({
@@ -37,7 +38,8 @@ export function ConversationList({
   selectedConversation,
   onSelectConversation,
   onNewConversation,
-  loading = false
+  loading = false,
+  currentUserId
 }: ConversationListProps) {
   const { isDark } = useTheme()
   const [searchQuery, setSearchQuery] = useState('')
@@ -115,41 +117,41 @@ export function ConversationList({
               whileTap={{ scale: 0.99 }}
             >
               <div className="flex items-center gap-3">
-                {/* Avatar with online status */}
+                {/* Avatar */}
                 <div className="relative">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                    <Users className="w-5 h-5 text-white" />
-                  </div>
-                  {/* Online indicator */}
-                  {conversation.participants.some(p => p.online) && (
-                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white dark:border-slate-800 rounded-full"></div>
+                  {conversation.participants.length === 2 && currentUserId ? (
+                    (() => {
+                      const otherParticipant = conversation.participants.find(p => p.id !== currentUserId)
+                      return otherParticipant?.avatar ? (
+                        <img
+                          src={otherParticipant.avatar}
+                          alt={otherParticipant.name}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
+                          <span className="text-gray-700 font-medium text-sm">
+                            {otherParticipant?.name?.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      )
+                    })()
+                  ) : (
+                    <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
+                      <Users className="w-5 h-5 text-gray-700" />
+                    </div>
                   )}
+
                 </div>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <p className="font-medium text-sm truncate">
-                      {conversation.participants.map(p => p.name).join(', ')}
+                      {conversation.participants.length === 2 && currentUserId
+                        ? conversation.participants.find(p => p.id !== currentUserId)?.name || conversation.participants.map(p => p.name).join(', ')
+                        : conversation.participants.map(p => p.name).join(', ')}
                     </p>
-                    <div className="flex items-center gap-2">
-                      {/* Read status indicator */}
-                      {conversation.lastMessage && (
-                        <div className="flex items-center">
-                          {conversation.lastMessage.isRead ? (
-                            <CheckCheck className="w-4 h-4 text-slate-400" />
-                          ) : (
-                            <Circle className="w-4 h-4 text-blue-500 fill-current" />
-                          )}
-                        </div>
-                      )}
 
-                      {/* Unread count */}
-                      {conversation.unreadCount > 0 && (
-                        <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full min-w-[20px] text-center">
-                          {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}
-                        </span>
-                      )}
-                    </div>
                   </div>
 
                   {/* Last message and typing indicator */}
@@ -172,15 +174,7 @@ export function ConversationList({
                     )}
                   </div>
 
-                  {/* Timestamp */}
-                  {conversation.lastMessage && (
-                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                      {new Date(conversation.lastMessage.timestamp).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </p>
-                  )}
+
                 </div>
               </div>
             </motion.div>

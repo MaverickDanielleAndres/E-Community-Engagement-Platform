@@ -192,6 +192,16 @@ export async function GET(
           }
         })
 
+        // Determine if message is read by current user
+        const isRead = msg.message_reads && msg.message_reads.some((read: any) => read.user_id === session.user.id)
+
+        // Get read by list
+        const readBy = msg.message_reads?.map((read: any) => ({
+          userId: read.user_id,
+          userName: read.users?.name || 'Unknown',
+          readAt: read.read_at
+        })) || []
+
         return {
           id: msg.id,
           content: msg.body,
@@ -206,6 +216,8 @@ export async function GET(
             content: msg.reply_to_message.body,
             senderName: msg.reply_to_message.users?.name || ''
           } : undefined,
+          isRead,
+          readBy,
           isEdited: msg.metadata?.isEdited || false
         }
       })) || []
