@@ -130,7 +130,7 @@ export default function MyComplaints() {
   const totalPages = Math.ceil(total / limit)
 
   return (
-    <div className={`space-y-6 ${isDark ? 'text-white bg-slate-900' : 'text-black bg-white'}`}>
+    <div className={`space-y-6 ${isDark ? 'text-white bg-slate-900' : 'text-black bg-transparent'}`}>
       <div className="flex items-center justify-between">
         <div>
           <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>

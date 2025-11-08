@@ -164,7 +164,7 @@ export default function MessagingPage() {
 
   return (
     <>
-      <div className={`h-[calc(100vh-8rem)] flex flex-col relative ${isMobile ? 'px-0' : 'px-4'}`}>
+    <div className={`h-[calc(100vh-8rem)] flex flex-col relative ${isMobile ? 'px-0' : 'px-4'} ${isDark ? 'bg-slate-900' : 'bg-transparent'}`}>
 
         {/* Mobile/Tablet: Always visible conversation toggle at top */}
         {isMobile && (

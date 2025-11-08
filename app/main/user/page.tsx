@@ -46,35 +46,35 @@ export default function UserDashboard() {
   }
 
   return (
-    <div className={`space-y-6 ${isDark ? 'bg-slate-1000 text-white' : 'bg-white text-black'}`}>
+    <div className={`space-y-6 ${isDark ? 'bg-slate-1000 text-white' : 'bg-transparent text-black'}`}>
       {/* Welcome Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="space-y-2"
       >
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <h1 className={`text-3xl font-bold break-words ${isDark ? 'text-white' : 'text-black'}`}>
-            Welcome back, {session?.user?.name || session?.user?.email?.split('@')[0] || 'Resident'}
-          </h1>
+        <div className="flex flex-col">
+          <div className="flex items-center justify-between">
+            <h1 className={`text-3xl font-bold break-words ${isDark ? 'text-white' : 'text-black'}`}>
+              Welcome back, {session?.user?.name || session?.user?.email?.split('@')[0] || 'Resident'}
+            </h1>
+            <button
+              onClick={handleRefreshDashboard}
+              disabled={loading}
+              title="Refresh dashboard"
+              className={`p-2 rounded-md transition-colors ${
+                isDark
+                  ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+              } ${loading ? 'animate-spin' : ''}`}
+            >
+              <ArrowPathIcon className={`w-5 h-5 ${isDark ? 'text-white' : 'text-black'}`} />
+            </button>
+          </div>
           <p className={`${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
-          Here's what's happening in your community today
-        </p>
-          
+            Here's what's happening in your community today
+          </p>
         </div>
-        
-        <button
-            onClick={handleRefreshDashboard}
-            disabled={loading}
-            title="Refresh dashboard"
-            className={`mt-2 sm:mt-0 p-2 rounded-md transition-colors ${
-              isDark
-                ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-            } ${loading ? 'animate-spin' : ''}`}
-          >
-            <ArrowPathIcon className={`w-5 h-5 ${isDark ? 'text-white' : 'text-black'}`} />
-          </button>
       </motion.div>
 
       {/* Stats Cards */}

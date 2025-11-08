@@ -115,7 +115,7 @@ export function ConversationView({
   }
 
   const handleToggleSidebar = () => {
-    onToggleSidebar?.()
+    handleToggleSidebar?.()
   }
 
   return (

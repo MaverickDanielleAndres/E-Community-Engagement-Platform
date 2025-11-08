@@ -120,7 +120,7 @@ export default function SubmitFeedback() {
   }
 
   return (
-    <div className={`max-w-2xl mx-auto space-y-6 ${isDark ? 'text-white bg-slate-900' : 'text-black bg-white'}`}>
+    <div className={`max-w-2xl mx-auto space-y-6 ${isDark ? 'text-white bg-slate-900' : 'text-black bg-transparent'}`}>
       {toast && (
         <Toast
           message={toast.message}

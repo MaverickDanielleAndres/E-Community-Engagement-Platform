@@ -128,8 +128,8 @@ export default function UserPolls() {
     refreshHeaderAndSidebar()
   }
  
-   return (
-     <div className={`space-y-6 ${isDark ? 'bg-slate-900 text-white' : 'bg-white text-black'}`}>
+  return (
+    <div className={`space-y-6 ${isDark ? 'bg-slate-900 text-white' : 'bg-transparent text-black'}`}>
        {/* Header */}
        <div className="flex items-center justify-between">
          <div>
