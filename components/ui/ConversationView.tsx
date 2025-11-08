@@ -114,13 +114,13 @@ export function ConversationView({
     setReplyTo(null)
   }
 
-  function onToggleSidebar(): void {
-    throw new Error('Function not implemented.')
+  const handleToggleSidebar = () => {
+    onToggleSidebar?.()
   }
 
   return (
     <div className="flex-1 flex flex-col">
-      <ConversationHeader conversation={conversation} currentUserId={currentUserId} onRefreshMessages={onRefreshMessages} onToggleSidebar={onToggleSidebar} />
+      <ConversationHeader conversation={conversation} currentUserId={currentUserId} onRefreshMessages={onRefreshMessages} onToggleSidebar={handleToggleSidebar} />
 
       {!conversation ? (
         <div className="flex-1 flex items-center justify-center">
@@ -133,7 +133,7 @@ export function ConversationView({
       ) : (
         <>
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[calc(100vh-16rem)] scroll-smooth">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[calc(100vh-12rem)] scroll-smooth">
             {loading ? (
               <div className="flex items-center justify-center h-full">
                 <LoadingSpinner />
@@ -259,99 +259,101 @@ export function ConversationHeader({
   }
 
   return (
-    <div className="p-4 border-b border-slate-200 dark:border-slate-700">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {conversation.participants.length === 2 && currentUserId ? (
-            (() => {
-              const otherParticipant = conversation.participants.find(p => p.id !== currentUserId)
-              return otherParticipant?.avatar ? (
-                <img
-                  src={otherParticipant.avatar}
-                  alt={otherParticipant.name}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-medium text-sm">
-                    {otherParticipant?.name?.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-              )
-            })()
-          ) : (
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-              <Users className="w-5 h-5 text-white" />
-            </div>
-          )}
-          <div>
-            <h2 className="font-semibold">
-              {conversationName}
-            </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2">
-              {conversation.participants.length === 2 && currentUserId
-                ? (() => {
-                    const otherParticipant = conversation.participants.find(p => p.id !== currentUserId)
-                    const isOnline = otherParticipant?.online
-                    return (
-                      <>
-                        <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-blue-500' : 'bg-gray-400'}`}></span>
-                        {isOnline ? 'active' : 'inactive'}
-                      </>
-                    )
-                  })()
-                : 'group chat'
-              }
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <button
-              onClick={() => setShowMenu(!showMenu)}
-              className={`p-2 rounded-lg transition-colors hover:bg-${isDark ? 'white/10' : 'slate-100'}`}
-            >
-              <MoreVertical className="w-5 h-5" />
-            </button>
-            {showMenu && (
-              <div ref={menuRef} className={`absolute right-0 mt-2 w-56 ${isDark ? 'bg-slate-800' : 'bg-white'} rounded-md shadow-lg border ${isDark ? 'border-slate-700' : 'border-slate-200'} z-10`}>
-                <button
-                  onClick={() => {
-                    onRefreshMessages?.()
-                    setShowMenu(false)
-                  }}
-                  className={`w-full text-left px-4 py-2 text-sm ${isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'} transition-colors flex items-center gap-2`}
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  Refresh
-                </button>
-                <button
-                  onClick={() => {
-                    setNewConversationName(conversationName)
-                    setShowNicknameModal(true)
-                    setShowMenu(false)
-                  }}
-                  className={`w-full text-left px-4 py-2 text-sm ${isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'} transition-colors`}
-                >
-                  Change Conversation Name
-                </button>
-                <button
-                  onClick={() => {
-                    setShowThemeModal(true)
-                    setShowMenu(false)
-                  }}
-                  className={`w-full text-left px-4 py-2 text-sm ${isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'} transition-colors`}
-                >
-                  Change Message Colors
-                </button>
-                <button
-                  onClick={handleDeleteConversation}
-                  className={`w-full text-left px-4 py-2 text-sm text-red-600 ${isDark ? 'hover:bg-red-900/20' : 'hover:bg-red-50'} transition-colors`}
-                >
-                  Delete Conversation
-                </button>
+    <div>
+      <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 flex-1">
+            {conversation.participants.length === 2 && currentUserId ? (
+              (() => {
+                const otherParticipant = conversation.participants.find(p => p.id !== currentUserId)
+                return otherParticipant?.avatar ? (
+                  <img
+                    src={otherParticipant.avatar}
+                    alt={otherParticipant.name}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                    <span className="text-white font-medium text-sm">
+                      {otherParticipant?.name?.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )
+              })()
+            ) : (
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                <Users className="w-5 h-5 text-white" />
               </div>
             )}
+            <div>
+              <h2 className="font-semibold">
+                {conversationName}
+              </h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                {conversation.participants.length === 2 && currentUserId
+                  ? (() => {
+                      const otherParticipant = conversation.participants.find(p => p.id !== currentUserId)
+                      const isOnline = otherParticipant?.online
+                      return (
+                        <>
+                          <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-blue-500' : 'bg-gray-400'}`}></span>
+                          {isOnline ? 'active' : 'inactive'}
+                        </>
+                      )
+                    })()
+                  : 'group chat'
+                }
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <button
+                onClick={() => setShowMenu(!showMenu)}
+                className={`p-2 rounded-lg transition-colors hover:bg-${isDark ? 'white/10' : 'slate-100'}`}
+              >
+                <MoreVertical className="w-5 h-5" />
+              </button>
+              {showMenu && (
+                <div ref={menuRef} className={`absolute right-0 mt-2 w-56 ${isDark ? 'bg-slate-800' : 'bg-white'} rounded-md shadow-lg border ${isDark ? 'border-slate-700' : 'border-slate-200'} z-10`}>
+                  <button
+                    onClick={() => {
+                      onRefreshMessages?.()
+                      setShowMenu(false)
+                    }}
+                    className={`w-full text-left px-4 py-2 text-sm ${isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'} transition-colors flex items-center gap-2`}
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Refresh
+                  </button>
+                  <button
+                    onClick={() => {
+                      setNewConversationName(conversationName)
+                      setShowNicknameModal(true)
+                      setShowMenu(false)
+                    }}
+                    className={`w-full text-left px-4 py-2 text-sm ${isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'} transition-colors`}
+                  >
+                    Change Conversation Name
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowThemeModal(true)
+                      setShowMenu(false)
+                    }}
+                    className={`w-full text-left px-4 py-2 text-sm ${isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'} transition-colors`}
+                  >
+                    Change Message Colors
+                  </button>
+                  <button
+                    onClick={handleDeleteConversation}
+                    className={`w-full text-left px-4 py-2 text-sm text-red-600 ${isDark ? 'hover:bg-red-900/20' : 'hover:bg-red-50'} transition-colors`}
+                  >
+                    Delete Conversation
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

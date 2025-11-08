@@ -20,7 +20,7 @@ interface Member {
 interface NewConversationModalProps {
   isOpen: boolean
   onClose: () => void
-  onCreateConversation: (memberIds: string[]) => Promise<void>
+  onCreateConversation: (memberIds: string[], isGroup?: boolean) => Promise<void>
 }
 
 export function NewConversationModal({
@@ -83,7 +83,8 @@ export function NewConversationModal({
 
     setCreating(true)
     try {
-      await onCreateConversation(Array.from(selectedMembers))
+      const isGroup = selectedMembers.size > 1
+      await onCreateConversation(Array.from(selectedMembers), isGroup)
       onClose()
     } catch (error) {
       console.error('Error creating conversation:', error)

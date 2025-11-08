@@ -6,8 +6,9 @@ import { messagingMiddleware } from '@/lib/messaging-middleware'
 import { z } from 'zod'
 
 const createConversationSchema = z.object({
-  participantIds: z.array(z.string().uuid()).min(1).max(1), // Only 1:1 conversations for now
+  participantIds: z.array(z.string().uuid()).min(1).max(10), // Allow up to 10 participants for group chats
   title: z.string().optional(),
+  isGroup: z.boolean().optional(),
 })
 
 export async function GET(request: NextRequest) {
@@ -131,7 +132,7 @@ export async function POST(request: NextRequest) {
       }
 
     const body = await request.json()
-    const { participantIds, title } = createConversationSchema.parse(body)
+    const { participantIds, title, isGroup } = createConversationSchema.parse(body)
 
     const supabase = getSupabaseServerClient()
 
@@ -146,52 +147,60 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not in community' }, { status: 403 })
     }
 
-    // Check if target user is in the same community and not an admin
-    const { data: targetUser, error: targetError } = await supabase
-      .from('community_members')
-      .select(`
-        user_id,
-        role
-      `)
-      .eq('community_id', (userCommunity as any).community_id)
-      .eq('user_id', participantIds[0])
-      .single()
+    // Determine if this is a group chat
+    const isGroupChat = isGroup || participantIds.length > 1
 
-    if (targetError || !targetUser) {
-      return NextResponse.json({ error: 'Target user not found in community' }, { status: 404 })
+    // Check if all target users are in the same community and not admins
+    for (const participantId of participantIds) {
+      const { data: targetUser, error: targetError } = await supabase
+        .from('community_members')
+        .select(`
+          user_id,
+          role
+        `)
+        .eq('community_id', (userCommunity as any).community_id)
+        .eq('user_id', participantId)
+        .single()
+
+      if (targetError || !targetUser) {
+        return NextResponse.json({ error: `User ${participantId} not found in community` }, { status: 404 })
+      }
+
+      if ((targetUser as any).role === 'Admin') {
+        return NextResponse.json({ error: 'Cannot message administrators' }, { status: 403 })
+      }
     }
 
-    if ((targetUser as any).role === 'Admin') {
-      return NextResponse.json({ error: 'Cannot message administrators' }, { status: 403 })
-    }
+    // For 1:1 conversations, check if conversation already exists
+    if (!isGroupChat) {
+      // Check if conversation already exists
+      // First get conversation IDs for the target user
+      const { data: targetUserConversations, error: targetConvError } = await supabase
+        .from('conversation_participants')
+        .select('conversation_id')
+        .eq('user_id', participantIds[0])
 
-    // Check if conversation already exists
-    // First get conversation IDs for the target user
-    const { data: targetUserConversations, error: targetConvError } = await supabase
-      .from('conversation_participants')
-      .select('conversation_id')
-      .eq('user_id', participantIds[0])
+      if (targetConvError) {
+        console.error('Error fetching target user conversations:', targetConvError)
+        return NextResponse.json({ error: 'Failed to check existing conversations' }, { status: 500 })
+      }
 
-    if (targetConvError) {
-      console.error('Error fetching target user conversations:', targetConvError)
-      return NextResponse.json({ error: 'Failed to check existing conversations' }, { status: 500 })
-    }
+      const conversationIds = targetUserConversations?.map((c: any) => c.conversation_id) || []
 
-    const conversationIds = targetUserConversations?.map((c: any) => c.conversation_id) || []
+      const { data: existingConv, error: existingError } = await supabase
+        .from('conversation_participants')
+        .select(`
+          conversation_id,
+          conversations!inner(id)
+        `)
+        .eq('user_id', session.user.id)
+        .in('conversation_id', conversationIds)
 
-    const { data: existingConv, error: existingError } = await supabase
-      .from('conversation_participants')
-      .select(`
-        conversation_id,
-        conversations!inner(id)
-      `)
-      .eq('user_id', session.user.id)
-      .in('conversation_id', conversationIds)
-
-    if (existingConv && existingConv.length > 0) {
-      return NextResponse.json({
-        conversation: { id: (existingConv[0] as any).conversation_id }
-      })
+      if (existingConv && existingConv.length > 0) {
+        return NextResponse.json({
+          conversation: { id: (existingConv[0] as any).conversation_id }
+        })
+      }
     }
 
     // Create new conversation
@@ -199,7 +208,7 @@ export async function POST(request: NextRequest) {
       .from('conversations')
       .insert({
         community_id: (userCommunity as any).community_id,
-        is_group: false,
+        is_group: isGroupChat,
         title: title,
         created_by: session.user.id
       })
@@ -211,10 +220,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create conversation' }, { status: 500 })
     }
 
-    // Add participants
+    // Add participants (including the creator)
     const participants = [
       { conversation_id: (conversation as any).id, user_id: session.user.id },
-      { conversation_id: (conversation as any).id, user_id: participantIds[0] }
+      ...participantIds.map(id => ({ conversation_id: (conversation as any).id, user_id: id }))
     ]
 
     const { error: partError } = await (supabase as any)
@@ -234,7 +243,7 @@ export async function POST(request: NextRequest) {
       action: 'create_conversation',
       target_table: 'conversations',
       target_id: (conversation as any).id,
-      payload: { participant_ids: participantIds }
+      payload: { participant_ids: participantIds, is_group: isGroupChat }
     })
 
     return NextResponse.json({ conversation: { id: (conversation as any).id } }, { status: 201 })

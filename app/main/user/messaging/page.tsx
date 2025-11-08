@@ -47,6 +47,8 @@ export default function MessagingPage() {
   const [showNewConversationModal, setShowNewConversationModal] = useState(false)
   const [replyTo, setReplyTo] = useState<{ id: string; content: string; senderName: string } | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
   const {
     conversations,
     selectedConversation,
@@ -67,6 +69,16 @@ export default function MessagingPage() {
     onlineUsers,
     refreshMessages
   } = useMessaging()
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768) // md breakpoint
+    }
+
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   // Update conversations with online status and typing indicators
   const enhancedConversations = conversations.map(conv => ({
@@ -117,9 +129,9 @@ export default function MessagingPage() {
     setShowNewConversationModal(true)
   }
 
-  const handleCreateConversation = async (memberIds: string[]) => {
+  const handleCreateConversation = async (memberIds: string[], isGroup?: boolean) => {
     try {
-      await createConversation(memberIds)
+      await createConversation(memberIds, isGroup)
     } catch (error) {
       console.error('Error creating conversation:', error)
     }
@@ -137,7 +149,9 @@ export default function MessagingPage() {
     const original = conversations.find(c => c.id === conversation.id)
     selectConversation(original || null)
     // Auto-close sidebar on mobile when conversation is selected
-    setSidebarOpen(false)
+    if (isMobile) {
+      setSidebarOpen(false)
+    }
   }
 
   if (isLoading) {
@@ -150,72 +164,84 @@ export default function MessagingPage() {
 
   return (
     <>
-      <div className="h-[calc(100vh-8rem)] flex relative">
+      <div className={`h-[calc(100vh-8rem)] flex flex-col relative ${isMobile ? 'px-0' : 'px-4'}`}>
 
-        {/* Sidebar */}
-        <div className={`
-          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-          md:translate-x-0
-          fixed md:relative
-          top-0 left-0
-          h-full
-          z-40 md:z-auto
-          transition-transform duration-300 ease-in-out
-          w-80
-        `}>
-          <ConversationList
-            conversations={enhancedConversations}
-            selectedConversation={selectedConversation}
-            onSelectConversation={handleSelectConversation}
-            onNewConversation={handleNewConversation}
-            loading={isLoading}
-            currentUserId={session?.user?.id || ''}
-            isMobile={sidebarOpen}
-            onCloseMobile={() => setSidebarOpen(false)}
-          />
-        </div>
-
-        {/* Backdrop for mobile */}
-        {sidebarOpen && (
-          <div
-            className="md:hidden fixed inset-0 bg-black/50 z-30"
-            onClick={() => setSidebarOpen(false)}
-          />
+        {/* Mobile/Tablet: Always visible conversation toggle at top */}
+        {isMobile && (
+          <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className={`flex items-center gap-2 p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-700'}`}
+              title="Toggle conversation list"
+            >
+              <Menu className="w-5 h-5" />
+              <span className="text-sm font-medium">Conversations</span>
+            </button>
+          </div>
         )}
 
-        {/* Main Content */}
-        <div className="flex-1 md:ml-0 relative">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className={`absolute left-4 top-4 z-10 p-2 rounded-lg transition-colors md:hidden ${
-              isDark
-                ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                : 'bg-white text-slate-700 hover:bg-slate-100'
-            } shadow-lg`}
-            title="Toggle sidebar"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-          <ConversationView
-            conversation={selectedConversation ? {
-              ...selectedConversation,
-              participants: selectedConversation.participants.map(p => ({
-                ...p,
-                online: onlineUsers.has(p.id)
-              }))
-            } : null}
-            messages={messages}
-            currentUserId={session?.user?.id || ''}
-            onSendMessage={handleSendMessage}
-            onReaction={handleReaction}
-            onReply={handleReply}
-            onDelete={handleDelete}
-            onEdit={handleEdit}
-            onRefreshMessages={refreshMessages}
-            loading={false}
-            replyTo={replyTo}
-            onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          />
+        {/* Content area */}
+        <div className={`flex flex-1 relative ${isMobile ? 'px-0' : 'px-4'}`}>
+
+          {/* Sidebar - Overlay on mobile */}
+          {isMobile ? (
+            <>
+              {sidebarOpen && (
+                <>
+                  <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setSidebarOpen(false)} />
+                  <div className="fixed top-0 left-0 h-full w-80 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 z-50">
+                    <ConversationList
+                      conversations={enhancedConversations}
+                      selectedConversation={selectedConversation}
+                      onSelectConversation={handleSelectConversation}
+                      onNewConversation={handleNewConversation}
+                      loading={isLoading}
+                      currentUserId={session?.user?.id || ''}
+                      isMobile={true}
+                      onCloseMobile={() => setSidebarOpen(false)}
+                    />
+                  </div>
+                </>
+              )}
+            </>
+          ) : (
+            <div className="w-80 border-r border-slate-200 dark:border-slate-700">
+              <ConversationList
+                conversations={enhancedConversations}
+                selectedConversation={selectedConversation}
+                onSelectConversation={handleSelectConversation}
+                onNewConversation={handleNewConversation}
+                loading={isLoading}
+                currentUserId={session?.user?.id || ''}  
+                isMobile={false}
+                onCloseMobile={() => setSidebarOpen(false)}
+              />
+            </div>
+          )}
+
+          {/* Main Content */}
+          <div className="flex-1 relative">
+            <ConversationView
+              conversation={selectedConversation ? {
+                ...selectedConversation,
+                participants: selectedConversation.participants.map(p => ({
+                  ...p,
+                  online: onlineUsers.has(p.id)
+                }))
+              } : null}
+              messages={messages}
+              currentUserId={session?.user?.id || ''}
+              onSendMessage={handleSendMessage}
+              onReaction={handleReaction}
+              onReply={handleReply}
+              onDelete={handleDelete}
+              onEdit={handleEdit}
+              onRefreshMessages={refreshMessages}
+              loading={false}
+              replyTo={replyTo}
+              onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+            />
+          </div>
         </div>
       </div>
 

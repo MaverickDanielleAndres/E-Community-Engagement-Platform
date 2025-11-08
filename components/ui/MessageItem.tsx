@@ -154,9 +154,7 @@ export function MessageItem({
     if (!message.isEdited) return null
 
     return (
-      <div className={`text-xs ${
-        isOwnMessage ? 'text-white' : 'text-slate-500 dark:text-slate-400'
-      } ${
+      <div className={`text-xs ${isDark ? 'text-white' : 'text-slate-500'} ${
         isOwnMessage ? 'text-right' : 'text-left'
       }`}>
         edited
@@ -389,7 +387,7 @@ export function MessageItem({
           {/* Action buttons */}
           <div className={`absolute top-1/2 -translate-y-1/2 ${
             isOwnMessage ? 'left-0 -translate-x-full mr-2' : 'right-0 translate-x-full ml-2'
-          } flex gap-0.5 p-1 opacity-0 group-hover:opacity-100 ${showTimestamp ? 'opacity-100' : ''} transition-opacity z-50`}>
+          } flex gap-0.5 p-1 opacity-0 group-hover:opacity-100 ${showTimestamp ? 'opacity-100' : ''} transition-opacity z-10`}>
             <button
               onClick={(e) => {
                 e.stopPropagation()

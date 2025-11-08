@@ -92,7 +92,7 @@ interface UseMessagingReturn {
   removeReaction: (messageId: string, emoji: string) => Promise<void>
   startTyping: () => void
   stopTyping: () => void
-  createConversation: (participantIds: string[]) => Promise<Conversation | null>
+  createConversation: (participantIds: string[], isGroup?: boolean) => Promise<Conversation | null>
   deleteMessage: (messageId: string) => Promise<void>
   editMessage: (messageId: string, newContent: string) => Promise<void>
   deleteConversation: (conversationId: string) => Promise<void>
@@ -632,12 +632,12 @@ export function useMessaging(): UseMessagingReturn {
   }, [selectedConversation, session?.user])
 
   // Create conversation
-  const createConversation = useCallback(async (participantIds: string[]): Promise<Conversation | null> => {
+  const createConversation = useCallback(async (participantIds: string[], isGroup?: boolean): Promise<Conversation | null> => {
     try {
       const response = await fetch('/api/messaging/conversations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ participantIds })
+        body: JSON.stringify({ participantIds, isGroup })
       })
 
       if (response.ok) {
