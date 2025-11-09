@@ -54,6 +54,24 @@ export default function AdminRequestsPage() {
     }
     return 'pending'
   })
+  const [isSmallScreen, setIsSmallScreen] = useState(false)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const mediaQuery = window.matchMedia('(max-width: 1279px)') // xl breakpoint -1 for tablet/mobile
+    setIsSmallScreen(mediaQuery.matches)
+
+    const handleChange = (e: MediaQueryListEvent) => {
+      setIsSmallScreen(e.matches)
+    }
+
+    mediaQuery.addEventListener('change', handleChange)
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleChange)
+    }
+  }, [])
 
   const fetchRequests = async (history = false) => {
     setIsLoading(true)
@@ -193,8 +211,8 @@ export default function AdminRequestsPage() {
       render: (value: any, row: VerificationRequest) => (
         <div className="flex items-center gap-1 sm:gap-2">
           <Link href={`/main/admin/requests/${row.id}`}>
-            <Button variant="outline" size="sm" className={`p-2 ${isDark ? 'text-white' : ''}`}>
-              <EyeIcon className={`w-4 h-4 ${isDark ? 'text-white' : ''}`} />
+            <Button variant="outline" size="sm" className={`p-1.5 sm:p-2 ${isDark ? 'text-white' : ''}`}>
+              <EyeIcon className={`w-3 h-3 sm:w-4 sm:h-4 ${isDark ? 'text-white' : ''}`} />
               <span className="sr-only">View</span>
             </Button>
           </Link>
@@ -202,27 +220,27 @@ export default function AdminRequestsPage() {
             variant="outline"
             size="sm"
             onClick={() => confirmAction(row.id, 'approve')}
-            className={`p-2 ${isDark ? 'text-white' : 'text-green-600 hover:text-green-700'}`}
+            className={`p-1.5 sm:p-2 ${isDark ? 'text-white' : 'text-green-600 hover:text-green-700'}`}
           >
-            <CheckIcon className={`w-4 h-4 ${isDark ? 'text-white' : ''}`} />
+            <CheckIcon className={`w-3 h-3 sm:w-4 sm:h-4 ${isDark ? 'text-white' : ''}`} />
             <span className="sr-only">Approve</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => confirmAction(row.id, 'reject')}
-            className={`p-2 ${isDark ? 'text-white' : 'text-red-600 hover:text-red-700'}`}
+            className={`p-1.5 sm:p-2 ${isDark ? 'text-white' : 'text-red-600 hover:text-red-700'}`}
           >
-            <XMarkIcon className={`w-4 h-4 ${isDark ? 'text-white' : ''}`} />
+            <XMarkIcon className={`w-3 h-3 sm:w-4 sm:h-4 ${isDark ? 'text-white' : ''}`} />
             <span className="sr-only">Reject</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => confirmAction(row.id, 'delete')}
-            className={`p-2 ${isDark ? 'text-white' : 'text-gray-600 hover:text-gray-700'}`}
+            className={`p-1.5 sm:p-2 ${isDark ? 'text-white' : 'text-gray-600 hover:text-gray-700'}`}
           >
-            <TrashIcon className={`w-4 h-4 ${isDark ? 'text-white' : ''}`} />
+            <TrashIcon className={`w-3 h-3 sm:w-4 sm:h-4 ${isDark ? 'text-white' : ''}`} />
             <span className="sr-only">Delete</span>
           </Button>
         </div>
@@ -297,9 +315,9 @@ export default function AdminRequestsPage() {
             variant="outline"
             size="sm"
             onClick={() => confirmAction(row.id, 'delete_history')}
-            className={`p-2 ${isDark ? 'text-white' : 'text-gray-600 hover:text-gray-700'}`}
+            className={`p-1.5 sm:p-2 ${isDark ? 'text-white' : 'text-gray-600 hover:text-gray-700'}`}
           >
-            <TrashIcon className={`w-4 h-4 ${isDark ? 'text-white' : ''}`} />
+            <TrashIcon className={`w-3 h-3 sm:w-4 sm:h-4 ${isDark ? 'text-white' : ''}`} />
             <span className="sr-only">Delete History</span>
           </Button>
         </div>
@@ -316,7 +334,7 @@ export default function AdminRequestsPage() {
   }
 
   return (
-    <div className="space-y-6 ">
+    <div className={`space-y-4 sm:space-y-6 ${isSmallScreen ? 'px-2' : 'px-4'}`}>
       {toast && (
         <Toast
           message={toast.message}
@@ -333,44 +351,46 @@ export default function AdminRequestsPage() {
         onClose={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
       />
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className={`text-xl sm:text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-          
+          <h1 className={`text-lg sm:text-xl md:text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Verification Requests
           </h1>
-          <p className={`text-sm sm:text-base ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+          <p className={`text-xs sm:text-sm md:text-base ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
             Review and manage ID verification requests
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className={`flex items-center gap-1.5 sm:gap-2 ${isSmallScreen ? 'flex-wrap' : ''}`}>
           <Button
             variant={activeTab === 'pending' ? 'primary' : 'outline'}
+            size="sm"
             onClick={() => setActiveTab('pending')}
-            className={isDark ? 'text-white hover:text-black active:text-black' : ''}
+            className={`${isDark ? 'text-white hover:text-black active:text-black' : ''} ${isSmallScreen ? 'text-xs px-2 py-1.5' : ''}`}
           >
-            Pending Requests
+            {isSmallScreen ? 'Pending' : 'Pending Requests'}
           </Button>
           <Button
             variant={activeTab === 'history' ? 'primary' : 'outline'}
+            size="sm"
             onClick={() => setActiveTab('history')}
-            className={isDark ? 'text-white hover:text-black active:text-black' : ''}
+            className={`${isDark ? 'text-white hover:text-black active:text-black' : ''} ${isSmallScreen ? 'text-xs px-2 py-1.5' : ''}`}
           >
             History
           </Button>
           {activeTab === 'history' && (
             <Button
               variant="outline"
+              size="sm"
               onClick={() => confirmAction(null, 'clear_history')}
-              className={isDark ? 'text-white hover:text-black active:text-black' : ''}
+              className={`${isDark ? 'text-white hover:text-black active:text-black' : ''} ${isSmallScreen ? 'text-xs px-2 py-1.5' : ''}`}
             >
-              Clear History
+              {isSmallScreen ? 'Clear' : 'Clear History'}
             </Button>
           )}
           <button
             onClick={() => fetchRequests(activeTab === 'history')}
             disabled={isLoading}
-            className={`p-2.5 rounded-xl border transition-all duration-200
+            className={`p-1.5 sm:p-2 md:p-2.5 rounded-xl border transition-all duration-200
               focus:outline-none focus:ring-2 focus:ring-blue-500
               disabled:opacity-50 disabled:cursor-not-allowed
               ${isDark
@@ -380,7 +400,7 @@ export default function AdminRequestsPage() {
             `}
             title="Refresh requests"
           >
-            <ArrowPathIcon className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+            <ArrowPathIcon className={`w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>

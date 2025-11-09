@@ -28,12 +28,30 @@ export function AdminHeader() {
   const [communityLogo, setCommunityLogo] = useState('')
   const [userImage, setUserImage] = useState('')
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isSmallScreen, setIsSmallScreen] = useState(false)
   const { data: session } = useSession()
   const { isDark } = useTheme()
   const { isCollapsed, setIsCollapsed } = useSidebar()
   const router = useRouter()
 
   const unreadCount = notifications.filter(n => !n.is_read).length
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const mediaQuery = window.matchMedia('(max-width: 1279px)') // xl breakpoint -1 for tablet/mobile
+    setIsSmallScreen(mediaQuery.matches)
+
+    const handleChange = (e: MediaQueryListEvent) => {
+      setIsSmallScreen(e.matches)
+    }
+
+    mediaQuery.addEventListener('change', handleChange)
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleChange)
+    }
+  }, [])
 
   useEffect(() => {
     if (!session?.user?.email) return
@@ -180,8 +198,8 @@ export function AdminHeader() {
           try {
             const response = await fetch('/api/me/summary')
             if (response.ok) {
-              const data = await response.json()
-              setUserImage(data.settings?.image || '')
+              const userData = await response.json()
+              setUserImage(userData.settings?.image || '')
             }
           } catch (error) {
             console.error('Error fetching user image:', error)
@@ -268,7 +286,7 @@ export function AdminHeader() {
         }
       `}
     >
-      <div className="flex items-center justify-between px-6 py-4">
+      <div className={`flex items-center justify-between ${isSmallScreen ? 'px-4 py-3' : 'px-6 py-4'}`}>
         {/* Left Section */}
         <div className="flex items-center space-x-4">
           <div className="hidden lg:block">
@@ -281,7 +299,7 @@ export function AdminHeader() {
                 />
               )}
               <div>
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+                <h1 className={`${isSmallScreen ? 'text-xl' : 'text-2xl'} font-bold text-slate-900 dark:text-white`}>
                   Admin Dashboard
                 </h1>
                 <p className="text-sm text-slate-500 dark:text-slate-400">

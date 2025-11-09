@@ -145,9 +145,9 @@ export default function AdminDashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className={`text-4xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <h1 className={`text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Welcome back, {session?.user?.name || 'Administrator'}
             </h1>
             <p className={isDark ? 'text-slate-400' : 'text-slate-600'}>
@@ -165,7 +165,7 @@ export default function AdminDashboard() {
                 newValue: 'true'
               }))
             }}
-            className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+            className="px-3 py-2 sm:px-4 sm:py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors text-sm sm:text-base"
           >
             Refresh
           </button>

@@ -1,6 +1,6 @@
 // @/app/api/polls/route.ts - Updated for multi-question polls
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
+import { getServerSession } from 'next-auth'
 import { createClient } from '@supabase/supabase-js'
 import { authOptions } from '@/lib/auth'
 

@@ -221,12 +221,12 @@ export function UserSidebar() {
     const isActive = pathname === item.href
     const Icon = item.icon
 
-    const handleNavClick = () => {
-      // Collapse sidebar on small screens when navigation link is clicked
-      if (isSmallScreen && !isCollapsed) {
-        setIsCollapsed(true)
-      }
+  const handleNavClick = () => {
+    // Auto-collapse sidebar on small screens when navigation link is clicked
+    if (isSmallScreen) {
+      setIsCollapsed(true)
     }
+  }
 
     return (
       <Link href={item.href} onClick={handleNavClick}>
@@ -234,7 +234,7 @@ export function UserSidebar() {
           whileHover={{ x: effectiveIsCollapsed ? 4 : 2, scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           className={`
-            relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 cursor-pointer group
+            relative flex items-center justify-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 cursor-pointer group
             ${isActive
               ? `${isDark ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-400 shadow-lg shadow-blue-500/10' : 'bg-gradient-to-r from-blue-50 to-purple-50 text-blue-600 shadow-lg shadow-blue-500/10'} border border-blue-200/50 dark:border-blue-500/30`
               : `${isDark ? 'text-slate-300 hover:bg-gradient-to-r hover:from-slate-800/50 hover:to-slate-700/50 hover:text-white hover:shadow-md' : 'text-slate-600 hover:bg-gradient-to-r hover:from-slate-100 hover:to-slate-50 hover:text-slate-900 hover:shadow-md'}`
@@ -251,7 +251,7 @@ export function UserSidebar() {
           )}
 
           <div className={`flex-shrink-0 ${isActive ? (isDark ? 'text-blue-400' : 'text-blue-600') : ''}`}>
-            <Icon size={20} />
+            <Icon size={isSmallScreen ? 16 : 20} />
           </div>
 
           <AnimatePresence>
@@ -287,7 +287,7 @@ export function UserSidebar() {
   const sidebarContent = (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+      <div className={`flex items-center justify-between ${effectiveIsCollapsed ? 'p-1' : 'p-4'} border-b border-slate-200 dark:border-slate-700`}>
         <AnimatePresence>
           {!effectiveIsCollapsed && (
             <motion.div
@@ -327,7 +327,7 @@ export function UserSidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-6">
+      <nav className="flex-1 p-2 space-y-4">
         {navigationSections.map((section, sectionIndex) => (
           <div key={section.title}>
             <AnimatePresence>
@@ -388,7 +388,7 @@ export function UserSidebar() {
   return (
     <motion.aside
       initial={false}
-      animate={{ width: isCollapsed ? 80 : 320 }}
+      animate={{ width: isCollapsed ? (isSmallScreen ? 56 : 60) : (isSmallScreen ? 280 : 320) }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
       className={`
         fixed left-0 top-0 bottom-0 z-30
