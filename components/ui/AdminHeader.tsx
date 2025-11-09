@@ -34,6 +34,9 @@ export function AdminHeader() {
   const { isCollapsed, setIsCollapsed } = useSidebar()
   const router = useRouter()
 
+  // Calculate sidebar width for header margin
+  const sidebarWidth = isCollapsed ? (isSmallScreen ? 56 : 60) : (isSmallScreen ? 280 : 320)
+
   const unreadCount = notifications.filter(n => !n.is_read).length
 
   useEffect(() => {
@@ -278,8 +281,9 @@ export function AdminHeader() {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
+      style={{ marginLeft: isSmallScreen && isCollapsed ? `${sidebarWidth}px` : '0px' }}
       className={`
-        sticky top-0 z-40 border-b backdrop-blur-md
+        sticky top-0 z-20 border-b backdrop-blur-md transition-all duration-300
         ${isDark
           ? 'bg-slate-900/80 border-slate-700'
           : 'bg-white/80 border-slate-200'
@@ -288,9 +292,9 @@ export function AdminHeader() {
     >
       <div className={`flex items-center justify-between ${isSmallScreen ? 'px-4 py-3' : 'px-6 py-4'}`}>
         {/* Left Section */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 ml-13">
           <div className="hidden lg:block">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3 ">
               {communityLogo && (
                 <img
                   src={communityLogo}

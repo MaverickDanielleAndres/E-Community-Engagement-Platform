@@ -1,16 +1,13 @@
-# Notification Modal Adjustment Task
+# Admin Sidebar Overlap Fix
 
-## Task Description
-Adjust the notification modal in UserHeader and AdminHeader components to pop up from the most right corner and adjust size for mobile screen sizes. Position both modals below the profile name instead of below the notification button.
+## Tasks
+- [x] Modify `app/main/admin/layout.tsx` to remove `marginLeft` from the content div, allowing the sidebar to overlap instead of pushing content.
+- [x] Add conditional `marginLeft` to `AdminHeader` on small screens when sidebar is expanded.
+- [x] Add conditional `marginLeft` to main content on small screens when sidebar is expanded.
+- [x] Test the layout on mobile and tablet to ensure no overflow issues.
+- [x] Verify sidebar toggle functionality works correctly with overlap.
 
-## Steps
-- [x] Update UserHeader.tsx notification modal width to responsive: w-64 sm:w-80
-- [x] Update AdminHeader.tsx notification modal width to responsive: w-64 sm:w-80
-- [x] Reposition AdminHeader notification modal to appear below the profile name
-- [x] Reposition UserHeader notification modal to appear below the profile name
-- [x] Reduce spacing between header buttons on mobile screens
-- [x] Make profile text smaller on mobile screens
-- [ ] Verify changes work on mobile screens
-
-## Status
-Completed
+## Notes
+- Sidebar is already positioned as `fixed` with `z-30`, so it will overlay content.
+- Header adjusts its margin only on small screens when sidebar is expanded to prevent overlap.
+- Main content adjusts its margin only on small screens when sidebar is expanded to prevent overlap.
