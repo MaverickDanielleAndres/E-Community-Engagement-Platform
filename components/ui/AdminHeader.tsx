@@ -281,7 +281,7 @@ export function AdminHeader() {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      style={{ marginLeft: isSmallScreen && !isCollapsed ? `${sidebarWidth}px` : '0px' }}
+      style={{ marginLeft: isSmallScreen && isCollapsed ? `${sidebarWidth}px` : '0px' }}
       className={`
         sticky top-0 z-20 border-b backdrop-blur-md transition-all duration-300
         ${isDark

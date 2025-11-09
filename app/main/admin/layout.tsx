@@ -38,7 +38,10 @@ export function AdminLayoutContent({ children }: { children: React.ReactNode }) 
 
       <div className="flex flex-col min-h-screen">
         <AdminHeader />
-        <main className="p-6">
+        <main
+          className="p-6"
+          style={{ marginLeft: isSmallScreen && isCollapsed ? `${sidebarWidth}px` : '0px' }}
+        >
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

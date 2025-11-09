@@ -398,7 +398,7 @@ export function AdminSidebar() {
       initial={false}
       animate={{
         width: isCollapsed ? (isSmallScreen ? 56 : 60) : (isSmallScreen ? 280 : 320),
-        x: isSmallScreen && isCollapsed ? -56 : 0
+        x: 0
       }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
       className={`

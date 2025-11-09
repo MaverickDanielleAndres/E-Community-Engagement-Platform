@@ -119,7 +119,7 @@ export function ConversationView({
   }
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="h-[calc(100vh-8rem)] flex flex-col">
       <ConversationHeader conversation={conversation} currentUserId={currentUserId} onRefreshMessages={onRefreshMessages} onToggleSidebar={handleToggleSidebar} />
 
       {!conversation ? (
@@ -133,7 +133,7 @@ export function ConversationView({
       ) : (
         <>
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[calc(100vh-12rem)] scroll-smooth">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth">
             {loading ? (
               <div className="flex items-center justify-center h-full">
                 <LoadingSpinner />
