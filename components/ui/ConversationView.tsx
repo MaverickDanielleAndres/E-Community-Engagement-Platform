@@ -122,7 +122,7 @@ export function ConversationView({
   }
 
   return (
-    <div className="h-[calc(100vh-10rem)] md:h-[calc(100vh-8rem)] flex flex-col">
+    <div className="h-full flex flex-col">
       <ConversationHeader conversation={conversation} currentUserId={currentUserId} onRefreshMessages={onRefreshMessages} onToggleSidebar={handleToggleSidebar} isAdmin={isAdmin} />
 
       {!conversation ? (

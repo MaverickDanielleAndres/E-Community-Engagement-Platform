@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { getSupabaseClient } from '@/lib/supabase'
 import { RealtimeChannel } from '@supabase/supabase-js'
+import { useRealtimeConversation } from './useRealtimeConversation'
 
 interface Conversation {
   id: string
@@ -112,6 +113,70 @@ export function useAdminMessaging(): UseAdminMessagingReturn {
   const channelsRef = useRef<RealtimeChannel[]>([])
   const typingTimeoutRef = useRef<NodeJS.Timeout>()
 
+  // Cleanup function
+  const cleanup = useCallback(() => {
+    channelsRef.current.forEach(channel => channel.unsubscribe())
+    channelsRef.current = []
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current)
+    }
+  }, [])
+
+  // Fetch messages for the current conversation
+  const fetchMessages = useCallback(async (conversationId: string) => {
+    try {
+      const response = await fetch(`/api/messaging/conversations/${conversationId}/messages`)
+      if (response.ok) {
+        const data = await response.json()
+        setMessages(data.messages || [])
+      } else {
+        setError('Failed to fetch messages')
+      }
+    } catch (err) {
+      setError('Error fetching messages')
+      console.error('Error fetching messages:', err)
+    }
+  }, [])
+
+  // Refresh messages
+  const refreshMessages = useCallback(async () => {
+    if (conversation) {
+      await fetchMessages(conversation.id)
+    }
+  }, [conversation, fetchMessages])
+
+  // Real-time conversation updates
+  useRealtimeConversation({
+    conversationId: conversation?.id || null,
+    onMessageInsert: useCallback((message: Message) => {
+      setMessages(prev => {
+        // Avoid duplicates
+        if (prev.some(msg => msg.id === message.id)) {
+          return prev
+        }
+        return [...prev, message]
+      })
+    }, []),
+    onMessageUpdate: useCallback((messageId: string, updates: Partial<Message>) => {
+      setMessages(prev => prev.map(msg =>
+        msg.id === messageId ? { ...msg, ...updates } : msg
+      ))
+    }, []),
+    onMessageDelete: useCallback((messageId: string) => {
+      setMessages(prev => prev.filter(msg => msg.id !== messageId))
+    }, []),
+    onReactionChange: useCallback(() => {
+      if (conversation) {
+        fetchMessages(conversation.id)
+      }
+    }, [conversation, fetchMessages]),
+    onRefresh: useCallback(() => {
+      if (conversation) {
+        fetchMessages(conversation.id)
+      }
+    }, [conversation, fetchMessages])
+  })
+
   // Helper function to format message for real-time updates
   const formatMessageForRealtime = useCallback(async (msg: any): Promise<Message> => {
     const attachmentsWithUrls = await Promise.all((msg.message_attachments || []).map(async (att: any) => {
@@ -161,38 +226,6 @@ export function useAdminMessaging(): UseAdminMessagingReturn {
       isEdited: msg.metadata?.isEdited || false
     }
   }, [supabase])
-
-  // Cleanup function
-  const cleanup = useCallback(() => {
-    channelsRef.current.forEach(channel => channel.unsubscribe())
-    channelsRef.current = []
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current)
-    }
-  }, [])
-
-  // Fetch messages for the current conversation
-  const fetchMessages = useCallback(async (conversationId: string) => {
-    try {
-      const response = await fetch(`/api/messaging/conversations/${conversationId}/messages`)
-      if (response.ok) {
-        const data = await response.json()
-        setMessages(data.messages || [])
-      } else {
-        setError('Failed to fetch messages')
-      }
-    } catch (err) {
-      setError('Error fetching messages')
-      console.error('Error fetching messages:', err)
-    }
-  }, [])
-
-  // Refresh messages
-  const refreshMessages = useCallback(async () => {
-    if (conversation) {
-      await fetchMessages(conversation.id)
-    }
-  }, [conversation, fetchMessages])
 
   // Initialize conversation with a specific member
   const initializeConversation = useCallback(async (memberId: string) => {
@@ -248,71 +281,6 @@ export function useAdminMessaging(): UseAdminMessagingReturn {
     if (!session?.user?.id) return
 
     cleanup()
-
-    // Messages subscription
-    const messagesChannel = supabase
-      .channel('messages')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'messages',
-        filter: `conversation_id=eq.${conversationId}`
-      }, async (payload) => {
-        console.log('Admin message change:', payload)
-        if (payload.eventType === 'INSERT') {
-          try {
-            const { data: newMessage, error } = await supabase
-              .from('messages')
-              .select(`
-                id,
-                body,
-                type,
-                reply_to_message_id,
-                created_at,
-                metadata,
-                sender_id,
-                users!sender_id(id, name, image),
-                message_attachments(id, storage_path, file_name, mime_type, size_bytes, thumbnail_path),
-                message_reactions(id, user_id, reaction, created_at, users!user_id(name)),
-                reply_to_message:reply_to_message_id(id, body, type, sender_id, users!sender_id(name))
-              `)
-              .eq('id', payload.new.id)
-              .single()
-
-            if (!error && newMessage) {
-              const formattedMessage = await formatMessageForRealtime(newMessage)
-              setMessages(prev => [...prev, formattedMessage])
-            }
-          } catch (err) {
-            console.error('Error fetching new message:', err)
-            fetchMessages(conversationId)
-          }
-        } else if (payload.eventType === 'UPDATE') {
-          setMessages(prev => prev.map(msg =>
-            msg.id === payload.new.id ? {
-              ...msg,
-              content: payload.new.body,
-              isEdited: true
-            } : msg
-          ))
-        } else if (payload.eventType === 'DELETE') {
-          setMessages(prev => prev.filter(msg => msg.id !== payload.old.id))
-        }
-      })
-      .subscribe()
-
-    // Message reactions subscription
-    const reactionsChannel = supabase
-      .channel('message_reactions')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'message_reactions',
-        filter: `conversation_id=eq.${conversationId}`
-      }, () => {
-        fetchMessages(conversationId)
-      })
-      .subscribe()
 
     // Presence channel for online status
     const presenceChannel = supabase.channel('presence', {
@@ -384,8 +352,37 @@ export function useAdminMessaging(): UseAdminMessagingReturn {
       })
       .subscribe()
 
-    channelsRef.current = [messagesChannel, reactionsChannel, presenceChannel, typingChannel]
-  }, [session?.user?.id, fetchMessages, formatMessageForRealtime, cleanup])
+    // Conversations subscription for real-time conversation updates
+    const conversationsChannel = supabase
+      .channel('conversations')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'conversations'
+      }, (payload: any) => {
+        console.log('Admin conversation change:', payload)
+        // Refresh conversation data when conversation changes
+        if (conversation && payload.new && payload.new.id === conversation.id) {
+          // Refresh messages when conversation is updated
+          fetchMessages(conversation.id)
+        }
+      })
+      .subscribe()
+
+    // Refresh broadcast channel for real-time updates
+    const refreshChannel = supabase
+      .channel('refresh')
+      .on('broadcast', { event: 'refresh' }, (payload) => {
+        console.log('Admin refresh broadcast received:', payload)
+        if (payload.payload.conversationId === conversationId) {
+          // Refresh messages for the current conversation
+          fetchMessages(conversationId)
+        }
+      })
+      .subscribe()
+
+    channelsRef.current = [presenceChannel, typingChannel, conversationsChannel, refreshChannel]
+  }, [session?.user?.id, fetchMessages, cleanup])
 
   // Clean up typing indicators after 3 seconds
   useEffect(() => {
@@ -397,6 +394,17 @@ export function useAdminMessaging(): UseAdminMessagingReturn {
 
     return () => clearInterval(interval)
   }, [])
+
+  // Auto-refresh messages every 10 seconds as fallback for real-time updates
+  useEffect(() => {
+    if (!conversation?.id) return
+
+    const interval = setInterval(() => {
+      fetchMessages(conversation.id)
+    }, 10000) // 10 seconds
+
+    return () => clearInterval(interval)
+  }, [conversation?.id, fetchMessages])
 
   // Send message
   const sendMessage = useCallback(async (content: string, attachments?: Attachment[], replyTo?: { id: string; content: string; senderName: string }, gif?: any) => {
@@ -446,6 +454,15 @@ export function useAdminMessaging(): UseAdminMessagingReturn {
       if (response.ok) {
         setMessages(prev => prev.filter(msg => msg.id !== tempId))
         fetchMessages(conversation.id)
+
+        // Broadcast refresh event to other users in the conversation
+        supabase.channel('refresh').send({
+          type: 'broadcast',
+          event: 'refresh',
+          payload: {
+            conversationId: conversation.id
+          }
+        })
       } else {
         setMessages(prev => prev.filter(msg => msg.id !== tempId))
         setError('Failed to send message')

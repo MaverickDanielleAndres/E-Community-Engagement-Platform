@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { getSupabaseClient } from '@/lib/supabase'
 import { RealtimeChannel } from '@supabase/supabase-js'
+import { useRealtimeConversation } from './useRealtimeConversation'
 
 interface Conversation {
   id: string
@@ -116,6 +117,93 @@ export function useMessaging(): UseMessagingReturn {
   const channelsRef = useRef<RealtimeChannel[]>([])
   const typingTimeoutRef = useRef<NodeJS.Timeout>()
 
+  // Fetch conversations
+  const fetchConversations = useCallback(async () => {
+    if (!session?.user?.id) return
+
+    try {
+      const response = await fetch('/api/messaging/conversations')
+      if (response.ok) {
+        const data = await response.json()
+        setConversations(data.conversations || [])
+      } else {
+        setError('Failed to fetch conversations')
+      }
+    } catch (err) {
+      setError('Error fetching conversations')
+      console.error('Error fetching conversations:', err)
+    }
+  }, [session?.user?.id])
+
+  // Fetch messages for selected conversation with pagination
+  const fetchMessages = useCallback(async (conversationId: string, cursor?: string, direction: 'older' | 'newer' = 'older') => {
+    try {
+      const params = new URLSearchParams()
+      if (cursor) params.set('cursor', cursor)
+      params.set('direction', direction)
+      params.set('limit', '50')
+
+      const response = await fetch(`/api/messaging/conversations/${conversationId}/messages?${params}`)
+      if (response.ok) {
+        const data = await response.json()
+        setMessages(prev => {
+          if (cursor) {
+            if (direction === 'newer') {
+              // Prepend newer messages
+              return [...data.messages, ...prev]
+            } else {
+              // Append older messages
+              return [...prev, ...data.messages]
+            }
+          } else {
+            // No cursor, replace all messages
+            return data.messages
+          }
+        })
+      } else {
+        setError('Failed to fetch messages')
+      }
+    } catch (err) {
+      setError('Error fetching messages')
+      console.error('Error fetching messages:', err)
+    }
+  }, [])
+
+  // Real-time conversation updates
+  useRealtimeConversation({
+    conversationId: selectedConversation?.id || null,
+    onMessageInsert: useCallback((message: Message) => {
+      setMessages(prev => {
+        // Avoid duplicates
+        if (prev.some(msg => msg.id === message.id)) {
+          return prev
+        }
+        return [...prev, message]
+      })
+      fetchConversations() // Update conversation list
+    }, [fetchConversations]),
+    onMessageUpdate: useCallback((messageId: string, updates: Partial<Message>) => {
+      setMessages(prev => prev.map(msg =>
+        msg.id === messageId ? { ...msg, ...updates } : msg
+      ))
+    }, []),
+    onMessageDelete: useCallback((messageId: string) => {
+      setMessages(prev => prev.filter(msg => msg.id !== messageId))
+      fetchConversations() // Update conversation list
+    }, [fetchConversations]),
+    onReactionChange: useCallback(() => {
+      if (selectedConversation) {
+        fetchMessages(selectedConversation.id)
+      }
+    }, [selectedConversation, fetchMessages]),
+    onRefresh: useCallback(() => {
+      if (selectedConversation) {
+        fetchMessages(selectedConversation.id)
+      }
+      fetchConversations()
+    }, [selectedConversation, fetchMessages, fetchConversations])
+  })
+
   // Helper function to format message for real-time updates
   const formatMessageForRealtime = useCallback(async (msg: any): Promise<Message> => {
     const attachmentsWithUrls = await Promise.all((msg.message_attachments || []).map(async (att: any) => {
@@ -175,58 +263,6 @@ export function useMessaging(): UseMessagingReturn {
     }
   }, [])
 
-  // Fetch conversations
-  const fetchConversations = useCallback(async () => {
-    if (!session?.user?.id) return
-
-    try {
-      const response = await fetch('/api/messaging/conversations')
-      if (response.ok) {
-        const data = await response.json()
-        setConversations(data.conversations || [])
-      } else {
-        setError('Failed to fetch conversations')
-      }
-    } catch (err) {
-      setError('Error fetching conversations')
-      console.error('Error fetching conversations:', err)
-    }
-  }, [session?.user?.id])
-
-  // Fetch messages for selected conversation with pagination
-  const fetchMessages = useCallback(async (conversationId: string, cursor?: string, direction: 'older' | 'newer' = 'older') => {
-    try {
-      const params = new URLSearchParams()
-      if (cursor) params.set('cursor', cursor)
-      params.set('direction', direction)
-      params.set('limit', '50')
-
-      const response = await fetch(`/api/messaging/conversations/${conversationId}/messages?${params}`)
-      if (response.ok) {
-        const data = await response.json()
-        setMessages(prev => {
-          if (cursor) {
-            if (direction === 'newer') {
-              // Prepend newer messages
-              return [...data.messages, ...prev]
-            } else {
-              // Append older messages
-              return [...prev, ...data.messages]
-            }
-          } else {
-            // No cursor, replace all messages
-            return data.messages
-          }
-        })
-      } else {
-        setError('Failed to fetch messages')
-      }
-    } catch (err) {
-      setError('Error fetching messages')
-      console.error('Error fetching messages:', err)
-    }
-  }, [])
-
   // Refresh messages
   const refreshMessages = useCallback(async () => {
     if (selectedConversation) {
@@ -240,87 +276,6 @@ export function useMessaging(): UseMessagingReturn {
 
     cleanup()
 
-    // Messages subscription
-    const messagesChannel = supabase
-      .channel('messages')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'messages',
-        filter: `conversation_id=in.(${conversations.map(c => c.id).join(',') || 'null'})`
-      }, async (payload) => {
-        console.log('Message change:', payload)
-        if (payload.eventType === 'INSERT' && selectedConversation) {
-          // Only update if the new message is for the selected conversation
-          if (payload.new.conversation_id === selectedConversation.id) {
-            // Fetch the complete message with relations directly
-            try {
-              const { data: newMessage, error } = await supabase
-                .from('messages')
-                .select(`
-                  id,
-                  body,
-                  type,
-                  reply_to_message_id,
-                  created_at,
-                  metadata,
-                  sender_id,
-                  users!sender_id(id, name, image),
-                  message_attachments(id, storage_path, file_name, mime_type, size_bytes, thumbnail_path),
-                  message_reactions(id, user_id, reaction, created_at, users!user_id(name)),
-                  reply_to_message:reply_to_message_id(id, body, type, sender_id, users!sender_id(name))
-                `)
-                .eq('id', payload.new.id)
-                .single()
-
-              if (!error && newMessage) {
-                // Format the message to match the expected structure
-                const formattedMessage = await formatMessageForRealtime(newMessage)
-                setMessages(prev => [...prev, formattedMessage])
-              }
-            } catch (err) {
-              console.error('Error fetching new message:', err)
-              // Fallback to fetching all messages
-              fetchMessages(selectedConversation.id)
-            }
-          }
-          fetchConversations()
-        } else if (payload.eventType === 'UPDATE' && selectedConversation) {
-          // Handle message edits
-          if (payload.new.conversation_id === selectedConversation.id) {
-            setMessages(prev => prev.map(msg =>
-              msg.id === payload.new.id ? {
-                ...msg,
-                content: payload.new.body,
-                isEdited: true
-              } : msg
-            ))
-          }
-        } else if (payload.eventType === 'DELETE' && selectedConversation) {
-          // Handle message deletions
-          if (payload.old.conversation_id === selectedConversation.id) {
-            setMessages(prev => prev.filter(msg => msg.id !== payload.old.id))
-          }
-        }
-      })
-      .subscribe()
-
-    // Message reactions subscription
-    const reactionsChannel = supabase
-      .channel('message_reactions')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'message_reactions'
-      }, (payload) => {
-        console.log('Reaction change:', payload)
-        // Refetch messages to get updated reactions
-        if (selectedConversation) {
-          fetchMessages(selectedConversation.id)
-        }
-      })
-      .subscribe()
-
     // Conversations subscription
     const conversationsChannel = supabase
       .channel('conversations')
@@ -328,7 +283,7 @@ export function useMessaging(): UseMessagingReturn {
         event: '*',
         schema: 'public',
         table: 'conversations'
-      }, (payload) => {
+      }, (payload: any) => {
         console.log('Conversation change:', payload)
         fetchConversations()
       })
@@ -412,8 +367,22 @@ export function useMessaging(): UseMessagingReturn {
       })
       .subscribe()
 
-    channelsRef.current = [messagesChannel, reactionsChannel, conversationsChannel, presenceChannel, typingChannel]
-  }, [session?.user?.id, conversations, selectedConversation, fetchMessages, fetchConversations, cleanup, formatMessageForRealtime, refreshMessages])
+    // Refresh broadcast channel for real-time updates
+    const refreshChannel = supabase
+      .channel('refresh')
+      .on('broadcast', { event: 'refresh' }, (payload) => {
+        console.log('Refresh broadcast received:', payload)
+        if (selectedConversation && payload.payload.conversationId === selectedConversation.id) {
+          // Refresh messages for the current conversation
+          fetchMessages(selectedConversation.id)
+        }
+        // Always refresh conversations list to update unread counts
+        fetchConversations()
+      })
+      .subscribe()
+
+    channelsRef.current = [conversationsChannel, presenceChannel, typingChannel, refreshChannel]
+  }, [session?.user?.id, conversations, selectedConversation, fetchMessages, fetchConversations, cleanup, refreshMessages])
 
   // Clean up typing indicators after 3 seconds
   useEffect(() => {
@@ -718,132 +687,6 @@ export function useMessaging(): UseMessagingReturn {
       console.error('Error marking messages as read:', err)
     }
   }, [fetchConversations])
-
-  // Real-time subscriptions
-  useEffect(() => {
-    if (!session?.user?.id || !selectedConversation?.id) return
-
-    const channel = supabase
-      .channel(`conversation_${selectedConversation.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${selectedConversation.id}`
-        },
-        (payload: any) => {
-          console.log('Message change detected:', payload)
-
-          if (payload.eventType === 'INSERT') {
-            // New message added
-            const newMessage = {
-              id: payload.new.id,
-              content: payload.new.body,
-              senderId: payload.new.sender_id,
-              senderName: payload.new.users?.name || 'Unknown',
-              timestamp: payload.new.created_at,
-              attachments: payload.new.message_attachments?.map((att: any) => ({
-                id: att.id,
-                name: att.file_name,
-                type: att.mime_type,
-                size: att.size_bytes,
-                url: att.thumbnail_path || null
-              })) || [],
-              reactions: payload.new.message_reactions?.map((reaction: any) => ({
-                emoji: reaction.reaction,
-                count: 1,
-                users: [reaction.users?.name || 'Unknown']
-              })) || [],
-              replyTo: payload.new.reply_to_message ? {
-                id: payload.new.reply_to_message.id,
-                content: payload.new.reply_to_message.body,
-                senderName: payload.new.reply_to_message.users?.name || 'Unknown'
-              } : undefined,
-              isRead: false,
-              readBy: []
-            }
-
-            setMessages(prev => {
-              // Check if message already exists (avoid duplicates)
-              if (prev.some(msg => msg.id === newMessage.id)) {
-                return prev
-              }
-              return [...prev, newMessage]
-            })
-
-            // Update conversation last message if it's a new message
-            if (payload.new.sender_id !== session.user.id) {
-              fetchConversations()
-            }
-          } else if (payload.eventType === 'UPDATE') {
-            // Message updated (edited)
-            setMessages(prev => prev.map(msg =>
-              msg.id === payload.new.id
-                ? { ...msg, content: payload.new.body, isEdited: true }
-                : msg
-            ))
-          } else if (payload.eventType === 'DELETE') {
-            // Message deleted
-            setMessages(prev => prev.filter(msg => msg.id !== payload.old.id))
-            fetchConversations()
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'message_reactions',
-          filter: `conversation_id=eq.${selectedConversation.id}`
-        },
-        (payload: any) => {
-          console.log('Reaction change detected:', payload)
-
-          // Update message reactions
-          setMessages(prev => prev.map(msg => {
-            if (msg.id === payload.new?.message_id || msg.id === payload.old?.message_id) {
-              // Re-fetch reactions for this message
-              fetchMessages(selectedConversation.id)
-            }
-            return msg
-          }))
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'message_reads',
-          filter: `conversation_id=eq.${selectedConversation.id}`
-        },
-        (payload: any) => {
-          console.log('Read status change detected:', payload)
-
-          // Update read status
-          setMessages(prev => prev.map(msg => {
-            if (msg.id === payload.new?.message_id) {
-              return {
-                ...msg,
-                isRead: true,
-                readBy: [...(msg.readBy || []), payload.new.user_id]
-              }
-            }
-            return msg
-          }))
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [session?.user?.id, selectedConversation?.id, supabase, fetchMessages, fetchConversations])
-
-
 
   return {
     conversations,
