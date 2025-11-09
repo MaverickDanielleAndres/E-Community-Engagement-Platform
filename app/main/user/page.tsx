@@ -55,7 +55,7 @@ export default function UserDashboard() {
       >
         <div className="flex flex-col">
           <div className="flex items-center justify-between">
-            <h1 className={`text-3xl font-bold break-words ${isDark ? 'text-white' : 'text-black'}`}>
+            <h1 className={`text-xl sm:text-2xl md:text-3xl font-bold break-words ${isDark ? 'text-white' : 'text-black'}`}>
               Welcome back, {session?.user?.name || session?.user?.email?.split('@')[0] || 'Resident'}
             </h1>
             <button

@@ -338,101 +338,6 @@ export function AdminHeader() {
                 </motion.span>
               )}
             </button>
-
-            <AnimatePresence>
-              {showNotifications && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                  className={`
-                    absolute right-0 mt-2 w-80 rounded-2xl shadow-2xl border z-50
-                    ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}
-                  `}
-                >
-                  <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                      Notifications
-                    </h3>
-                    <button
-                      onClick={async (e) => {
-                        e.stopPropagation()
-                        if (!session?.user?.email) return
-                        try {
-                          const response = await fetch('/api/admin/notifications?clear=true', {
-                            method: 'DELETE'
-                          })
-                          if (response.ok) {
-                            // Clear the notifications list locally
-                            setNotifications([])
-                            setShowNotifications(false)
-                          } else {
-                            console.error('Failed to clear notifications')
-                          }
-                        } catch (error) {
-                          console.error('Error clearing notifications:', error)
-                        }
-                      }}
-                      className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                    >
-                      Clear All
-                    </button>
-                  </div>
-                  <div className="p-4 border-b border-slate-200 dark:border-slate-700">
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      {unreadCount} unread notifications
-                    </p>
-                  </div>
-
-                  <div className="max-h-64 overflow-y-auto">
-                    {notifications.map((notification, index) => (
-                      <motion.div
-                        key={notification.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.2, delay: index * 0.05 }}
-                        className={`
-                          p-4 border-b border-slate-200 dark:border-slate-700 last:border-b-0
-                          ${!notification.is_read ? (isDark ? 'bg-slate-700/50' : 'bg-blue-50/50') : ''}
-                          hover:${isDark ? 'bg-slate-700' : 'bg-slate-50'} transition-colors duration-150
-                        `}
-                      >
-                        <div className="flex items-start space-x-3">
-                          <span className="text-lg">{getNotificationIcon(notification.type)}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-slate-900 dark:text-white text-sm">
-                              {notification.title}
-                            </p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                              {notification.message}
-                            </p>
-                            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                              {new Date(notification.created_at).toLocaleString()}
-                            </p>
-                          </div>
-                          {!notification.is_read && (
-                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                          )}
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-
-                  <div className="p-3 border-t border-slate-200 dark:border-slate-700">
-                    <button
-                      onClick={() => {
-                        router.push('/main/admin/notifications')
-                        setShowNotifications(false)
-                      }}
-                      className="w-full text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                    >
-                      View all notifications
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
 
           {/* User Menu */}
@@ -562,6 +467,102 @@ export function AdminHeader() {
                     >
                       <LogOut className="w-4 h-4" />
                       <span>Sign out</span>
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Notifications Modal positioned below profile name */}
+            <AnimatePresence>
+              {showNotifications && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                  className={`
+                    absolute right-0 mt-2 w-64 sm:w-80 rounded-2xl shadow-2xl border z-50
+                    ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}
+                  `}
+                >
+                  <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                      Notifications
+                    </h3>
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation()
+                        if (!session?.user?.email) return
+                        try {
+                          const response = await fetch('/api/admin/notifications?clear=true', {
+                            method: 'DELETE'
+                          })
+                          if (response.ok) {
+                            // Clear the notifications list locally
+                            setNotifications([])
+                            setShowNotifications(false)
+                          } else {
+                            console.error('Failed to clear notifications')
+                          }
+                        } catch (error) {
+                          console.error('Error clearing notifications:', error)
+                        }
+                      }}
+                      className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                  <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      {unreadCount} unread notifications
+                    </p>
+                  </div>
+
+                  <div className="max-h-64 overflow-y-auto">
+                    {notifications.map((notification, index) => (
+                      <motion.div
+                        key={notification.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.2, delay: index * 0.05 }}
+                        className={`
+                          p-4 border-b border-slate-200 dark:border-slate-700 last:border-b-0
+                          ${!notification.is_read ? (isDark ? 'bg-slate-700/50' : 'bg-blue-50/50') : ''}
+                          hover:${isDark ? 'bg-slate-700' : 'bg-slate-50'} transition-colors duration-150
+                        `}
+                      >
+                        <div className="flex items-start space-x-3">
+                          <span className="text-lg">{getNotificationIcon(notification.type)}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-slate-900 dark:text-white text-sm">
+                              {notification.title}
+                            </p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                              {notification.message}
+                            </p>
+                            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                              {new Date(notification.created_at).toLocaleString()}
+                            </p>
+                          </div>
+                          {!notification.is_read && (
+                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          )}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  <div className="p-3 border-t border-slate-200 dark:border-slate-700">
+                    <button
+                      onClick={() => {
+                        router.push('/main/admin/notifications')
+                        setShowNotifications(false)
+                      }}
+                      className="w-full text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      View all notifications
                     </button>
                   </div>
                 </motion.div>

@@ -218,7 +218,7 @@ export function UserHeader() {
         </div>
 
         {/* Right: User Actions */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           {/* Notifications */}
           <div className="relative" ref={notificationsRef}>
           <button
@@ -234,123 +234,6 @@ export function UserHeader() {
               <span className="absolute -top-1 -right-1 block h-3 w-3 rounded-full bg-red-500"></span>
             )}
           </button>
-
-            <AnimatePresence>
-              {isNotificationsOpen && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                  className={`absolute right-0 mt-2 w-80 rounded-xl shadow-lg border py-2 z-50 ${
-                    isDark
-                      ? 'bg-slate-800 border-slate-700'
-                      : 'bg-white border-slate-200'
-                  }`}
-                >
-                  <div className={`px-4 py-2 border-b flex items-center justify-between ${
-                    isDark ? 'border-slate-700' : 'border-slate-200'
-                  }`}>
-                    <h3 className={`font-semibold text-sm ${
-                      isDark ? 'text-white' : 'text-slate-900'
-                    }`}>Notifications</h3>
-                    <button
-                      onClick={async (e) => {
-                        e.stopPropagation()
-                        if (!session?.user?.email) return
-                        try {
-                          const response = await fetch('/api/admin/notifications/mark-read', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                          })
-                          if (response.ok) {
-                            setNotifications([])
-                            setIsNotificationsOpen(false)
-                          }
-                        } catch (error) {
-                          console.error('Error marking notifications as read:', error)
-                        }
-                      }}
-                      className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                    >
-                      Clear All
-                    </button>
-                  </div>
-                  <div className={`p-4 border-b ${
-                    isDark ? 'border-slate-700' : 'border-slate-200'
-                  }`}>
-                    <p className={`text-sm ${
-                      isDark ? 'text-slate-400' : 'text-slate-500'
-                    }`}>
-                      {notifications.filter(n => !n.is_read).length} unread notifications
-                    </p>
-                  </div>
-                  <div className="max-h-80 overflow-y-auto">
-                    {notifications.length > 0 ? (
-                      notifications.map((notification, index) => (
-                        <motion.div
-                          key={notification.id}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.2, delay: index * 0.05 }}
-                          className={`p-4 border-b last:border-b-0 ${
-                            !notification.is_read 
-                              ? isDark ? 'bg-slate-700/50' : 'bg-blue-50/50'
-                              : ''
-                          } ${
-                            isDark 
-                              ? 'hover:bg-slate-700 border-slate-700' 
-                              : 'hover:bg-slate-50 border-slate-200'
-                          } transition-colors duration-150`}
-                        >
-                          <div className="flex items-start space-x-3">
-                            <span className="text-lg">ℹ️</span>
-                            <div className="flex-1 min-w-0">
-                              <p className={`font-medium text-sm ${
-                                isDark ? 'text-white' : 'text-slate-900'
-                              }`}>
-                                {notification.title}
-                              </p>
-                              <p className={`text-xs mt-1 ${
-                                isDark ? 'text-slate-400' : 'text-slate-500'
-                              }`}>
-                                {notification.body}
-                              </p>
-                              <p className={`text-xs mt-1 ${
-                                isDark ? 'text-slate-500' : 'text-slate-400'
-                              }`}>
-                                {new Date(notification.created_at).toLocaleString()}
-                              </p>
-                            </div>
-                            {!notification.is_read && (
-                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                            )}
-                          </div>
-                        </motion.div>
-                      ))
-                    ) : (
-                      <div className={`px-4 py-6 text-center ${
-                        isDark ? 'text-slate-400' : 'text-slate-500'
-                      }`}>
-                        No notifications
-                      </div>
-                    )}
-                  </div>
-                  <div className={`p-3 border-t ${
-                    isDark ? 'border-slate-700' : 'border-slate-200'
-                  }`}>
-                    <button
-                      onClick={() => {
-                        router.push('/main/user/notifications')
-                        setIsNotificationsOpen(false)
-                      }}
-                      className="w-full text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                    >
-                      View all notifications
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
 
           {/* Refresh Button */}
@@ -412,7 +295,7 @@ export function UserHeader() {
                 )}
               </div>
               {!isProfileOpen && (
-                <span className={`hidden sm:inline text-sm font-medium ${
+                <span className={`hidden sm:inline text-xs sm:text-sm font-medium ${
                   isDark ? 'text-white' : 'text-slate-900'
                 }`}>
                   {nickname || user?.name || user?.email?.split('@')[0] || 'User'}
@@ -421,48 +304,168 @@ export function UserHeader() {
               <ChevronDown className={`w-4 h-4 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            {isProfileOpen && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className={`absolute right-0 mt-2 w-48 rounded-xl shadow-lg border py-1 z-50 ${
-                  isDark
-                    ? 'bg-slate-800 border-slate-700'
-                    : 'bg-white border-slate-200'
-                }`}
-              >
-                <Link
-                  href="/main/user/settings"
-                  className={`flex items-center px-4 py-2 text-sm transition-colors ${
+            <AnimatePresence>
+              {isProfileOpen && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                  className={`absolute right-0 mt-2 w-48 rounded-xl shadow-lg border py-1 z-50 ${
                     isDark
-                      ? 'text-slate-300 hover:bg-slate-700/50'
-                      : 'text-slate-700 hover:bg-slate-100'
-                  }`}
-                  onClick={() => setIsProfileOpen(false)}
-                >
-                  <Settings className="w-4 h-4 mr-3" />
-                  Profile Settings
-                </Link>
-                <hr className={`my-1 ${
-                  isDark ? 'border-slate-700' : 'border-slate-200'
-                }`} />
-                <button
-                  onClick={async () => {
-                    setIsProfileOpen(false)
-                    await signOut({ callbackUrl: '/' })
-                  }}
-                  className={`w-full flex items-center px-4 py-2 text-sm transition-colors ${
-                    isDark
-                      ? 'text-red-400 hover:bg-red-900/20'
-                      : 'text-red-600 hover:bg-red-50'
+                      ? 'bg-slate-800 border-slate-700'
+                      : 'bg-white border-slate-200'
                   }`}
                 >
-                  <LogOut className="w-4 h-4 mr-3" />
-                  Sign Out
-                </button>
-              </motion.div>
-            )}
+                  <Link
+                    href="/main/user/settings"
+                    className={`flex items-center px-4 py-2 text-sm transition-colors ${
+                      isDark
+                        ? 'text-slate-300 hover:bg-slate-700/50'
+                        : 'text-slate-700 hover:bg-slate-100'
+                    }`}
+                    onClick={() => setIsProfileOpen(false)}
+                  >
+                    <Settings className="w-4 h-4 mr-3" />
+                    Profile Settings
+                  </Link>
+                  <hr className={`my-1 ${
+                    isDark ? 'border-slate-700' : 'border-slate-200'
+                  }`} />
+                  <button
+                    onClick={async () => {
+                      setIsProfileOpen(false)
+                      await signOut({ callbackUrl: '/' })
+                    }}
+                    className={`w-full flex items-center px-4 py-2 text-sm transition-colors ${
+                      isDark
+                        ? 'text-red-400 hover:bg-red-900/20'
+                        : 'text-red-600 hover:bg-red-50'
+                    }`}
+                  >
+                    <LogOut className="w-4 h-4 mr-3" />
+                    Sign Out
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Notifications Modal positioned below profile name */}
+            <AnimatePresence>
+              {isNotificationsOpen && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                  className={`absolute right-0 mt-2 w-64 sm:w-80 rounded-xl shadow-lg border py-2 z-50 ${
+                    isDark
+                      ? 'bg-slate-800 border-slate-700'
+                      : 'bg-white border-slate-200'
+                  }`}
+                >
+                  <div className={`px-4 py-2 border-b flex items-center justify-between ${
+                    isDark ? 'border-slate-700' : 'border-slate-200'
+                  }`}>
+                    <h3 className={`font-semibold text-sm ${
+                      isDark ? 'text-white' : 'text-slate-900'
+                    }`}>Notifications</h3>
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation()
+                        if (!session?.user?.email) return
+                        try {
+                          const response = await fetch('/api/admin/notifications/mark-read', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                          })
+                          if (response.ok) {
+                            setNotifications([])
+                            setIsNotificationsOpen(false)
+                          }
+                        } catch (error) {
+                          console.error('Error marking notifications as read:', error)
+                        }
+                      }}
+                      className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                  <div className={`p-4 border-b ${
+                    isDark ? 'border-slate-700' : 'border-slate-200'
+                  }`}>
+                    <p className={`text-sm ${
+                      isDark ? 'text-slate-400' : 'text-slate-500'
+                    }`}>
+                      {notifications.filter(n => !n.is_read).length} unread notifications
+                    </p>
+                  </div>
+                  <div className="max-h-80 overflow-y-auto">
+                    {notifications.length > 0 ? (
+                      notifications.map((notification, index) => (
+                        <motion.div
+                          key={notification.id}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.2, delay: index * 0.05 }}
+                          className={`p-4 border-b last:border-b-0 ${
+                            !notification.is_read
+                              ? isDark ? 'bg-slate-700/50' : 'bg-blue-50/50'
+                              : ''
+                          } ${
+                            isDark
+                              ? 'hover:bg-slate-700 border-slate-700'
+                              : 'hover:bg-slate-50 border-slate-200'
+                          } transition-colors duration-150`}
+                        >
+                          <div className="flex items-start space-x-3">
+                            <span className="text-lg">ℹ️</span>
+                            <div className="flex-1 min-w-0">
+                              <p className={`font-medium text-sm ${
+                                isDark ? 'text-white' : 'text-slate-900'
+                              }`}>
+                                {notification.title}
+                              </p>
+                              <p className={`text-xs mt-1 ${
+                                isDark ? 'text-slate-400' : 'text-slate-500'
+                              }`}>
+                                {notification.body}
+                              </p>
+                              <p className={`text-xs mt-1 ${
+                                isDark ? 'text-slate-500' : 'text-slate-400'
+                              }`}>
+                                {new Date(notification.created_at).toLocaleString()}
+                              </p>
+                            </div>
+                            {!notification.is_read && (
+                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            )}
+                          </div>
+                        </motion.div>
+                      ))
+                    ) : (
+                      <div className={`px-4 py-6 text-center ${
+                        isDark ? 'text-slate-400' : 'text-slate-500'
+                      }`}>
+                        No notifications
+                      </div>
+                    )}
+                  </div>
+                  <div className={`p-3 border-t ${
+                    isDark ? 'border-slate-700' : 'border-slate-200'
+                  }`}>
+                    <button
+                      onClick={() => {
+                        router.push('/main/user/notifications')
+                        setIsNotificationsOpen(false)
+                      }}
+                      className="w-full text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      View all notifications
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>

@@ -1,12 +1,16 @@
-# TODO: Fix Background and Responsiveness on User Pages
+# Notification Modal Adjustment Task
 
-## Tasks
-- [x] Update the header layout in `app/main/user/page.tsx` to always put the subtitle "Here's what's happening in your community today" below the "Welcome back" title, and place the refresh button after the user's name.
-- [x] Change background from `bg-white` to `bg-transparent` in light mode for `app/main/user/page.tsx`.
-- [ ] Apply background fix to remaining user pages: polls, complaints/my, feedback/my, notifications, announcements, messaging.
-- [ ] Test the responsiveness and background on all user pages.
+## Task Description
+Adjust the notification modal in UserHeader and AdminHeader components to pop up from the most right corner and adjust size for mobile screen sizes. Position both modals below the profile name instead of below the notification button.
 
-## Notes
-- Restructured the header: Outer div with flex-col, inner div with flex items-center justify-between for title and button, subtitle below.
-- This ensures subtitle is always below, and button is next to the title on all screens.
-- Development server is running on http://localhost:3001.
+## Steps
+- [x] Update UserHeader.tsx notification modal width to responsive: w-64 sm:w-80
+- [x] Update AdminHeader.tsx notification modal width to responsive: w-64 sm:w-80
+- [x] Reposition AdminHeader notification modal to appear below the profile name
+- [x] Reposition UserHeader notification modal to appear below the profile name
+- [x] Reduce spacing between header buttons on mobile screens
+- [x] Make profile text smaller on mobile screens
+- [ ] Verify changes work on mobile screens
+
+## Status
+Completed
