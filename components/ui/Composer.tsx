@@ -339,16 +339,16 @@ export function Composer({
       )}
 
       {/* Message Input */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 md:gap-2">
         {/* Attach Menu Button - Desktop */}
         <div className="relative hidden md:block">
           <button
             onClick={() => setShowAttachMenu(!showAttachMenu)}
-            className={`p-2 rounded-lg transition-colors hover:bg-${isDark ? 'white/10' : 'slate-100'}`}
+            className={`p-1 md:p-2 rounded-lg transition-colors hover:bg-${isDark ? 'white/10' : 'slate-100'}`}
             disabled={disabled}
             title="Attach"
           >
-            <Paperclip className="w-5 h-5" />
+            <Paperclip className="w-4 h-4 md:w-5 md:h-5" />
           </button>
           {showAttachMenu && (
             <div className={`absolute bottom-full left-0 mb-2 w-48 ${isDark ? 'bg-slate-800' : 'bg-white'} rounded-md shadow-lg border ${isDark ? 'border-slate-700' : 'border-slate-200'} z-[9999]`}>
@@ -400,11 +400,11 @@ export function Composer({
         <div className="relative md:hidden">
           <button
             onClick={() => setShowAttachMenu(!showAttachMenu)}
-            className={`p-2 rounded-lg transition-colors hover:bg-${isDark ? 'white/10' : 'slate-100'}`}
+            className={`p-1 md:p-2 rounded-lg transition-colors hover:bg-${isDark ? 'white/10' : 'slate-100'}`}
             disabled={disabled}
             title="Attach"
           >
-            <Paperclip className="w-5 h-5" />
+            <Paperclip className="w-4 h-4 md:w-5 md:h-5" />
           </button>
           {showAttachMenu && (
             <div className={`absolute bottom-full left-0 mb-2 w-48 ${isDark ? 'bg-slate-800' : 'bg-white'} rounded-md shadow-lg border ${isDark ? 'border-slate-700' : 'border-slate-200'} z-[9999]`}>
@@ -460,7 +460,7 @@ export function Composer({
             placeholder={placeholder}
             disabled={disabled}
             rows={1}
-            className={`w-full px-4 py-2 pr-12 h-10 rounded-lg border border-slate-200 dark:border-slate-600 ${isDark ? 'bg-slate-900 text-slate-100' : 'bg-white text-slate-900'} focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none disabled:opacity-50`}
+            className={`w-full px-3 md:px-4 py-2 pr-10 md:pr-12 h-8 md:h-10 text-sm md:text-base rounded-lg border border-slate-200 dark:border-slate-600 ${isDark ? 'bg-slate-900 text-slate-100' : 'bg-white text-slate-900'} focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none disabled:opacity-50`}
           />
           <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
             <button
@@ -469,14 +469,14 @@ export function Composer({
                 message ? 'opacity-100' : 'opacity-0 pointer-events-none'
               }`}
             >
-              <X className="w-4 h-4" />
+              <X className="w-3 h-3 md:w-4 md:h-4" />
             </button>
             <button
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className={`p-1 rounded transition-colors hover:bg-${isDark ? 'white/10' : 'slate-100'} mr-2`}
+              className={`p-1 rounded transition-colors hover:bg-${isDark ? 'white/10' : 'slate-100'} mr-1 md:mr-2`}
               disabled={disabled}
             >
-              <Smile className="w-4 h-4" />
+              <Smile className="w-3 h-3 md:w-4 md:h-4" />
             </button>
           </div>
         </div>
@@ -506,7 +506,7 @@ export function Composer({
         <div className="relative hidden md:block">
           <button
             onClick={() => setShowGifPicker(!showGifPicker)}
-            className={`px-3 py-2 rounded-lg transition-colors text-sm font-medium hover:bg-${isDark ? 'white/10' : 'slate-100'}`}
+            className={`px-2 md:px-3 py-2 rounded-lg transition-colors text-xs md:text-sm font-medium hover:bg-${isDark ? 'white/10' : 'slate-100'}`}
             disabled={disabled}
             title="GIF"
           >
@@ -525,9 +525,9 @@ export function Composer({
         <button
           onClick={handleSend}
           disabled={disabled || (!message.trim() && attachments.length === 0)}
-          className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="p-1 md:p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          <Send className="w-5 h-5" />
+          <Send className="w-4 h-4 md:w-5 md:h-5" />
         </button>
       </div>
 

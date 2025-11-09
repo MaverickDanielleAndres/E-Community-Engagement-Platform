@@ -122,7 +122,7 @@ export function ConversationView({
   }
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col">
+    <div className="h-[calc(100vh-10rem)] md:h-[calc(100vh-8rem)] flex flex-col">
       <ConversationHeader conversation={conversation} currentUserId={currentUserId} onRefreshMessages={onRefreshMessages} onToggleSidebar={handleToggleSidebar} isAdmin={isAdmin} />
 
       {!conversation ? (
@@ -136,7 +136,7 @@ export function ConversationView({
       ) : (
         <>
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth">
+          <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-2 md:space-y-4 scroll-smooth">
             {loading ? (
               <div className="flex items-center justify-center h-full">
                 <LoadingSpinner />
@@ -293,10 +293,10 @@ export function ConversationHeader({
               </div>
             )}
             <div>
-              <h2 className="font-semibold">
+              <h2 className="font-semibold text-base md:text-lg">
                 {conversationName}
               </h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2">
+              <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2">
                 {conversation.participants.length === 2 && currentUserId
                   ? (() => {
                       const otherParticipant = conversation.participants.find(p => p.id !== currentUserId)

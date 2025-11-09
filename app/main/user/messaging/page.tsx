@@ -168,7 +168,7 @@ export default function MessagingPage() {
 
         {/* Mobile/Tablet: Always visible conversation toggle at top */}
         {isMobile && (
-          <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+          <div className=" p-2 border-b border-slate-200 dark:border-slate-700">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className={`flex items-center gap-2 p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-700'}`}
