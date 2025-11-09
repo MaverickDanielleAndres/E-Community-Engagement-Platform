@@ -23,6 +23,7 @@ interface Conversation {
     senderId: string
   }
   unreadCount: number
+  title?: string
 }
 
 interface Attachment {
@@ -122,7 +123,7 @@ export function ConversationView({
 
   return (
     <div className="h-[calc(100vh-8rem)] flex flex-col">
-      <ConversationHeader conversation={conversation} currentUserId={currentUserId} onRefreshMessages={onRefreshMessages} onToggleSidebar={handleToggleSidebar} />
+      <ConversationHeader conversation={conversation} currentUserId={currentUserId} onRefreshMessages={onRefreshMessages} onToggleSidebar={handleToggleSidebar} isAdmin={isAdmin} />
 
       {!conversation ? (
         <div className="flex-1 flex items-center justify-center">
@@ -184,13 +185,15 @@ export function ConversationHeader({
   currentUserId,
   onDeleteConversation,
   onRefreshMessages,
-  onToggleSidebar
+  onToggleSidebar,
+  isAdmin = false
 }: {
   conversation: Conversation | null
   currentUserId: string
   onDeleteConversation?: (conversationId: string) => void
   onRefreshMessages?: () => void
   onToggleSidebar?: () => void
+  isAdmin?: boolean
 }) {
   const { isDark } = useTheme()
   const [showMenu, setShowMenu] = useState(false)
@@ -349,12 +352,14 @@ export function ConversationHeader({
                   >
                     Change Message Colors
                   </button>
-                  <button
-                    onClick={handleDeleteConversation}
-                    className={`w-full text-left px-4 py-2 text-sm text-red-600 ${isDark ? 'hover:bg-red-900/20' : 'hover:bg-red-50'} transition-colors`}
-                  >
-                    Delete Conversation
-                  </button>
+                  {conversation.participants.length === 2 && !isAdmin && conversation.title !== 'Admin' && (
+                    <button
+                      onClick={handleDeleteConversation}
+                      className={`w-full text-left px-4 py-2 text-sm text-red-600 ${isDark ? 'hover:bg-red-900/20' : 'hover:bg-red-50'} transition-colors`}
+                    >
+                      Delete Conversation
+                    </button>
+                  )}
                 </div>
               )}
             </div>
