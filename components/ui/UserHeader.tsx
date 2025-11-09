@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useTheme } from '@/components/ThemeContext'
 import { useToast } from '@/components/ToastContext'
+import { useSidebar } from '@/components/ui/SidebarContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, User, LogOut, Settings, ChevronDown, PlusSquare, FileText, RotateCcw } from 'lucide-react'
 import Link from 'next/link'
@@ -17,7 +18,28 @@ export function UserHeader() {
   const { data: session } = useSession()
   const { isDark, toggleTheme } = useTheme()
   const { showToast } = useToast()
+  const { isCollapsed } = useSidebar()
   const router = useRouter()
+  const [isSmallScreen, setIsSmallScreen] = useState(false)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const mediaQuery = window.matchMedia('(max-width: 1279px)') // xl breakpoint -1 for tablet/mobile
+    setIsSmallScreen(mediaQuery.matches)
+
+    const handleChange = (e: MediaQueryListEvent) => {
+      setIsSmallScreen(e.matches)
+    }
+
+    mediaQuery.addEventListener('change', handleChange)
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleChange)
+    }
+  }, [])
+
+  const sidebarWidth = isCollapsed ? (isSmallScreen ? 56 : 60) : (isSmallScreen ? 280 : 320)
   // Removed searchQuery state and related
   const [userImage, setUserImage] = useState<string>('')
   const [communityLogo, setCommunityLogo] = useState('')
@@ -199,9 +221,9 @@ export function UserHeader() {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       className={`backdrop-blur-md border-b sticky top-0 z-20 px-4 sm:px-6 lg:px-8 py-4 ${
-        isDark 
-          ? 'bg-slate-900 border-slate-700' 
-          : 'bg-white border-slate-200'
+        isDark
+          ? 'bg-slate-900/80 border-slate-700'
+          : 'bg-white/80 border-slate-200'
       }`}
     >
       <div className="flex items-center justify-between">

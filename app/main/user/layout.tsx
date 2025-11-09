@@ -36,10 +36,13 @@ function UserLayoutContent({ children }: { children: React.ReactNode }) {
     <div className={`min-h-screen ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
       <UserSidebar />
 
-      <div style={{ marginLeft: `${sidebarWidth}px` }} className="transition-all duration-300 flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-screen">
         <UserHeader />
 
-        <main className="p-6">
+        <main
+          className="p-6"
+          style={{ marginLeft: isSmallScreen && isCollapsed ? `${sidebarWidth}px` : '0px' }}
+        >
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

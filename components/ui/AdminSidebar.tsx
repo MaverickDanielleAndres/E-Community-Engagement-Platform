@@ -396,7 +396,10 @@ export function AdminSidebar() {
   return (
     <motion.aside
       initial={false}
-      animate={{ width: isCollapsed ? (isSmallScreen ? 56 : 60) : (isSmallScreen ? 280 : 320) }}
+      animate={{
+        width: isCollapsed ? (isSmallScreen ? 56 : 60) : (isSmallScreen ? 280 : 320),
+        x: isSmallScreen && isCollapsed ? -56 : 0
+      }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
       className={`
         fixed left-0 top-0 bottom-0 z-30
