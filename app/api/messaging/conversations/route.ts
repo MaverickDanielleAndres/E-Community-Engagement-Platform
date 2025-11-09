@@ -43,7 +43,65 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch conversations' }, { status: 500 })
     }
 
-    const conversationIds = userConversations?.map((c: any) => c.conversation_id) || []
+    let conversationIds = userConversations?.map((c: any) => c.conversation_id) || []
+
+    // Ensure user has a default conversation with admin
+    const { data: adminUser, error: adminError } = await supabase
+      .from('community_members')
+      .select('user_id, users(id, name, image)')
+      .eq('community_id', (userCommunity as any).community_id)
+      .eq('role', 'Admin')
+      .single()
+
+    if (adminError || !adminUser) {
+      console.error('Error fetching admin user:', adminError)
+    } else {
+      // Check if user already has a conversation with admin
+      const { data: adminConversation, error: adminConvError } = await supabase
+        .from('conversation_participants')
+        .select('conversation_id')
+        .eq('user_id', (adminUser as any).user_id)
+        .in('conversation_id', conversationIds)
+
+      if (adminConvError) {
+        console.error('Error checking admin conversation:', adminConvError)
+      } else if (!adminConversation || adminConversation.length === 0) {
+        // Create default conversation with admin
+        const { data: newConversation, error: newConvError } = await supabase
+          .from('conversations')
+          .insert({
+            community_id: (userCommunity as any).community_id,
+            is_group: false,
+            title: 'Admin',
+            created_by: session.user.id
+          })
+          .select()
+          .single()
+
+        if (newConvError) {
+          console.error('Error creating admin conversation:', newConvError)
+        } else {
+          // Add participants
+          const participants = [
+            { conversation_id: (newConversation as any).id, user_id: session.user.id },
+            { conversation_id: (newConversation as any).id, user_id: (adminUser as any).user_id }
+          ]
+
+          const { error: partError } = await supabase
+            .from('conversation_participants')
+            .insert(participants)
+
+          if (partError) {
+            console.error('Error adding participants to admin conversation:', partError)
+            // Clean up conversation if participants failed
+            await supabase.from('conversations').delete().eq('id', (newConversation as any).id)
+          } else {
+            // Add to conversation IDs
+            conversationIds.push((newConversation as any).id)
+          }
+        }
+      }
+    }
 
     if (conversationIds.length === 0) {
       return NextResponse.json({ conversations: [] })
@@ -115,6 +173,13 @@ export async function GET(request: NextRequest) {
       } : null
     })) || []
 
+    // Sort conversations with Admin conversation always at the top
+    formattedConversations.sort((a, b) => {
+      if (a.title === 'Admin') return -1
+      if (b.title === 'Admin') return 1
+      return 0 // Keep existing order for others
+    })
+
     return NextResponse.json({ conversations: formattedConversations })
     } catch (error) {
       console.error('Error in conversations GET:', error)
@@ -150,7 +215,8 @@ export async function POST(request: NextRequest) {
     // Determine if this is a group chat
     const isGroupChat = isGroup || participantIds.length > 1
 
-    // Check if all target users are in the same community and not admins
+    // Check if all target users are in the same community
+    // Allow admins to message members, but prevent members from messaging admins
     for (const participantId of participantIds) {
       const { data: targetUser, error: targetError } = await supabase
         .from('community_members')
@@ -166,7 +232,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: `User ${participantId} not found in community` }, { status: 404 })
       }
 
-      if ((targetUser as any).role === 'Admin') {
+      // Only prevent non-admin users from messaging admins
+      if ((targetUser as any).role === 'Admin' && (userCommunity as any).role !== 'Admin') {
         return NextResponse.json({ error: 'Cannot message administrators' }, { status: 403 })
       }
     }
@@ -237,6 +304,43 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create conversation' }, { status: 500 })
     }
 
+    // Fetch the created conversation with participants
+    const { data: createdConversation, error: fetchError } = await supabase
+      .from('conversations')
+      .select(`
+        id,
+        title,
+        is_group,
+        created_at,
+        last_message_at,
+        conversation_participants(user_id, users(id, name, image, status))
+      `)
+      .eq('id', (conversation as any).id)
+      .single()
+
+    if (fetchError) {
+      console.error('Error fetching created conversation:', fetchError)
+      // Clean up conversation if fetch failed
+      await supabase.from('conversations').delete().eq('id', (conversation as any).id)
+      return NextResponse.json({ error: 'Failed to create conversation' }, { status: 500 })
+    }
+
+    // Format the response like the GET route
+    const formattedConversation = {
+      id: createdConversation.id,
+      title: createdConversation.title,
+      isGroup: createdConversation.is_group,
+      lastMessageAt: createdConversation.last_message_at,
+      unreadCount: 0,
+      participants: createdConversation.conversation_participants?.map((p: any) => ({
+        id: p.users.id,
+        name: p.users.name,
+        image: p.users.image,
+        status: p.users.status
+      })) || [],
+      lastMessage: null
+    }
+
     // Log audit event
     await (supabase as any).from('audit_logs').insert({
       actor_id: session.user.id,
@@ -246,7 +350,7 @@ export async function POST(request: NextRequest) {
       payload: { participant_ids: participantIds, is_group: isGroupChat }
     })
 
-    return NextResponse.json({ conversation: { id: (conversation as any).id } }, { status: 201 })
+    return NextResponse.json({ conversation: formattedConversation }, { status: 201 })
     } catch (error) {
       if (error instanceof z.ZodError) {
         return NextResponse.json({ error: 'Invalid request data', details: error.errors }, { status: 400 })

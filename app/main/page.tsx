@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { 
-  KPIStatCard, 
+  KPICard, 
   ChartCard, 
   DataTable, 
   EmptyState 
@@ -150,22 +150,22 @@ export default function UserDashboard() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KPIStatCard
+        <KPICard
           title="My Complaints"
           value={data.myComplaints}
           icon={MessageSquareWarning}
         />
-        <KPIStatCard
+        <KPICard
           title="My Votes"
           value={data.myVotes}
           icon={PieChart}
         />
-        <KPIStatCard
+        <KPICard
           title="Community Rating"
           value={`${data.satisfactionIndex}/5`}
           icon={Smile}
         />
-        <KPIStatCard
+        <KPICard
           title="My Feedback"
           value={data.myFeedback}
           icon={TrendingUp}
@@ -273,7 +273,6 @@ export default function UserDashboard() {
             description="Submit your first complaint to get started"
             icon={MessageSquareWarning}
             actionLabel="Submit Complaint"
-            actionHref="/main/user/complaints/submit"
           />
         )}
       </div>

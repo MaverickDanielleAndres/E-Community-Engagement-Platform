@@ -56,22 +56,11 @@ export async function messagingMiddleware(
     return response
   }
 
-  // Block admin-to-member messaging and contact addition
-  const pathname = request.nextUrl.pathname
-  if ((userCommunity as any).role === 'Admin') {
-    if (pathname.includes('/conversations') && request.method === 'POST') {
-      const response = NextResponse.json({ error: 'Admins cannot create conversations' }, { status: 403 })
-      addCorsHeaders(response, request)
-      return response
-    }
-    if (pathname.includes('/contacts') && request.method === 'POST') {
-      const response = NextResponse.json({ error: 'Admins cannot add contacts' }, { status: 403 })
-      addCorsHeaders(response, request)
-      return response
-    }
-  }
+  // Allow admins to message members from admin panel
+  // The conversation route itself handles the logic for admin messaging restrictions
 
   // Apply rate limiting based on endpoint
+  const pathname = request.nextUrl.pathname
   if (pathname.includes('/messages') && request.method === 'POST') {
     if (isRateLimited(request, rateLimitConfigs.messaging)) {
       const response = NextResponse.json(

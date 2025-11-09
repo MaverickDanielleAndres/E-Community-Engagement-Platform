@@ -33,7 +33,7 @@ interface Attachment {
   file?: File
 }
 
-interface Message {
+export interface Message {
   id: string
   content: string
   senderId: string
@@ -305,17 +305,6 @@ export function useMessaging(): UseMessagingReturn {
       })
       .subscribe()
 
-    // Refresh channel for real-time updates
-    const refreshChannel = supabase
-      .channel('refresh')
-      .on('broadcast', { event: 'refresh' }, (payload) => {
-        if (payload.payload.conversationId === selectedConversation?.id) {
-          // Automatically refresh messages when changes are detected
-          refreshMessages()
-        }
-      })
-      .subscribe()
-
     // Message reactions subscription
     const reactionsChannel = supabase
       .channel('message_reactions')
@@ -423,7 +412,7 @@ export function useMessaging(): UseMessagingReturn {
       })
       .subscribe()
 
-    channelsRef.current = [messagesChannel, refreshChannel, reactionsChannel, conversationsChannel, presenceChannel, typingChannel]
+    channelsRef.current = [messagesChannel, reactionsChannel, conversationsChannel, presenceChannel, typingChannel]
   }, [session?.user?.id, conversations, selectedConversation, fetchMessages, fetchConversations, cleanup, formatMessageForRealtime, refreshMessages])
 
   // Clean up typing indicators after 3 seconds

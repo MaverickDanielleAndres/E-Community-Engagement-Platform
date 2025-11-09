@@ -60,13 +60,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Format the data
-    const formattedMembers = members?.map(member => ({
-      id: member.users.id,
-      name: member.users.name || 'Unknown',
-      email: member.users.email,
+    const formattedMembers = members?.map((member: any) => ({
+      id: member.users?.id,
+      name: member.users?.name || 'Unknown',
+      email: member.users?.email,
       role: member.role,
       joined_at: member.joined_at,
-      last_active: member.users.updated_at, // Using updated_at as last_active proxy
+      last_active: member.users?.updated_at, // Using updated_at as last_active proxy
       status: 'active' // You can add actual status logic based on your needs
     })) || []
 

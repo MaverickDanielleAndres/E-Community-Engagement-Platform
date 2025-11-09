@@ -294,18 +294,18 @@ export function Composer({
     <div className="p-4 border-t border-slate-200 dark:border-slate-700" onPaste={handlePaste}>
       {/* Reply Preview */}
       {replyTo && (
-        <div className="mb-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border-l-4 border-blue-500 flex items-center justify-between">
+        <div className={`mb-3 p-3 rounded-lg border-l-4 border-blue-500 flex items-center justify-between ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
           <div className="flex-1">
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
               Replying to <span className="font-medium">{replyTo.senderName}</span>
             </p>
-            <p className="text-sm text-slate-800 dark:text-slate-200 truncate">
+            <p className={`text-sm truncate ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
               {replyTo.content}
             </p>
           </div>
           <button
             onClick={onCancelReply}
-            className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
+            className={`p-1 rounded transition-colors ${isDark ? 'hover:bg-slate-700 text-white' : 'hover:bg-slate-200'}`}
           >
             <X className="w-4 h-4" />
           </button>

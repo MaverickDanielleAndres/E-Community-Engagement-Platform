@@ -2,12 +2,13 @@
 'use client'
 
 import { DataTable, SearchInput, ConfirmDialog } from '@/components/ui'
+import { AdminMessageModal } from '@/components/ui/AdminMessageModal'
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { motion } from 'framer-motion'
 import {
   Users, Copy, Edit, Trash2, Shield, User, Crown,
-  Search, Filter, MoreVertical, Eye, UserCheck, RefreshCw
+  Search, Filter, MoreVertical, Eye, UserCheck, RefreshCw, MessageCircle
 } from 'lucide-react'
 import { useTheme } from '@/components/ThemeContext'
 import { Toast } from '@/components/Toast'
@@ -42,6 +43,8 @@ export default function AdminMembers() {
   const [selectedMember, setSelectedMember] = useState<Member | null>(null)
   const [showRoleDialog, setShowRoleDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showMessageModal, setShowMessageModal] = useState(false)
+  const [selectedMemberForMessage, setSelectedMemberForMessage] = useState<Member | null>(null)
   const [newRole, setNewRole] = useState('')
   const { isDark } = useTheme()
 
@@ -169,6 +172,11 @@ export default function AdminMembers() {
   const openDeleteDialog = (member: Member) => {
     setSelectedMember(member)
     setShowDeleteDialog(true)
+  }
+
+  const openMessageModal = (member: Member) => {
+    setSelectedMemberForMessage(member)
+    setShowMessageModal(true)
   }
 
   const getRoleIcon = (role: string) => {
@@ -487,6 +495,19 @@ export default function AdminMembers() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center space-x-2">
+                      {member.role.toLowerCase() !== 'admin' && (
+                        <button
+                          onClick={() => openMessageModal(member)}
+                          className={`p-2 rounded-lg transition-colors duration-200 ${
+                            isDark
+                              ? 'text-slate-400 hover:text-green-400 hover:bg-slate-700'
+                              : 'text-slate-600 hover:text-green-600 hover:bg-slate-100'
+                          }`}
+                          title="Send Message"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                        </button>
+                      )}
                       <button
                         onClick={() => openRoleDialog(member)}
                         className={`p-2 rounded-lg transition-colors duration-200 ${
@@ -575,6 +596,13 @@ export default function AdminMembers() {
         description={`Are you sure you want to remove ${selectedMember?.name} from the community? This action cannot be undone.`}
         confirmLabel="Remove Member"
         variant="danger"
+      />
+
+      {/* Admin Message Modal */}
+      <AdminMessageModal
+        isOpen={showMessageModal}
+        onClose={() => setShowMessageModal(false)}
+        member={selectedMemberForMessage}
       />
     </div>
   )

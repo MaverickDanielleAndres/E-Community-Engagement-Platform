@@ -45,13 +45,13 @@ export async function POST(
 
       // Mark messages as read
       if (unreadMessages && unreadMessages.length > 0) {
-        const readRecords = unreadMessages.map(msg => ({
+        const readRecords = unreadMessages.map((msg: any) => ({
           message_id: msg.id,
           user_id: session.user.id,
           read_at: new Date().toISOString()
         }))
 
-        const { error: insertError } = await supabase
+        const { error: insertError } = await (supabase as any)
           .from('message_reads')
           .insert(readRecords)
 

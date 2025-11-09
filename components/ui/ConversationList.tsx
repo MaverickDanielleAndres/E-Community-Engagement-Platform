@@ -190,11 +190,12 @@ export function ConversationList({
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <p className="font-medium text-sm truncate">
-                      {conversationNames[conversation.id] ||
+                  <p className="font-medium text-sm truncate">
+                      {(conversation as any).title === 'Admin' ? 'Admin' :
+                        (conversationNames[conversation.id] ||
                         (conversation.participants.length === 2 && currentUserId
                           ? conversation.participants.find(p => p.id !== currentUserId)?.name || conversation.participants.map(p => p.name).join(', ')
-                          : conversation.participants.map(p => p.name).join(', '))}
+                          : conversation.participants.map(p => p.name).join(', ')))}
                     </p>
 
                   </div>

@@ -1,7 +1,7 @@
 // @/components/ui/AdminSidebar.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useRouter } from 'next/navigation'
@@ -32,6 +32,7 @@ export function AdminSidebar() {
   const { isDark } = useTheme()
   const { data: session } = useSession()
   const pathname = usePathname()
+  const sidebarRef = useRef<HTMLDivElement>(null)
 
   // Check if mobile/tablet screens using matchMedia for better reliability (default collapsed below xl)
   const [isSmallScreen, setIsSmallScreen] = useState(false)
@@ -203,8 +204,7 @@ export function AdminSidebar() {
       title: "Overview",
       items: [
         { label: "Dashboard", href: "/main/admin", icon: LayoutDashboard },
-        { label: "AI Insights", href: "/main/admin/ai-insights", icon: Bot },
-        { label: "Analytics", href: "/main/admin/analytics", icon: BarChart3 }
+        { label: "AI Insights", href: "/main/admin/ai-insights", icon: Bot }
       ]
     },
       {
@@ -233,10 +233,8 @@ export function AdminSidebar() {
     const Icon = item.icon
 
   const handleNavClick = () => {
-    // Auto-collapse sidebar on small screens when navigation link is clicked
-    if (isSmallScreen) {
-      setIsCollapsed(true)
-    }
+    // Auto-collapse sidebar when navigation link is clicked (always, not just small screens)
+    setIsCollapsed(true)
   }
 
     return (
@@ -392,9 +390,24 @@ export function AdminSidebar() {
     </div>
   )
 
+  // Handle click outside to close sidebar
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node) && !isCollapsed) {
+        setIsCollapsed(true)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isCollapsed, setIsCollapsed])
+
   // Always render the sidebar, no mobile drawer
   return (
     <motion.aside
+      ref={sidebarRef}
       initial={false}
       animate={{
         width: isCollapsed ? (isSmallScreen ? 56 : 60) : (isSmallScreen ? 280 : 320),

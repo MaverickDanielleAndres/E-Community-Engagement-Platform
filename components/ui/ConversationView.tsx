@@ -70,6 +70,7 @@ interface ConversationViewProps {
   replyTo?: { id: string; content: string; senderName: string } | null
   isSidebarOpen?: boolean
   onToggleSidebar?: () => void
+  isAdmin?: boolean
 }
 
 export function ConversationView({
@@ -84,7 +85,8 @@ export function ConversationView({
   onRefreshMessages,
   loading = false,
   replyTo: propReplyTo,
-  isSidebarOpen = false
+  isSidebarOpen = false,
+  isAdmin = false
 }: ConversationViewProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [replyTo, setReplyTo] = useState<{ id: string; content: string; senderName: string } | null>(null)
@@ -147,17 +149,19 @@ export function ConversationView({
                 />
               </div>
             ) : (
-              messages.map((message) => (
-                <MessageItem
-                  key={message.id}
-                  message={message}
-                  currentUserId={currentUserId}
-                  onReaction={onReaction}
-                  onReply={handleReply}
-                  onDelete={onDelete}
-                  onEdit={onEdit}
-                />
-              ))
+              messages
+                .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+                .map((message) => (
+                  <MessageItem
+                    key={message.id}
+                    message={message}
+                    currentUserId={currentUserId}
+                    onReaction={onReaction}
+                    onReply={handleReply}
+                    onDelete={onDelete}
+                    onEdit={onEdit}
+                  />
+                ))
             )}
             <div ref={messagesEndRef} />
           </div>

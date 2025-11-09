@@ -393,7 +393,7 @@ export function MessageItem({
                 e.stopPropagation()
                 setShowReactions(!showReactions)
               }}
-              className="p-1 rounded transition-transform text-slate-600 dark:text-slate-400 hover:scale-110"
+              className={`p-1 rounded transition-transform ${isDark ? 'bg-slate-700 text-white hover:bg-slate-600' : 'text-slate-600 hover:scale-110'}`}
               title="Add reaction"
             >
               <Smile className="w-3 h-3" />
@@ -403,7 +403,7 @@ export function MessageItem({
                 e.stopPropagation()
                 onReply(message.id, message)
               }}
-              className="p-1 rounded transition-transform text-slate-600 dark:text-slate-400 hover:scale-110"
+              className={`p-1 rounded transition-transform ${isDark ? 'bg-slate-700 text-white hover:bg-slate-600' : 'text-slate-600 hover:scale-110'}`}
               title="Reply to message"
             >
               <Reply className="w-3 h-3" />
@@ -414,7 +414,7 @@ export function MessageItem({
                   e.stopPropagation()
                   setShowMenu(!showMenu)
                 }}
-                className="p-1 rounded transition-transform text-slate-600 dark:text-slate-400 hover:scale-110"
+                className={`p-1 rounded transition-transform ${isDark ? 'bg-slate-700 text-white hover:bg-slate-600' : 'text-slate-600 hover:scale-110'}`}
                 title="More options"
               >
                 <MoreVertical className="w-3 h-3" />
@@ -465,7 +465,7 @@ export function MessageItem({
                       setIsEditing(true)
                       setShowMenu(false)
                     }}
-                    className="flex items-center gap-2 px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                    className={`flex items-center gap-2 px-3 py-1 text-sm rounded transition-colors ${isDark ? 'bg-slate-700 text-white hover:bg-slate-600' : 'text-blue-600 hover:bg-blue-50'}`}
                   >
                     <Edit className="w-3 h-3" />
                     Edit
@@ -474,7 +474,7 @@ export function MessageItem({
                 {canDelete && (
                   <button
                     onClick={handleDelete}
-                    className="flex items-center gap-2 px-3 py-1 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                    className={`flex items-center gap-2 px-3 py-1 text-sm rounded transition-colors ${isDark ? 'bg-slate-700 text-white hover:bg-slate-600' : 'text-red-600 hover:bg-red-50'}`}
                   >
                     <Trash2 className="w-3 h-3" />
                     Delete
@@ -515,7 +515,7 @@ export function MessageItem({
 
         {/* Timestamp */}
         {showTimestamp && (
-          <div className={`text-xs text-slate-500 dark:text-slate-400 mt-1 ${
+          <div className={`text-xs text-slate-500 dark:text-white mt-1 ${
             isOwnMessage ? 'text-right' : 'text-left'
           }`}>
             {new Date(message.timestamp).toLocaleString()}

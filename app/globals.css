@@ -71,3 +71,42 @@
     @apply transition-all duration-300 ease-in-out;
   }
 }
+
+
+/* Add this to your app/globals.css file at the bottom */
+
+/* EComAI Chat Response Formatting */
+.formatted-response {
+  line-height: 1.8;
+}
+
+.formatted-response strong {
+  font-weight: 600;
+  color: inherit;
+}
+
+.formatted-response div {
+  word-wrap: break-word;
+}
+
+/* Ensure proper text rendering in chat bubbles */
+.formatted-response div > div {
+  margin-top: 0;
+}
+
+.formatted-response br {
+  content: "";
+  display: block;
+  margin: 4px 0;
+}
+
+/* Make sure lists are visible */
+.formatted-response ul,
+.formatted-response ol {
+  margin-left: 20px;
+  margin-bottom: 8px;
+}
+
+.formatted-response li {
+  margin-bottom: 4px;
+}
