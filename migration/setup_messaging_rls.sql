@@ -165,6 +165,9 @@ CREATE POLICY "Users can update their own read receipts" ON message_reads
 CREATE POLICY "Users can view audit logs for their actions" ON audit_logs
   FOR SELECT USING (actor_id = auth.uid());
 
+CREATE POLICY "Users can insert audit logs for their actions" ON audit_logs
+  FOR INSERT WITH CHECK (actor_id = auth.uid());
+
 -- Function to update conversation last_message_at
 CREATE OR REPLACE FUNCTION update_conversation_last_message_at()
 RETURNS TRIGGER AS $$

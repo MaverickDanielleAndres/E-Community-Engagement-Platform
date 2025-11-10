@@ -122,6 +122,16 @@ export async function GET(
         return NextResponse.json({ error: 'Not a participant in this conversation' }, { status: 403 })
       }
 
+      // Fetch all community members with roles for role mapping
+      const { data: allMembers } = await supabase
+        .from('community_members')
+        .select('user_id, role')
+
+      const roleMap = new Map((allMembers as any)?.map((m: any) => [m.user_id, m.role]) || [])
+
+      // Get sender role
+      const senderRole = roleMap.get(session.user.id) || 'member'
+
       // Build query with cursor-based pagination
       let query = supabase
         .from('messages')
@@ -202,6 +212,8 @@ export async function GET(
           readAt: read.read_at
         })) || []
 
+        const senderRole = roleMap.get(msg.sender_id) || 'member'
+
         return {
           id: msg.id,
           content: msg.body,
@@ -218,7 +230,8 @@ export async function GET(
           } : undefined,
           isRead,
           readBy,
-          isEdited: msg.metadata?.isEdited || false
+          isEdited: msg.metadata?.isEdited || false,
+          role: senderRole
         }
       })) || []
 
@@ -326,6 +339,9 @@ export async function POST(
       if (partError || !participant) {
         return NextResponse.json({ error: 'Not a participant in this conversation' }, { status: 403 })
       }
+
+      // Get sender role from session
+      const senderRole = (session.user as any).role || 'member'
 
       // If replying to a message, verify it exists in this conversation
       if (replyToMessageId) {
@@ -450,8 +466,20 @@ export async function POST(
         attachments: attachmentRecords,
         gif: gif || undefined,
         reactions: [],
-        replyTo: undefined
+        replyTo: undefined,
+        role: senderRole
       }
+
+      // Broadcast the new message to all clients in the conversation
+      const supabaseRealtime = getSupabaseServerClient()
+      await supabaseRealtime.channel(`messages_${conversationId}`).send({
+        type: 'broadcast',
+        event: 'message_insert',
+        payload: {
+          conversationId,
+          message: formattedMessage
+        }
+      })
 
       // Add new message to cache
       const cache = MessageCache.getInstance()

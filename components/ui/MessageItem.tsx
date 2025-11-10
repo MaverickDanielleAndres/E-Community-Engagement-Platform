@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Reply, Heart, Smile, MoreVertical, Trash2, Edit } from 'lucide-react'
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal'
@@ -49,6 +49,7 @@ interface Message {
   }>
   isDelivered?: boolean
   isEdited?: boolean
+  role?: string
 }
 
 interface MessageItemProps {
@@ -58,6 +59,11 @@ interface MessageItemProps {
   onReply: (messageId: string, replyTo: Message) => void
   onDelete?: (messageId: string) => void
   onEdit?: (messageId: string, newContent: string) => void
+  adminMessageColor?: string
+  memberMessageColor?: string
+  selfMessageColor?: string
+  role?: string
+  isGroupChat?: boolean
 }
 
 export function MessageItem({
@@ -66,7 +72,11 @@ export function MessageItem({
   onReaction,
   onReply,
   onDelete,
-  onEdit
+  onEdit,
+  adminMessageColor,
+  memberMessageColor,
+  selfMessageColor,
+  isGroupChat
 }: MessageItemProps) {
   const { isDark } = useTheme()
   const [showReactions, setShowReactions] = useState(false)
@@ -91,9 +101,11 @@ export function MessageItem({
   const isRead = hasReads && message.readBy!.some(read => read.userId !== currentUserId)
   const readCount = hasReads ? message.readBy!.filter(read => read.userId !== currentUserId).length : 0
 
-  // Get message colors from localStorage
-  const sentMessageColor = localStorage.getItem('sentMessageColor') || '#3b82f6'
+  // Get message colors from props or localStorage
+  const sentMessageColor = selfMessageColor || localStorage.getItem('sentMessageColor') || '#3b82f6'
   const receivedMessageColor = localStorage.getItem('receivedMessageColor') || '#374151'
+  const adminColor = adminMessageColor || localStorage.getItem('adminMessageColor') || '#f59e0b'
+  const memberColor = memberMessageColor || localStorage.getItem('memberMessageColor') || '#10b981'
 
   // Close menus when clicking outside
   useEffect(() => {
@@ -185,15 +197,22 @@ export function MessageItem({
           </div>
         )}
 
+        {/* Sender name for group chats */}
+        {isGroupChat && !isOwnMessage && (
+          <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+            {message.senderName}
+          </div>
+        )}
+
         {/* Message bubble */}
         <div
-          className={`relative px-4 py-2 rounded-lg group cursor-pointer ${
-            isOwnMessage
-              ? `text-white`
-              : 'text-slate-900 dark:text-slate-100'
-          }`}
+          className={`relative px-4 py-2 rounded-lg group cursor-pointer text-white`}
           style={{
-            backgroundColor: isOwnMessage ? sentMessageColor : receivedMessageColor
+            backgroundColor: isOwnMessage
+              ? sentMessageColor
+              : message.role === 'admin'
+                ? adminColor
+                : memberColor
           }}
           onClick={() => setShowTimestamp(!showTimestamp)}
         >

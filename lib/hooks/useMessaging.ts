@@ -67,6 +67,7 @@ export interface Message {
   }>
   isOptimistic?: boolean
   isEdited?: boolean
+  role?: string
 }
 
 interface TypingIndicator {

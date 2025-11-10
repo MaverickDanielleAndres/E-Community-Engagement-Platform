@@ -55,6 +55,7 @@ interface Message {
     count: number
     users: string[]
   }>
+  role?: string
 }
 
 interface ConversationViewProps {
@@ -161,6 +162,11 @@ export function ConversationView({
                     onReply={handleReply}
                     onDelete={onDelete}
                     onEdit={onEdit}
+                    adminMessageColor={localStorage.getItem('adminMessageColor') || '#f59e0b'}
+                    memberMessageColor={localStorage.getItem('memberMessageColor') || '#10b981'}
+                    selfMessageColor={localStorage.getItem('sentMessageColor') || '#3b82f6'}
+                    role={message.role}
+                    isGroupChat={conversation.participants.length > 2}
                   />
                 ))
             )}
@@ -265,6 +271,23 @@ export function ConversationHeader({
     setShowDeleteModal(false)
   }
 
+  const handleClearMessages = async () => {
+    try {
+      const response = await fetch(`/api/messaging/conversations/${conversation.id}/clear`, {
+        method: 'DELETE',
+      })
+      if (response.ok) {
+        console.log('Messages cleared successfully')
+        // Refresh messages
+        onRefreshMessages?.()
+      } else {
+        console.error('Failed to clear messages')
+      }
+    } catch (error) {
+      console.error('Error clearing messages:', error)
+    }
+  }
+
   return (
     <div>
       <div className="p-4 border-b border-slate-200 dark:border-slate-700">
@@ -333,25 +356,38 @@ export function ConversationHeader({
                     <RefreshCw className="w-4 h-4" />
                     Refresh
                   </button>
-                  <button
-                    onClick={() => {
-                      setNewConversationName(conversationName)
-                      setShowNicknameModal(true)
-                      setShowMenu(false)
-                    }}
-                    className={`w-full text-left px-4 py-2 text-sm ${isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'} transition-colors`}
-                  >
-                    Change Conversation Name
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowThemeModal(true)
-                      setShowMenu(false)
-                    }}
-                    className={`w-full text-left px-4 py-2 text-sm ${isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'} transition-colors`}
-                  >
-                    Change Message Colors
-                  </button>
+                  {isAdmin && (
+                    <>
+                      <button
+                        onClick={() => {
+                          setNewConversationName(conversationName)
+                          setShowNicknameModal(true)
+                          setShowMenu(false)
+                        }}
+                        className={`w-full text-left px-4 py-2 text-sm ${isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'} transition-colors`}
+                      >
+                        Change Conversation Name
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowThemeModal(true)
+                          setShowMenu(false)
+                        }}
+                        className={`w-full text-left px-4 py-2 text-sm ${isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'} transition-colors`}
+                      >
+                        Change Message Colors
+                      </button>
+                      <button
+                        onClick={() => {
+                          handleClearMessages()
+                          setShowMenu(false)
+                        }}
+                        className={`w-full text-left px-4 py-2 text-sm text-red-600 ${isDark ? 'hover:bg-red-900/20' : 'hover:bg-red-50'} transition-colors`}
+                      >
+                        Clear Messages
+                      </button>
+                    </>
+                  )}
                   {conversation.participants.length === 2 && !isAdmin && conversation.title !== 'Admin' && (
                     <button
                       onClick={handleDeleteConversation}
@@ -413,12 +449,13 @@ export function ConversationHeader({
               <button
                 onClick={() => {
                   if (newConversationName.trim()) {
-                    setConversationName(newConversationName.trim())
-                    localStorage.setItem(`conversationName_${conversation.id}`, newConversationName.trim())
+                    const updatedName = newConversationName.trim()
+                    setConversationName(updatedName)
+                    localStorage.setItem(`conversationName_${conversation.id}`, updatedName)
                     // Trigger storage event to update sidebar
                     window.dispatchEvent(new StorageEvent('storage', {
                       key: `conversationName_${conversation.id}`,
-                      newValue: newConversationName.trim()
+                      newValue: updatedName
                     }))
                   }
                   setShowNicknameModal(false)

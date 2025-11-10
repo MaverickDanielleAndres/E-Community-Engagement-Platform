@@ -39,6 +39,20 @@ interface Message {
     count: number
     users: string[]
   }>
+  replyTo?: {
+    id: string
+    content: string
+    senderName: string
+  }
+  isRead?: boolean
+  readBy?: Array<{
+    userId: string
+    userName: string
+    readAt: string
+  }>
+  isDelivered?: boolean
+  isEdited?: boolean
+  role?: string
 }
 
 export default function MessagingPage() {

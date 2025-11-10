@@ -52,6 +52,7 @@ export function Composer({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const emojiPickerRef = useRef<HTMLDivElement>(null)
 
   const handleSend = () => {
     if (!message.trim() && attachments.length === 0) return
@@ -460,7 +461,8 @@ export function Composer({
             placeholder={placeholder}
             disabled={disabled}
             rows={1}
-            className={`w-full px-3 md:px-4 py-2 pr-10 md:pr-12 h-8 md:h-10 text-sm md:text-base rounded-lg border border-slate-200 dark:border-slate-600 ${isDark ? 'bg-slate-900 text-slate-100' : 'bg-white text-slate-900'} focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none disabled:opacity-50`}
+            className={`w-full px-3 md:px-4 py-2 pr-10 md:pr-12 h-8 md:h-10 text-sm md:text-base rounded-lg border border-slate-200 dark:border-slate-600 bg-${isDark ? 'slate-900' : 'white'} text-${isDark ? 'white' : 'slate-900'} focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none disabled:opacity-50`}
+
           />
           <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
             <button
@@ -503,24 +505,14 @@ export function Composer({
           <Images className="w-5 h-5" />
         </button>
 
-        <div className="relative hidden md:block">
-          <button
-            onClick={() => setShowGifPicker(!showGifPicker)}
-            className={`px-2 md:px-3 py-2 rounded-lg transition-colors text-xs md:text-sm font-medium hover:bg-${isDark ? 'white/10' : 'slate-100'}`}
-            disabled={disabled}
-            title="GIF"
-          >
-            GIF
-          </button>
-          {showGifPicker && (
-            <div className="absolute bottom-full right-0 mb-2 z-50">
-              <GifPicker
-                onSelectGif={handleGifSelect}
-                onClose={() => setShowGifPicker(false)}
-              />
-            </div>
-          )}
-        </div>
+        <button
+          onClick={() => setShowGifPicker(!showGifPicker)}
+          className={`hidden md:flex px-2 md:px-3 py-2 rounded-lg transition-colors text-xs md:text-sm font-medium hover:bg-${isDark ? 'white/10' : 'slate-100'}`}
+          disabled={disabled}
+          title="GIF"
+        >
+          GIF
+        </button>
 
         <button
           onClick={handleSend}
@@ -533,14 +525,36 @@ export function Composer({
 
       {/* Emoji Picker */}
       {showEmojiPicker && (
-        <div className="fixed bottom-20 right-4 z-[9999] shadow-lg rounded-lg overflow-hidden bg-white dark:bg-slate-900">
-          <EmojiPicker
-            onEmojiClick={handleEmojiClick}
-            theme={isDark ? 'dark' : 'light' as any}
-            width={300}
-            height={400}
+        <>
+          <div
+            className="fixed inset-0 z-[9998]"
+            onClick={() => setShowEmojiPicker(false)}
           />
-        </div>
+          <div className="fixed bottom-20 right-4 z-[9999] shadow-lg rounded-lg overflow-hidden bg-white dark:bg-slate-900">
+            <EmojiPicker
+              onEmojiClick={handleEmojiClick}
+              theme={isDark ? 'dark' : 'light' as any}
+              width={300}
+              height={400}
+            />
+          </div>
+        </>
+      )}
+
+      {/* GIF Picker */}
+      {showGifPicker && (
+        <>
+          <div
+            className="fixed inset-0 z-[9998]"
+            onClick={() => setShowGifPicker(false)}
+          />
+          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9999] shadow-lg rounded-lg overflow-hidden bg-white dark:bg-slate-900">
+            <GifPicker
+              onSelectGif={handleGifSelect}
+              onClose={() => setShowGifPicker(false)}
+            />
+          </div>
+        </>
       )}
 
       {/* Hidden file inputs */}
@@ -566,6 +580,12 @@ export function Composer({
         <div className="mt-2 flex items-center gap-2 text-red-500">
           <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
           <span className="text-sm">Recording... {recordingTime}s</span>
+          <button
+            onClick={handleVoiceRecord}
+            className="md:hidden ml-2 px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
+          >
+            Stop
+          </button>
         </div>
       )}
     </div>

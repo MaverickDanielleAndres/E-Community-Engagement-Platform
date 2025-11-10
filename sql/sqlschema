@@ -174,6 +174,11 @@ CREATE TABLE public.conversations (
   created_by uuid NOT NULL,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   last_message_at timestamp with time zone,
+  is_default boolean NOT NULL DEFAULT false,
+  color text DEFAULT '#3b82f6'::text,
+  admin_message_color text DEFAULT '#f59e0b'::text,
+  member_message_color text DEFAULT '#10b981'::text,
+  self_message_color text DEFAULT '#3b82f6'::text,
   CONSTRAINT conversations_pkey PRIMARY KEY (id),
   CONSTRAINT conversations_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.users(id)
 );
@@ -219,10 +224,14 @@ CREATE TABLE public.feedback (
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   form_data jsonb,
   template_id uuid,
+  admin_response text,
+  admin_response_at timestamp with time zone,
+  admin_response_by uuid,
   CONSTRAINT feedback_pkey PRIMARY KEY (id),
   CONSTRAINT feedback_community_id_fkey FOREIGN KEY (community_id) REFERENCES public.communities(id),
   CONSTRAINT feedback_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
-  CONSTRAINT feedback_template_id_fkey FOREIGN KEY (template_id) REFERENCES public.feedback_form_templates(id)
+  CONSTRAINT feedback_template_id_fkey FOREIGN KEY (template_id) REFERENCES public.feedback_form_templates(id),
+  CONSTRAINT feedback_admin_response_by_fkey FOREIGN KEY (admin_response_by) REFERENCES public.users(id)
 );
 CREATE TABLE public.feedback_form_templates (
   id uuid NOT NULL DEFAULT gen_random_uuid(),

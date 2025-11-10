@@ -59,21 +59,30 @@ export function useRealtimeConversation({
       }
     })
 
+    // Get sender role for real-time messages
+    const { data: allMembers } = await supabase
+      .from('community_members')
+      .select('user_id, role')
+
+    const roleMap = new Map((allMembers as any)?.map((m: any) => [m.user_id, m.role]) || [])
+    const senderRole = roleMap.get(msg.senderId) || 'member'
+
     return {
       id: msg.id,
-      content: msg.body,
-      senderId: msg.sender_id,
-      senderName: msg.users?.name || '',
-      timestamp: msg.created_at,
+      content: msg.content,
+      senderId: msg.senderId,
+      senderName: msg.senderName || '',
+      timestamp: msg.timestamp,
       attachments: attachmentsWithUrls,
-      gif: msg.metadata?.gif || undefined,
+      gif: msg.gif || undefined,
       reactions: Array.from(reactionsMap.values()),
-      replyTo: msg.reply_to_message ? {
-        id: msg.reply_to_message.id,
-        content: msg.reply_to_message.body,
-        senderName: msg.reply_to_message.users?.name || ''
+      replyTo: msg.replyTo ? {
+        id: msg.replyTo.id,
+        content: msg.replyTo.content,
+        senderName: msg.replyTo.senderName || ''
       } : undefined,
-      isEdited: msg.metadata?.isEdited || false
+      isEdited: msg.isEdited || false,
+      role: senderRole
     }
   }
 
@@ -91,81 +100,30 @@ export function useRealtimeConversation({
 
     cleanup()
 
-    // Messages subscription
-    const messagesChannel = supabase
+    // Broadcast channel for messages, reactions and refresh
+    const broadcastChannel = supabase
       .channel(`messages_${conversationId}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'messages',
-        filter: `conversation_id=eq.${conversationId}`
-      }, async (payload) => {
-        console.log('Real-time message change:', payload)
-        if (payload.eventType === 'INSERT') {
-          try {
-            const { data: newMessage, error } = await supabase
-              .from('messages')
-              .select(`
-                id,
-                body,
-                type,
-                reply_to_message_id,
-                created_at,
-                metadata,
-                sender_id,
-                users!sender_id(id, name, image),
-                message_attachments(id, storage_path, file_name, mime_type, size_bytes, thumbnail_path),
-                message_reactions(id, user_id, reaction, created_at, users!user_id(name)),
-                reply_to_message:reply_to_message_id(id, body, type, sender_id, users!sender_id(name))
-              `)
-              .eq('id', payload.new.id)
-              .single()
-
-            if (!error && newMessage) {
-              const formattedMessage = await formatMessageForRealtime(newMessage)
-              onMessageInsert(formattedMessage)
-            }
-          } catch (err) {
-            console.error('Error fetching new message:', err)
-            onRefresh() // Fallback to refresh
-          }
-        } else if (payload.eventType === 'UPDATE') {
-          onMessageUpdate(payload.new.id, {
-            content: payload.new.body,
-            isEdited: true
-          })
-        } else if (payload.eventType === 'DELETE') {
-          onMessageDelete(payload.old.id)
+      .on('broadcast', { event: 'message_insert' }, async (payload) => {
+        console.log('Message insert broadcast:', payload)
+        if (payload.payload.conversationId === conversationId) {
+          // Format the message properly for real-time updates
+          const formattedMessage = await formatMessageForRealtime(payload.payload.message)
+          onMessageInsert(formattedMessage)
         }
       })
-      .subscribe()
-
-    // Message reactions subscription
-    const reactionsChannel = supabase
-      .channel(`reactions_${conversationId}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'message_reactions',
-        filter: `conversation_id=eq.${conversationId}`
-      }, () => {
-        console.log('Real-time reaction change')
+      .on('broadcast', { event: 'reaction_change' }, (payload) => {
+        console.log('Reaction change broadcast:', payload)
         onReactionChange()
       })
-      .subscribe()
-
-    // Refresh broadcast channel for cross-interface updates
-    const refreshChannel = supabase
-      .channel('refresh')
-      .on('broadcast', { event: 'refresh' }, (payload) => {
-        console.log('Refresh broadcast received:', payload)
+      .on('broadcast', { event: 'refresh_messages' }, (payload) => {
+        console.log('Refresh messages broadcast:', payload)
         if (payload.payload.conversationId === conversationId) {
           onRefresh()
         }
       })
       .subscribe()
 
-    channelsRef.current = [messagesChannel, reactionsChannel, refreshChannel]
+    channelsRef.current = [broadcastChannel]
 
     return cleanup
   }, [session?.user?.id, conversationId, onMessageInsert, onMessageUpdate, onMessageDelete, onReactionChange, onRefresh, supabase])

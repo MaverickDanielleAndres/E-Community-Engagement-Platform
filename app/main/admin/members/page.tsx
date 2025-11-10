@@ -3,6 +3,7 @@
 
 import { DataTable, SearchInput, ConfirmDialog } from '@/components/ui'
 import { AdminMessageModal } from '@/components/ui/AdminMessageModal'
+import { GroupChatModal } from '@/components/ui/GroupChatModal'
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { motion } from 'framer-motion'
@@ -47,9 +48,12 @@ export default function AdminMembers() {
   const [selectedMemberForMessage, setSelectedMemberForMessage] = useState<Member | null>(null)
   const [newRole, setNewRole] = useState('')
   const { isDark } = useTheme()
+  const [showGroupChatModal, setShowGroupChatModal] = useState(false)
+  const [groupChatId, setGroupChatId] = useState<string>('')
 
   useEffect(() => {
     fetchMembersAndCommunity()
+    fetchGroupChatId()
   }, [])
 
   const fetchMembersAndCommunity = async () => {
@@ -80,6 +84,22 @@ export default function AdminMembers() {
       setToast({ message: 'Error loading members data', type: 'error' })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchGroupChatId = async () => {
+    try {
+      const response = await fetch('/api/messaging/conversations')
+      if (response.ok) {
+        const data = await response.json()
+        const conversations = data.conversations || []
+        const groupChat = conversations.find((conv: any) => conv.title === 'Group Chat' && conv.isGroup)
+        if (groupChat) {
+          setGroupChatId(groupChat.id)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch group chat ID:', error)
     }
   }
 
@@ -384,9 +404,22 @@ export default function AdminMembers() {
         className={`${isDark ? 'bg-slate-800' : 'bg-white'} rounded-2xl shadow-lg border ${isDark ? 'border-slate-700' : 'border-slate-200'} overflow-hidden`}
       >
         <div className="p-6 border-b border-slate-200 dark:border-slate-700">
-          <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            Members ({filteredMembers.length})
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              Members ({filteredMembers.length})
+            </h2>
+            <button
+              onClick={() => setShowGroupChatModal(true)}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors duration-200 ${
+                isDark
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                  : 'bg-blue-500 hover:bg-blue-600 text-white'
+              }`}
+            >
+              <MessageCircle className="w-4 h-4" />
+              <span>Group Chat</span>
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -603,6 +636,14 @@ export default function AdminMembers() {
         isOpen={showMessageModal}
         onClose={() => setShowMessageModal(false)}
         member={selectedMemberForMessage}
+      />
+
+      {/* Group Chat Modal */}
+      <GroupChatModal
+        isOpen={showGroupChatModal}
+        onClose={() => setShowGroupChatModal(false)}
+        conversationId={groupChatId}
+        isAdmin={true}
       />
     </div>
   )
