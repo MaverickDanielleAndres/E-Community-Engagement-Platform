@@ -404,13 +404,13 @@ export default function AdminMembers() {
         className={`${isDark ? 'bg-slate-800' : 'bg-white'} rounded-2xl shadow-lg border ${isDark ? 'border-slate-700' : 'border-slate-200'} overflow-hidden`}
       >
         <div className="p-6 border-b border-slate-200 dark:border-slate-700">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
             <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Members ({filteredMembers.length})
             </h2>
             <button
               onClick={() => setShowGroupChatModal(true)}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors duration-200 ${
+              className={`flex items-center justify-center space-x-2 px-4 py-2 sm:px-4 sm:py-2 rounded-lg transition-colors duration-200 w-full sm:w-auto ${
                 isDark
                   ? 'bg-blue-600 hover:bg-blue-700 text-white'
                   : 'bg-blue-500 hover:bg-blue-600 text-white'

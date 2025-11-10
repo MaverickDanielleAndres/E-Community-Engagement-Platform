@@ -420,29 +420,6 @@ export function GroupChatModal({
                     </div>
                   </div>
 
-
-
-                  {/* Admin Message Color */}
-                  <div>
-                    <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                      Admin Message Color
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="color"
-                        value={newAdminMessageColor || adminMessageColor}
-                        onChange={(e) => setNewAdminMessageColor(e.target.value)}
-                        className="w-12 h-10 rounded-md border cursor-pointer"
-                      />
-                      <button
-                        onClick={() => handleUpdateMessageColor('adminMessageColor', newAdminMessageColor || adminMessageColor)}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                      >
-                        Update
-                      </button>
-                    </div>
-                  </div>
-
                   {/* Member Message Color */}
                   <div>
                     <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
@@ -493,7 +470,7 @@ export function GroupChatModal({
                     <div className="flex gap-2">
                       <button
                         onClick={() => setShowClearConfirm(true)}
-                        className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600"
+                        className="px-4 py-2 bg-red-700 text-white rounded-md hover:bg-orange-600"
                       >
                         Clear Messages
                       </button>

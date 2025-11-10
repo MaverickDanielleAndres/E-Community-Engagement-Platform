@@ -8,6 +8,7 @@ import { MessageItem } from '@/components/ui/MessageItem'
 import { Composer } from '@/components/ui/Composer'
 
 import { useTheme } from '@/components/ThemeContext'
+import { useSession } from 'next-auth/react'
 
 interface Conversation {
   id: string
@@ -92,6 +93,32 @@ export function ConversationView({
 }: ConversationViewProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [replyTo, setReplyTo] = useState<{ id: string; content: string; senderName: string } | null>(null)
+  const [adminMessageColor, setAdminMessageColor] = useState('#f59e0b')
+  const [memberMessageColor, setMemberMessageColor] = useState('#10b981')
+  const [selfMessageColor, setSelfMessageColor] = useState('#3b82f6')
+
+  // Fetch conversation settings
+  const fetchConversationSettings = async () => {
+    if (!conversation) return
+
+    try {
+      const response = await fetch(`/api/messaging/conversations/${conversation.id}/settings`)
+      if (response.ok) {
+        const settings = await response.json()
+        setAdminMessageColor(settings.adminMessageColor || '#f59e0b')
+        setMemberMessageColor(settings.memberMessageColor || '#10b981')
+        setSelfMessageColor(settings.selfMessageColor || '#3b82f6')
+      }
+    } catch (error) {
+      console.error('Error fetching conversation settings:', error)
+    }
+  }
+
+  useEffect(() => {
+    if (conversation) {
+      fetchConversationSettings()
+    }
+  }, [conversation])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -125,7 +152,17 @@ export function ConversationView({
   return (
     <div className="h-full flex flex-col">
       <div className="flex-shrink-0">
-        <ConversationHeader conversation={conversation} currentUserId={currentUserId} onRefreshMessages={onRefreshMessages} onToggleSidebar={handleToggleSidebar} isAdmin={isAdmin} />
+        <ConversationHeader
+          conversation={conversation}
+          currentUserId={currentUserId}
+          onRefreshMessages={onRefreshMessages}
+          onToggleSidebar={handleToggleSidebar}
+          isAdmin={isAdmin}
+          adminMessageColor={adminMessageColor}
+          memberMessageColor={memberMessageColor}
+          selfMessageColor={selfMessageColor}
+          onColorChange={fetchConversationSettings}
+        />
       </div>
 
       {!conversation ? (
@@ -164,9 +201,9 @@ export function ConversationView({
                     onReply={handleReply}
                     onDelete={onDelete}
                     onEdit={onEdit}
-                    adminMessageColor={localStorage.getItem('adminMessageColor') || '#f59e0b'}
-                    memberMessageColor={localStorage.getItem('memberMessageColor') || '#10b981'}
-                    selfMessageColor={localStorage.getItem('sentMessageColor') || '#3b82f6'}
+                    adminMessageColor={adminMessageColor}
+                    memberMessageColor={memberMessageColor}
+                    selfMessageColor={selfMessageColor}
                     role={message.role}
                     isGroupChat={conversation.participants.length > 2}
                   />
@@ -196,7 +233,11 @@ export function ConversationHeader({
   onDeleteConversation,
   onRefreshMessages,
   onToggleSidebar,
-  isAdmin = false
+  isAdmin = false,
+  adminMessageColor,
+  memberMessageColor,
+  selfMessageColor,
+  onColorChange
 }: {
   conversation: Conversation | null
   currentUserId: string
@@ -204,37 +245,52 @@ export function ConversationHeader({
   onRefreshMessages?: () => void
   onToggleSidebar?: () => void
   isAdmin?: boolean
+  adminMessageColor?: string
+  memberMessageColor?: string
+  selfMessageColor?: string
+  onColorChange?: () => void
 }) {
   const { isDark } = useTheme()
+  const { data: session } = useSession()
   const [showMenu, setShowMenu] = useState(false)
   const [conversationName, setConversationName] = useState('')
-  const [sentMessageColor, setSentMessageColor] = useState('#3b82f6')
-  const [receivedMessageColor, setReceivedMessageColor] = useState('#374151')
+  const [localAdminMessageColor, setLocalAdminMessageColor] = useState(adminMessageColor || '#f59e0b')
+  const [localMemberMessageColor, setLocalMemberMessageColor] = useState(memberMessageColor || '#10b981')
+  const [localSelfMessageColor, setLocalSelfMessageColor] = useState(selfMessageColor || '#3b82f6')
   const [showNicknameModal, setShowNicknameModal] = useState(false)
   const [showThemeModal, setShowThemeModal] = useState(false)
   const [newConversationName, setNewConversationName] = useState('')
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
+  // Fetch conversation settings from API
+  const fetchConversationSettings = async () => {
+    if (!conversation) return
+
+    try {
+      const response = await fetch(`/api/messaging/conversations/${conversation.id}/settings`)
+      if (response.ok) {
+        const settings = await response.json()
+        setLocalAdminMessageColor(settings.adminMessageColor || '#f59e0b')
+        setLocalMemberMessageColor(settings.memberMessageColor || '#10b981')
+        setLocalSelfMessageColor(settings.selfMessageColor || '#3b82f6')
+      }
+    } catch (error) {
+      console.error('Error fetching conversation settings:', error)
+    }
+  }
+
   useEffect(() => {
     if (!conversation) return
 
-    const storedName = localStorage.getItem(`conversationName_${conversation.id}`)
-    if (storedName) {
-      setConversationName(storedName)
-    } else {
-      // Default to other participant's name or group name
-      const defaultName = conversation.participants.length === 2 && currentUserId
-        ? conversation.participants.find(p => p.id !== currentUserId)?.name || conversation.participants.map(p => p.name).join(', ')
-        : conversation.participants.map(p => p.name).join(', ')
-      setConversationName(defaultName)
-    }
+    // Use conversation.title from API data instead of localStorage
+    const defaultName = conversation.title || (conversation.participants.length === 2 && currentUserId
+      ? conversation.participants.find(p => p.id !== currentUserId)?.name || conversation.participants.map(p => p.name).join(', ')
+      : conversation.participants.map(p => p.name).join(', '))
+    setConversationName(defaultName)
 
-    const storedSentColor = localStorage.getItem('sentMessageColor')
-    if (storedSentColor) setSentMessageColor(storedSentColor)
-
-    const storedReceivedColor = localStorage.getItem('receivedMessageColor')
-    if (storedReceivedColor) setReceivedMessageColor(storedReceivedColor)
+    // Fetch colors from API instead of localStorage
+    fetchConversationSettings()
 
     // Close menus when clicking outside
     const handleClickOutside = (event: MouseEvent) => {
@@ -480,36 +536,69 @@ export function ConversationHeader({
             <h3 className="text-lg font-semibold mb-4">Change Message Colors</h3>
             <div className="space-y-4">
               <div>
-                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Sent Message Color</label>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Admin Message Color</label>
                 <input
                   type="color"
-                  value={sentMessageColor}
-                  onChange={(e) => {
-                    setSentMessageColor(e.target.value)
-                    localStorage.setItem('sentMessageColor', e.target.value)
-                  }}
+                  value={localAdminMessageColor}
+                  onChange={(e) => setLocalAdminMessageColor(e.target.value)}
                   className="w-full h-10 rounded-md border cursor-pointer"
                 />
               </div>
               <div>
-                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Received Message Color</label>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Member Message Color</label>
                 <input
                   type="color"
-                  value={receivedMessageColor}
-                  onChange={(e) => {
-                    setReceivedMessageColor(e.target.value)
-                    localStorage.setItem('receivedMessageColor', e.target.value)
-                  }}
+                  value={localMemberMessageColor}
+                  onChange={(e) => setLocalMemberMessageColor(e.target.value)}
+                  className="w-full h-10 rounded-md border cursor-pointer"
+                />
+              </div>
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Self Message Color</label>
+                <input
+                  type="color"
+                  value={localSelfMessageColor}
+                  onChange={(e) => setLocalSelfMessageColor(e.target.value)}
                   className="w-full h-10 rounded-md border cursor-pointer"
                 />
               </div>
             </div>
-            <div className="flex justify-end mt-6">
+            <div className="flex justify-end gap-2 mt-6">
               <button
                 onClick={() => setShowThemeModal(false)}
+                className={`px-4 py-2 rounded-md ${isDark ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-900'} transition-colors`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch(`/api/messaging/conversations/${conversation.id}/settings`, {
+                      method: 'PUT',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        adminMessageColor: localAdminMessageColor,
+                        memberMessageColor: localMemberMessageColor,
+                        selfMessageColor: localSelfMessageColor,
+                      }),
+                    })
+                    if (response.ok) {
+                      console.log('Message colors updated successfully')
+                      setShowThemeModal(false)
+                      // Update the parent state
+                      onColorChange?.()
+                    } else {
+                      console.error('Failed to update message colors')
+                    }
+                  } catch (error) {
+                    console.error('Error updating message colors:', error)
+                  }
+                }}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
               >
-                Done
+                Save
               </button>
             </div>
           </div>
