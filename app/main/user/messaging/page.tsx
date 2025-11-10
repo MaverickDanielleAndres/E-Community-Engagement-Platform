@@ -234,27 +234,29 @@ export default function MessagingPage() {
           )}
 
           {/* Main Content */}
-          <div className="flex-1 relative">
-            <ConversationView
-              conversation={selectedConversation ? {
-                ...selectedConversation,
-                participants: selectedConversation.participants.map(p => ({
-                  ...p,
-                  online: onlineUsers.has(p.id)
-                }))
-              } : null}
-              messages={messages}
-              currentUserId={session?.user?.id || ''}
-              onSendMessage={handleSendMessage}
-              onReaction={handleReaction}
-              onReply={handleReply}
-              onDelete={handleDelete}
-              onEdit={handleEdit}
-              onRefreshMessages={refreshMessages}
-              loading={false}
-              replyTo={replyTo}
-              onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-            />
+          <div className="flex-1 relative overflow-hidden">
+            <div className="h-[calc(100vh-10rem)] md:h-[calc(100vh-8rem)]">
+              <ConversationView
+                conversation={selectedConversation ? {
+                  ...selectedConversation,
+                  participants: selectedConversation.participants.map(p => ({
+                    ...p,
+                    online: onlineUsers.has(p.id)
+                  }))
+                } : null}
+                messages={messages}
+                currentUserId={session?.user?.id || ''}
+                onSendMessage={handleSendMessage}
+                onReaction={handleReaction}
+                onReply={handleReply}
+                onDelete={handleDelete}
+                onEdit={handleEdit}
+                onRefreshMessages={refreshMessages}
+                loading={false}
+                replyTo={replyTo}
+                onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+              />
+            </div>
           </div>
         </div>
       </div>

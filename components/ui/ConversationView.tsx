@@ -124,7 +124,9 @@ export function ConversationView({
 
   return (
     <div className="h-full flex flex-col">
-      <ConversationHeader conversation={conversation} currentUserId={currentUserId} onRefreshMessages={onRefreshMessages} onToggleSidebar={handleToggleSidebar} isAdmin={isAdmin} />
+      <div className="flex-shrink-0">
+        <ConversationHeader conversation={conversation} currentUserId={currentUserId} onRefreshMessages={onRefreshMessages} onToggleSidebar={handleToggleSidebar} isAdmin={isAdmin} />
+      </div>
 
       {!conversation ? (
         <div className="flex-1 flex items-center justify-center">
@@ -174,12 +176,14 @@ export function ConversationView({
           </div>
 
           {/* Message Input */}
-          <Composer
-            onSendMessage={(content, attachments, gif, replyToParam) => onSendMessage(content, attachments, gif, replyToParam)}
-            placeholder="Type a message..."
-            replyTo={replyTo}
-            onCancelReply={handleCancelReply}
-          />
+          <div className="flex-shrink-0">
+            <Composer
+              onSendMessage={(content, attachments, gif, replyToParam) => onSendMessage(content, attachments, gif, replyToParam)}
+              placeholder="Type a message..."
+              replyTo={replyTo}
+              onCancelReply={handleCancelReply}
+            />
+          </div>
         </>
       )}
     </div>
