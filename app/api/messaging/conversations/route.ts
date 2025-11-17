@@ -352,25 +352,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch conversations' }, { status: 500 })
     }
 
-    // Calculate unread counts for each conversation
-    const conversationsWithUnreadCounts = await Promise.all((conversations || []).map(async (conv: any) => {
-      // Count unread messages: messages not sent by user and not in message_reads
-      const { count: unreadCount, error: unreadError } = await supabase
-        .from('messages')
-        .select('id', { count: 'exact', head: true })
-        .eq('conversation_id', conv.id)
-        .neq('sender_id', session.user.id)
-        .not('message_reads', 'cs', `{"user_id": "${session.user.id}"}`)
-
-      if (unreadError) {
-        console.error('Error fetching unread count for conversation:', conv.id, unreadError)
-      }
-
-      return {
-        ...conv,
-        unreadCount: unreadCount || 0
-      }
-    }))
+    // No unread count calculation needed
+    const conversationsWithUnreadCounts = conversations || []
 
     // Format the response
     const formattedConversations = conversationsWithUnreadCounts?.map((conv: any) => ({
@@ -378,7 +361,7 @@ export async function GET(request: NextRequest) {
       title: conv.title,
       isGroup: conv.is_group,
       lastMessageAt: conv.last_message_at,
-      unreadCount: conv.unreadCount,
+      unreadCount: 0, // No unread count calculation
       participants: conv.conversation_participants?.map((p: any) => ({
         id: p.users.id,
         name: p.users.name,
@@ -398,7 +381,7 @@ export async function GET(request: NextRequest) {
     })) || []
 
     // Sort conversations with Admin conversation always at the top
-    formattedConversations.sort((a, b) => {
+    formattedConversations.sort((a: any, b: any) => {
       if (a.title === 'Admin') return -1
       if (b.title === 'Admin') return 1
       return 0 // Keep existing order for others
