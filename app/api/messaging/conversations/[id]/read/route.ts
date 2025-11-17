@@ -31,17 +31,33 @@ export async function POST(
       }
 
       // Get all unread messages in the conversation for this user
-      const { data: unreadMessages, error: messagesError } = await supabase
+      // First get messages not sent by the user
+      const { data: messages, error: messagesError } = await supabase
         .from('messages')
         .select('id')
         .eq('conversation_id', conversationId)
-        .not('sender_id', 'eq', session.user.id) // Only messages not sent by the user
-        .not('message_reads', 'cs', `{"user_id": "${session.user.id}"}`) // Not already read
+        .neq('sender_id', session.user.id) // Only messages not sent by the user
 
       if (messagesError) {
-        console.error('Error fetching unread messages:', messagesError)
-        return NextResponse.json({ error: 'Failed to fetch unread messages' }, { status: 500 })
+        console.error('Error fetching messages:', messagesError)
+        return NextResponse.json({ error: 'Failed to fetch messages' }, { status: 500 })
       }
+
+      // Get already read message IDs for this user
+      const { data: readMessages, error: readError } = await supabase
+        .from('message_reads')
+        .select('message_id')
+        .eq('user_id', session.user.id)
+
+      if (readError) {
+        console.error('Error fetching read messages:', readError)
+        return NextResponse.json({ error: 'Failed to fetch read messages' }, { status: 500 })
+      }
+
+      const readMessageIds = new Set((readMessages as any[])?.map((r: any) => r.message_id) || [])
+
+      // Filter out already read messages
+      const unreadMessages = (messages as any[])?.filter((msg: any) => !readMessageIds.has(msg.id)) || []
 
       // Mark messages as read
       if (unreadMessages && unreadMessages.length > 0) {

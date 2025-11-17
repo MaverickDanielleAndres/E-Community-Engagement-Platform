@@ -261,6 +261,7 @@ export function ConversationHeader({
   const [showThemeModal, setShowThemeModal] = useState(false)
   const [newConversationName, setNewConversationName] = useState('')
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [isMemberToMember, setIsMemberToMember] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   // Fetch conversation settings from API
@@ -282,6 +283,12 @@ export function ConversationHeader({
 
   useEffect(() => {
     if (!conversation) return
+
+    // Determine if this is a member-to-member conversation
+    const isGroup = conversation.participants.length > 2
+    const isAdminConv = conversation.title === 'Admin'
+    const isMemberToMember = conversation.participants.length === 2 && !isAdminConv
+    setIsMemberToMember(isMemberToMember)
 
     // Use conversation.title from API data instead of localStorage
     const defaultName = conversation.title || (conversation.participants.length === 2 && currentUserId
@@ -345,6 +352,30 @@ export function ConversationHeader({
       }
     } catch (error) {
       console.error('Error clearing messages:', error)
+    }
+  }
+
+  const handleUpdateConversationName = async (newName: string) => {
+    try {
+      const response = await fetch(`/api/messaging/conversations/${conversation.id}/settings`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title: newName }),
+      })
+      if (response.ok) {
+        console.log('Conversation name updated successfully')
+        // Update local state immediately
+        setConversationName(newName)
+        // Refresh conversation data
+        fetchConversationSettings()
+        // The real-time broadcast will handle updating other clients
+      } else {
+        console.error('Failed to update conversation name')
+      }
+    } catch (error) {
+      console.error('Error updating conversation name:', error)
     }
   }
 
@@ -448,13 +479,34 @@ export function ConversationHeader({
                       </button>
                     </>
                   )}
-                  {conversation.participants.length === 2 && !isAdmin && conversation.title !== 'Admin' && (
-                    <button
-                      onClick={handleDeleteConversation}
-                      className={`w-full text-left px-4 py-2 text-sm text-red-600 ${isDark ? 'hover:bg-red-900/20' : 'hover:bg-red-50'} transition-colors`}
-                    >
-                      Delete Conversation
-                    </button>
+                  {isMemberToMember && (
+                    <>
+                      <button
+                        onClick={() => {
+                          setNewConversationName(conversationName)
+                          setShowNicknameModal(true)
+                          setShowMenu(false)
+                        }}
+                        className={`w-full text-left px-4 py-2 text-sm ${isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'} transition-colors`}
+                      >
+                        Change Conversation Name
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowThemeModal(true)
+                          setShowMenu(false)
+                        }}
+                        className={`w-full text-left px-4 py-2 text-sm ${isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-100'} transition-colors`}
+                      >
+                        Change Message Colors
+                      </button>
+                      <button
+                        onClick={handleDeleteConversation}
+                        className={`w-full text-left px-4 py-2 text-sm text-red-600 ${isDark ? 'hover:bg-red-900/20' : 'hover:bg-red-50'} transition-colors`}
+                      >
+                        Delete Conversation
+                      </button>
+                    </>
                   )}
                 </div>
               )}
@@ -511,12 +563,7 @@ export function ConversationHeader({
                   if (newConversationName.trim()) {
                     const updatedName = newConversationName.trim()
                     setConversationName(updatedName)
-                    localStorage.setItem(`conversationName_${conversation.id}`, updatedName)
-                    // Trigger storage event to update sidebar
-                    window.dispatchEvent(new StorageEvent('storage', {
-                      key: `conversationName_${conversation.id}`,
-                      newValue: updatedName
-                    }))
+                    handleUpdateConversationName(updatedName)
                   }
                   setShowNicknameModal(false)
                 }}
@@ -535,15 +582,7 @@ export function ConversationHeader({
           <div className={`p-6 rounded-lg shadow-lg max-w-md w-full mx-4 ${isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-900'}`}>
             <h3 className="text-lg font-semibold mb-4">Change Message Colors</h3>
             <div className="space-y-4">
-              <div>
-                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Admin Message Color</label>
-                <input
-                  type="color"
-                  value={localAdminMessageColor}
-                  onChange={(e) => setLocalAdminMessageColor(e.target.value)}
-                  className="w-full h-10 rounded-md border cursor-pointer"
-                />
-              </div>
+              
               <div>
                 <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Member Message Color</label>
                 <input

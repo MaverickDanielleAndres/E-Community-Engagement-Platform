@@ -136,6 +136,21 @@ export function useMessaging(): UseMessagingReturn {
     }
   }, [session?.user?.id])
 
+  // Broadcast refresh for conversation updates
+  const broadcastRefresh = useCallback(async (conversationId: string) => {
+    try {
+      await supabase.channel('refresh').send({
+        type: 'broadcast',
+        event: 'refresh',
+        payload: {
+          conversationId
+        }
+      })
+    } catch (error) {
+      console.error('Error broadcasting refresh:', error)
+    }
+  }, [supabase])
+
   // Fetch messages for selected conversation with pagination
   const fetchMessages = useCallback(async (conversationId: string, cursor?: string, direction: 'older' | 'newer' = 'older') => {
     try {
@@ -478,13 +493,7 @@ export function useMessaging(): UseMessagingReturn {
         fetchConversations()
 
         // Broadcast refresh event to other users in the conversation
-        supabase.channel('refresh').send({
-          type: 'broadcast',
-          event: 'refresh',
-          payload: {
-            conversationId: selectedConversation.id
-          }
-        })
+        broadcastRefresh(selectedConversation.id)
       } else {
         // Remove optimistic message on error
         setMessages(prev => prev.filter(msg => msg.id !== tempId))

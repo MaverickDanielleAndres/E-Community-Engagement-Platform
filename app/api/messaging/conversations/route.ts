@@ -191,7 +191,7 @@ export async function GET(request: NextRequest) {
       if (existingGroupChats && existingGroupChats.length > 1) {
         console.log(`Found ${existingGroupChats.length} group chats, cleaning up duplicates`)
         // Keep the first one, delete the rest
-        const keepId = existingGroupChats[0].id
+        const keepId = (existingGroupChats[0] as any).id
         const deleteIds = existingGroupChats.slice(1).map((gc: any) => gc.id)
 
         // Delete duplicate conversations and their participants
@@ -208,16 +208,11 @@ export async function GET(request: NextRequest) {
 
         groupChatId = keepId
       } else if (existingGroupChats && existingGroupChats.length === 1) {
-        groupChatId = existingGroupChats[0].id
+        groupChatId = (existingGroupChats[0] as any).id
       }
 
       // If we have a group chat, ensure it's properly configured
       if (groupChatId) {
-        // Always ensure title is "Group Chat" for default group chats
-        await (supabase as any)
-          .from('conversations')
-          .update({ title: 'Group Chat' })
-          .eq('id', groupChatId)
 
         // Ensure all active community members are participants
         const { data: communityMembers, error: membersError } = await (supabase as any)
@@ -485,16 +480,14 @@ export async function POST(request: NextRequest) {
 
       const { data: existingConv, error: existingError } = await supabase
         .from('conversation_participants')
-        .select(`
-          conversation_id,
-          conversations!inner(id)
-        `)
+        .select('conversation_id')
         .eq('user_id', session.user.id)
         .in('conversation_id', conversationIds)
+        .limit(1)
 
       if (existingConv && existingConv.length > 0) {
         return NextResponse.json({
-          conversation: { id: (existingConv[0] as any).conversation_id }
+          conversation: { id: existingConv[0].conversation_id }
         })
       }
     }

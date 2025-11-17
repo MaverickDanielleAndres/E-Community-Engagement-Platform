@@ -241,7 +241,7 @@ export function GroupChatModal({
   }
 
   const handleUpdateChatName = async () => {
-    if (!newChatName.trim() || !isAdmin) return
+    if (!newChatName.trim()) return
 
     try {
       const response = await fetch(`/api/messaging/conversations/${conversationId}`, {
@@ -396,83 +396,98 @@ export function GroupChatModal({
             {/* Settings Panel */}
             {showSettings && isAdmin && (
               <div className="p-6 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {/* Change Name */}
-                  <div>
-                    <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                      Chat Name
-                    </label>
-                    <div className="flex gap-2">
+                <div className="space-y-6">
+                  {/* Chat Name Section */}
+                  <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+                    <div className="flex-1">
+                      <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                        Chat Name
+                      </label>
                       <input
                         type="text"
                         value={newChatName}
                         onChange={(e) => setNewChatName(e.target.value)}
                         placeholder={chatName}
-                        className={`flex-1 px-3 py-2 border rounded-md ${isDark ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-300 text-slate-900'}`}
+                        className={`w-full px-3 py-2 border rounded-md ${isDark ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400' : 'bg-white border-slate-300 text-slate-900 placeholder-slate-500'}`}
                       />
-                      <button
-                        onClick={handleUpdateChatName}
-                        disabled={!newChatName.trim()}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50"
-                      >
-                        Update
-                      </button>
+                    </div>
+                    <button
+                      onClick={handleUpdateChatName}
+                      disabled={!newChatName.trim()}
+                      className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+                    >
+                      Update Name
+                    </button>
+                  </div>
+
+                  {/* Message Colors Section */}
+                  <div>
+                    <h3 className={`text-sm font-medium mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                      Message Colors
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Member Message Color */}
+                      <div className="flex flex-col gap-2">
+                        <label className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                          Member Messages
+                        </label>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="color"
+                            value={newMemberMessageColor || memberMessageColor}
+                            onChange={(e) => setNewMemberMessageColor(e.target.value)}
+                            className="w-16 h-12 rounded-lg border-2 border-slate-300 cursor-pointer"
+                          />
+                          <span className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                            {newMemberMessageColor || memberMessageColor}
+                          </span>
+                          <button
+                            onClick={() => handleUpdateMessageColor('memberMessageColor', newMemberMessageColor || memberMessageColor)}
+                            className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
+                          >
+                            Update
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Self Message Color */}
+                      <div className="flex flex-col gap-2">
+                        <label className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                          Your Messages
+                        </label>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="color"
+                            value={newSelfMessageColor || selfMessageColor}
+                            onChange={(e) => setNewSelfMessageColor(e.target.value)}
+                            className="w-16 h-12 rounded-lg border-2 border-slate-300 cursor-pointer"
+                          />
+                          <span className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                            {newSelfMessageColor || selfMessageColor}
+                          </span>
+                          <button
+                            onClick={() => handleUpdateMessageColor('selfMessageColor', newSelfMessageColor || selfMessageColor)}
+                            className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
+                          >
+                            Update
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Member Message Color */}
-                  <div>
-                    <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                      Member Message Color
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="color"
-                        value={newMemberMessageColor || memberMessageColor}
-                        onChange={(e) => setNewMemberMessageColor(e.target.value)}
-                        className="w-12 h-10 rounded-md border cursor-pointer"
-                      />
-                      <button
-                        onClick={() => handleUpdateMessageColor('memberMessageColor', newMemberMessageColor || memberMessageColor)}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                      >
-                        Update
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Self Message Color */}
-                  <div>
-                    <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                      Self Message Color
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="color"
-                        value={newSelfMessageColor || selfMessageColor}
-                        onChange={(e) => setNewSelfMessageColor(e.target.value)}
-                        className="w-12 h-10 rounded-md border cursor-pointer"
-                      />
-                      <button
-                        onClick={() => handleUpdateMessageColor('selfMessageColor', newSelfMessageColor || selfMessageColor)}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                      >
-                        Update
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div>
-                    <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                      Actions
-                    </label>
-                    <div className="flex gap-2">
+                  {/* Actions Section */}
+                  <div className="border-t border-slate-200 dark:border-slate-600 pt-4">
+                    <h3 className={`text-sm font-medium mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                      Danger Zone
+                    </h3>
+                    <div className="flex flex-col sm:flex-row gap-3">
                       <button
                         onClick={() => setShowClearConfirm(true)}
-                        className="px-4 py-2 bg-red-700 text-white rounded-md hover:bg-orange-600"
+                        className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors flex items-center gap-2"
                       >
-                        Clear Messages
+                        <Trash2 className="w-4 h-4" />
+                        Clear All Messages
                       </button>
                     </div>
                   </div>

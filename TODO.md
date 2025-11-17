@@ -1,5 +1,8 @@
-- [ ] Update ConversationList.tsx to use conversation.title from API instead of localStorage
-- [ ] Update ConversationView.tsx to fetch message colors from API settings instead of localStorage
-- [ ] Test name updates in conversation list
-- [ ] Test color updates in message view
-- [ ] Verify real-time sync
+# Fix Group Chat Settings Layout
+
+## Tasks
+- [x] Restructure settings panel layout in GroupChatModal.tsx
+- [x] Improve color picker sizing and alignment
+- [x] Organize settings into logical sections
+- [x] Add better spacing and responsive design
+- [x] Test layout improvements - Development server running on localhost:3001

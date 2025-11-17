@@ -80,8 +80,44 @@ export async function PUT(
 
       const isAdmin = (userCommunity as any).role === 'Admin'
 
-      if (!isAdmin) {
+      // Allow members to update conversation names for member-to-member conversations
+      // Get participant count by counting participants in conversation_participants table
+      const { count: participantCount, error: countError } = await supabase
+        .from('conversation_participants')
+        .select('*', { count: 'exact', head: true })
+        .eq('conversation_id', conversationId)
+
+      if (countError) {
+        console.error('Error counting participants:', countError)
+        return NextResponse.json({ error: 'Failed to fetch conversation details' }, { status: 500 })
+      }
+
+      const { data: conversation, error: convError } = await supabase
+        .from('conversations')
+        .select('title')
+        .eq('id', conversationId)
+        .single()
+
+      if (convError) {
+        console.error('Error fetching conversation:', convError)
+        return NextResponse.json({ error: 'Failed to fetch conversation' }, { status: 500 })
+      }
+
+      const isMemberToMember = (participantCount || 0) === 2 && (conversation as any).title !== 'Admin'
+      const isDefaultGroupChat = (conversation as any).is_default && (participantCount || 0) > 2
+
+      if (!isAdmin && !isMemberToMember && !isDefaultGroupChat) {
         return NextResponse.json({ error: 'Only admins can update conversation settings' }, { status: 403 })
+      }
+
+      // For member-to-member conversations, only allow title updates
+      if (!isAdmin && isMemberToMember && color !== undefined) {
+        return NextResponse.json({ error: 'Members can only update conversation names' }, { status: 403 })
+      }
+
+      // For default group chat, only allow title updates
+      if (!isAdmin && isDefaultGroupChat && color !== undefined) {
+        return NextResponse.json({ error: 'Members can only update the group chat name' }, { status: 403 })
       }
 
       // Update conversation

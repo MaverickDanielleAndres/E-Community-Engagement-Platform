@@ -109,31 +109,34 @@ export const authOptions: NextAuthOptions = {
       return true
     },
     async jwt({ token, user, account, trigger }) {
-      console.log('JWT callback triggered:', { token, user, trigger })
+      // Remove excessive logging to prevent terminal spam
 
       // Initial sign in
       if (user) {
         token.id = user.id
         token.role = user.role
-        // Don't store image in JWT to avoid size limits
         token.name = user.name
         token.email = user.email
-        // Force refresh to remove any existing image data from old sessions
-        token.forceRefresh = true
+        // Set a timestamp for when we last fetched user data
+        token.lastFetched = Date.now()
       }
 
-      // Force refresh token if it contains image data (from old sessions)
+      // Clean up any image data from old sessions (one-time cleanup)
       if (token.picture || token.image || (token as any).userImage) {
-        console.log('Detected old JWT with image data, forcing refresh')
-        // Clear any image data and force refresh
         delete token.picture
         delete token.image
         delete (token as any).userImage
-        token.forceRefresh = true
       }
 
-      // Fetch/update user data from DB (role, name, status - image excluded to prevent JWT bloat)
-      if (token.id) {
+      // Only fetch user data if it's been more than 5 minutes since last fetch
+      // or if this is an update trigger, or if we don't have the data yet
+      const shouldFetchData = !token.lastFetched ||
+        (Date.now() - (token.lastFetched as number)) > (5 * 60 * 1000) || // 5 minutes
+        trigger === 'update' ||
+        !token.role ||
+        !token.name
+
+      if (token.id && shouldFetchData) {
         try {
           // Check community role first
           const { data: communityRole } = await supabase
@@ -143,7 +146,6 @@ export const authOptions: NextAuthOptions = {
             .single()
 
           if (communityRole) {
-            console.log('Community role found:', communityRole.role)
             token.role = communityRole.role
           } else {
             // Fallback to user role
@@ -153,7 +155,6 @@ export const authOptions: NextAuthOptions = {
               .eq('id', token.id)
               .single()
 
-            console.log('User role fallback:', userRole?.role)
             token.role = userRole?.role || 'Guest'
           }
 
@@ -168,38 +169,14 @@ export const authOptions: NextAuthOptions = {
             token.name = userData.name
             token.status = userData.status || 'active'
           }
+
+          // Update last fetched timestamp
+          token.lastFetched = Date.now()
         } catch (error) {
           console.error('Error fetching user data:', error)
-          token.role = 'Guest'
-          token.status = 'active'
-        }
-      }
-
-      if (trigger === 'update' && token.id) {
-        // Refresh user data on update
-        try {
-          // Refresh role
-          const { data: communityRole } = await supabase
-            .from('community_members')
-            .select('role')
-            .eq('user_id', token.id)
-            .single()
-
-          token.role = communityRole ? communityRole.role : token.role
-
-          // Refresh name and status
-          const { data: userData } = await supabase
-            .from('users')
-            .select('name, status')
-            .eq('id', token.id)
-            .single()
-
-          if (userData) {
-            token.name = userData.name
-            token.status = userData.status || 'active'
-          }
-        } catch (error) {
-          console.error('Error refreshing user data:', error)
+          // Set defaults if fetch fails
+          if (!token.role) token.role = 'Guest'
+          if (!token.status) token.status = 'active'
         }
       }
 

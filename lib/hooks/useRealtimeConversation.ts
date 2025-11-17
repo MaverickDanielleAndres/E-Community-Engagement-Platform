@@ -121,6 +121,12 @@ export function useRealtimeConversation({
           onRefresh()
         }
       })
+      .on('broadcast', { event: 'refresh' }, (payload) => {
+        console.log('Refresh broadcast:', payload)
+        if (payload.payload.conversationId === conversationId) {
+          onRefresh()
+        }
+      })
       .subscribe()
 
     channelsRef.current = [broadcastChannel]
