@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
       .from('users')
       .select(`
         id,
+        name,
         community_members(
           community_id,
           role
@@ -52,6 +53,7 @@ export async function GET(request: NextRequest) {
     const settings = {
       community_id: communityId,
       name: community.name,
+      admin_name: user.name || '',
       description: community.description || '',
       code: community.code,
       logo_url: community.logo_url || '',
@@ -90,7 +92,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, description, code, logo_url } = body
+    const { name, admin_name, description, code, logo_url } = body
 
     // Get user and check if admin
     const { data: user } = await supabase
@@ -110,6 +112,14 @@ export async function PUT(request: NextRequest) {
     }
 
     const communityId = user.community_members[0].community_id
+
+    // Update user name if provided
+    if (admin_name !== undefined) {
+      await supabase
+        .from('users')
+        .update({ name: admin_name })
+        .eq('id', user.id)
+    }
 
     // Update community settings
     const { data: updatedCommunity, error } = await supabase

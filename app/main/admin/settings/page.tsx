@@ -3,6 +3,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 import { useTheme } from '@/components/ThemeContext'
 import { getSupabaseClient } from '@/lib/supabase'
 import { Save, Settings, Shield, Bell, Bot, Upload, Check, Camera } from 'lucide-react'
@@ -10,6 +11,7 @@ import { Save, Settings, Shield, Bell, Bot, Upload, Check, Camera } from 'lucide
 interface CommunitySettings {
   community_id: string
   name: string
+  admin_name: string
   description: string
   code: string
   logo_url: string
@@ -36,6 +38,7 @@ export default function AdminSettings() {
   const [settings, setSettings] = useState<CommunitySettings>({
     community_id: '',
     name: '',
+    admin_name: '',
     description: '',
     code: '',
     logo_url: '',
@@ -90,6 +93,7 @@ export default function AdminSettings() {
         },
         body: JSON.stringify({
           name: settings.name,
+          admin_name: settings.admin_name,
           description: settings.description,
           code: settings.code,
           logo_url: settings.logo_url,
@@ -99,6 +103,27 @@ export default function AdminSettings() {
       if (!response.ok) {
         throw new Error('Failed to save settings')
       }
+
+      // Trigger refresh of header and sidebar data across the app
+      localStorage.setItem('sidebarRefresh', 'true')
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'sidebarRefresh',
+        newValue: 'true'
+      }))
+
+      // Also trigger a custom event for immediate refresh
+      window.dispatchEvent(new Event('sidebarRefresh'))
+
+      // Trigger refresh of admin and user dashboards
+      localStorage.setItem('dashboardRefresh', Date.now().toString())
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'dashboardRefresh',
+        newValue: Date.now().toString()
+      }))
+      window.dispatchEvent(new Event('dashboardRefresh'))
+
+      // Force page refresh after saving settings
+      window.location.reload()
 
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
@@ -202,12 +227,12 @@ export default function AdminSettings() {
 
           <div>
             <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-gray-700'}`}>
-              Community Code
+              Admin Name
             </label>
             <input
               type="text"
-              value={settings.code}
-              onChange={(e) => setSettings({ ...settings, code: e.target.value })}
+              value={settings.admin_name}
+              onChange={(e) => setSettings({ ...settings, admin_name: e.target.value })}
               className={`
                 w-full px-3 py-2 rounded-lg border transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500
                 ${isDark
@@ -216,6 +241,25 @@ export default function AdminSettings() {
                 }
               `}
             />
+          </div>
+
+          <div>
+            <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-gray-700'}`}>
+              Community Code
+            </label>
+            <input
+              type="text"
+              value={settings.code}
+              disabled
+              className={`
+                w-full px-3 py-2 rounded-lg border transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 opacity-50 cursor-not-allowed
+                ${isDark
+                  ? 'bg-slate-700 border-slate-600 text-white'
+                  : 'bg-white border-slate-300 text-gray-900'
+                }
+              `}
+            />
+            <p className="text-xs mt-1 text-gray-500">Community code cannot be changed</p>
           </div>
 
           <div className="md:col-span-2">

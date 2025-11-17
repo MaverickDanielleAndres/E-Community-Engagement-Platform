@@ -80,6 +80,25 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchDashboardData()
+
+    // Listen for dashboard refresh events
+    const handleDashboardRefresh = () => {
+      fetchDashboardData()
+    }
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'dashboardRefresh') {
+        fetchDashboardData()
+      }
+    }
+
+    window.addEventListener('dashboardRefresh', handleDashboardRefresh)
+    window.addEventListener('storage', handleStorageChange)
+
+    return () => {
+      window.removeEventListener('dashboardRefresh', handleDashboardRefresh)
+      window.removeEventListener('storage', handleStorageChange)
+    }
   }, [])
 
   const ActivityIcon = ({ type }: { type: string }) => {

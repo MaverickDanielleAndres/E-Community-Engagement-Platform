@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { motion } from 'framer-motion'
@@ -36,6 +36,27 @@ export default function UserDashboard() {
     // Refresh header and sidebar data
     refreshHeaderAndSidebar()
   }
+
+  useEffect(() => {
+    // Listen for dashboard refresh events
+    const handleDashboardRefresh = () => {
+      refreshDashboard()
+    }
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'dashboardRefresh') {
+        refreshDashboard()
+      }
+    }
+
+    window.addEventListener('dashboardRefresh', handleDashboardRefresh)
+    window.addEventListener('storage', handleStorageChange)
+
+    return () => {
+      window.removeEventListener('dashboardRefresh', handleDashboardRefresh)
+      window.removeEventListener('storage', handleStorageChange)
+    }
+  }, [])
 
   if (loading) {
     return (
