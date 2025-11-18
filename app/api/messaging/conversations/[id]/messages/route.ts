@@ -340,8 +340,14 @@ export async function POST(
         return NextResponse.json({ error: 'Not a participant in this conversation' }, { status: 403 })
       }
 
-      // Get sender role from session
-      const senderRole = (session.user as any).role || 'member'
+      // Fetch sender role from community_members
+      const { data: memberData } = await supabase
+        .from('community_members')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .single()
+
+      const senderRole = memberData?.role || 'member'
 
       // If replying to a message, verify it exists in this conversation
       if (replyToMessageId) {

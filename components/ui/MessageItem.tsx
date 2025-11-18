@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Reply, Heart, Smile, MoreVertical, Trash2, Edit } from 'lucide-react'
+import { Reply, Heart, Smile, MoreVertical, Trash2, Edit, CheckCircle } from 'lucide-react'
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal'
 import { ImageModal } from '@/components/ui/ImageModal'
 import { useTheme } from '@/components/ThemeContext'
@@ -198,9 +198,12 @@ export function MessageItem({
         )}
 
         {/* Sender name for group chats */}
-        {isGroupChat && !isOwnMessage && (
-          <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+        {isGroupChat && (
+          <div className="text-xs text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1">
             {message.senderName}
+            {message.role === 'admin' && (
+              <CheckCircle className="w-3 h-3 text-blue-500" />
+            )}
           </div>
         )}
 
