@@ -118,7 +118,7 @@ export default function AboutUs() {
   return (
     <section
       id="about"
-      className={`relative py-32 px-6 overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}
+      className={`relative py-16 md:py-32 px-4 md:px-6 overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}
       onMouseMove={handleMouseMove}
     >
       {/* Dynamic Parallax Background */}
@@ -180,10 +180,10 @@ export default function AboutUs() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className={`text-4xl md:text-5xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'} mb-6`}
+            className={`text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'} mb-6`}
           >
             Empowering Communities Through
-            <span className={`bg-gradient-to-r from-slate-600 to-slate-800 ${isDark ? 'dark:from-slate-300 dark:to-slate-100' : ''} bg-clip-text text-transparent`}> Technology</span>
+<span className={`bg-gradient-to-r ${isDark ? 'from-white to-gray-900' : 'from-gray-700 to-black'} bg-clip-text text-transparent`}> Technology</span>
           </motion.h2>
 
           <motion.p
@@ -191,7 +191,7 @@ export default function AboutUs() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.6 }}
-            className={`text-xl ${isDark ? 'text-slate-400' : 'text-slate-600'} max-w-3xl mx-auto mb-12`}
+            className={`text-lg sm:text-xl ${isDark ? 'text-slate-400' : 'text-slate-600'} max-w-3xl mx-auto mb-12`}
           >
             We're revolutionizing community management by combining technology with human-centric design to create more connected, efficient, and democratic communities.
           </motion.p>
@@ -489,11 +489,11 @@ export default function AboutUs() {
           transition={{ duration: 0.8 }}
           className="mb-20"
         >
-          <div className="text-center mb-16">
-            <h3 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'} mb-4`}>
+          <div className="text-center mb-12 md:mb-16">
+            <h3 className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'} mb-4`}>
               What Our Communities Say
             </h3>
-            <p className={`text-lg ${isDark ? 'text-slate-400' : 'text-slate-600'} max-w-2xl mx-auto`}>
+            <p className={`text-base md:text-lg ${isDark ? 'text-slate-400' : 'text-slate-600'} max-w-2xl mx-auto`}>
               Real stories from real community leaders who trust E-Community.
             </p>
           </div>

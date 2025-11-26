@@ -1,4 +1,3 @@
-//@/components/Contact.tsx
 'use client'
 
 import { useState } from 'react'
@@ -61,7 +60,7 @@ export default function Contact() {
   }
 
   return (
-    <section id="contact" className={`relative py-24 px-6 overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
+    <section id="contact" className={`relative py-24 px-6 overflow-hidden ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
       {/* Circular Gradient Background */}
       <div className="absolute inset-0 overflow-hidden">
         <motion.div
@@ -74,7 +73,7 @@ export default function Contact() {
             repeat: Infinity,
             ease: "linear"
           }}
-          className={`absolute top-1/4 -left-1/4 w-96 h-96 ${isDark ? 'bg-gradient-to-br from-slate-400/5 to-slate-600/5' : 'bg-gradient-to-br from-slate-400/10 to-slate-600/10'} rounded-full blur-3xl`}
+          className={`absolute top-1/4 -left-1/4 w-96 h-96 ${isDark ? 'bg-gradient-to-br from-gray-500/5 to-gray-600/5' : 'bg-gradient-to-br from-gray-400/10 to-gray-500/10'} rounded-full blur-3xl`}
         />
         <motion.div
           animate={{
@@ -86,7 +85,7 @@ export default function Contact() {
             repeat: Infinity,
             ease: "linear"
           }}
-          className={`absolute bottom-1/4 -right-1/4 w-96 h-96 ${isDark ? 'bg-gradient-to-br from-slate-400/5 to-slate-600/5' : 'bg-gradient-to-br from-slate-400/10 to-slate-600/10'} rounded-full blur-3xl`}
+          className={`absolute bottom-1/4 -right-1/4 w-96 h-96 ${isDark ? 'bg-gradient-to-br from-gray-600/5 to-gray-700/5' : 'bg-gradient-to-br from-gray-500/10 to-gray-600/10'} rounded-full blur-3xl`}
         />
       </div>
 
@@ -103,10 +102,10 @@ export default function Contact() {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className={`text-4xl md:text-5xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'} mb-6`}
+            className={`text-4xl md:text-5xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-gray-900'} mb-6`}
           >
             Get in
-            <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent"> Touch</span>
+<span className={`bg-gradient-to-r ${isDark ? 'from-white to-gray-900' : 'from-gray-700 to-black'} bg-clip-text text-transparent`}> Touch</span>
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -154,7 +153,7 @@ export default function Contact() {
               >
                 <motion.div
                   whileHover={{ scale: 1.1, rotate: 5 }}
-                  className={`p-4 ${isDark ? 'bg-emerald-600' : 'bg-emerald-500'} rounded-2xl shadow-lg`}
+                  className={`p-4 ${isDark ? 'bg-gray-700' : 'bg-gray-600'} rounded-2xl shadow-lg`}
                 >
                   <EnvelopeIcon className="w-7 h-7 text-white" />
                 </motion.div>
@@ -174,7 +173,7 @@ export default function Contact() {
               >
                 <motion.div
                   whileHover={{ scale: 1.1, rotate: 5 }}
-                  className={`p-4 ${isDark ? 'bg-teal-600' : 'bg-teal-500'} rounded-2xl shadow-lg`}
+                  className={`p-4 ${isDark ? 'bg-gray-700' : 'bg-gray-600'} rounded-2xl shadow-lg`}
                 >
                   <PhoneIcon className="w-7 h-7 text-white" />
                 </motion.div>
@@ -194,7 +193,7 @@ export default function Contact() {
               >
                 <motion.div
                   whileHover={{ scale: 1.1, rotate: 5 }}
-                  className={`p-4 ${isDark ? 'bg-cyan-600' : 'bg-cyan-500'} rounded-2xl shadow-lg`}
+                  className={`p-4 ${isDark ? 'bg-gray-700' : 'bg-gray-600'} rounded-2xl shadow-lg`}
                 >
                   <MapPinIcon className="w-7 h-7 text-white" />
                 </motion.div>
@@ -224,7 +223,7 @@ export default function Contact() {
                   repeat: Infinity,
                   ease: "linear"
                 }}
-                className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-slate-400/20 to-slate-600/20 rounded-full blur-xl"
+                className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-gray-500/20 to-gray-600/20 rounded-full blur-xl"
               />
 
               <div className="relative z-10">
@@ -258,7 +257,7 @@ export default function Contact() {
                 repeat: Infinity,
                 ease: "linear"
               }}
-              className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-slate-400/10 to-slate-600/10 rounded-full blur-2xl"
+              className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-gray-500/10 to-gray-600/10 rounded-full blur-2xl"
             />
             <motion.div
               animate={{
@@ -270,7 +269,7 @@ export default function Contact() {
                 repeat: Infinity,
                 ease: "linear"
               }}
-              className="absolute bottom-0 left-0 w-20 h-20 bg-gradient-to-br from-emerald-500/10 to-blue-500/10 rounded-full blur-2xl"
+              className="absolute bottom-0 left-0 w-20 h-20 bg-gradient-to-br from-gray-600/10 to-gray-700/10 rounded-full blur-2xl"
             />
 
             <div className="relative z-10">
@@ -284,7 +283,7 @@ export default function Contact() {
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-                    className={`w-20 h-20 ${isDark ? 'bg-emerald-600' : 'bg-emerald-500'} rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg`}
+                    className={`w-20 h-20 ${isDark ? 'bg-gray-700' : 'bg-gray-600'} rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg`}
                   >
                     <motion.svg
                       initial={{ pathLength: 0 }}
@@ -340,12 +339,16 @@ export default function Contact() {
                       <label className={`block text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'} mb-3`}>
                         Name
                       </label>
-                      <Input
+                      <input
                         {...register('name')}
-                        error={errors.name?.message}
+                        className={`w-full px-4 py-3 ${isDark ? 'bg-slate-900/50 border-slate-600 text-white placeholder-slate-500' : 'bg-white/50 border-slate-300 text-slate-900 placeholder-slate-400'} border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent transition-all duration-300 backdrop-blur-sm`}
                         placeholder="Your name"
-                        className="w-full"
                       />
+                      {errors.name && (
+                        <p className="mt-2 text-sm text-red-500">
+                          {errors.name.message}
+                        </p>
+                      )}
                     </motion.div>
 
                     {/* Email Field */}
@@ -359,13 +362,17 @@ export default function Contact() {
                       <label className={`block text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'} mb-3`}>
                         Email
                       </label>
-                      <Input
+                      <input
                         type="email"
                         {...register('email')}
-                        error={errors.email?.message}
+                        className={`w-full px-4 py-3 ${isDark ? 'bg-slate-900/50 border-slate-600 text-white placeholder-slate-500' : 'bg-white/50 border-slate-300 text-slate-900 placeholder-slate-400'} border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent transition-all duration-300 backdrop-blur-sm`}
                         placeholder="your@email.com"
-                        className="w-full"
                       />
+                      {errors.email && (
+                        <p className="mt-2 text-sm text-red-500">
+                          {errors.email.message}
+                        </p>
+                      )}
                     </motion.div>
                   </div>
 
@@ -380,12 +387,16 @@ export default function Contact() {
                     <label className={`block text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'} mb-3`}>
                       Subject
                     </label>
-                    <Input
+                    <input
                       {...register('subject')}
-                      error={errors.subject?.message}
+                      className={`w-full px-4 py-3 ${isDark ? 'bg-slate-900/50 border-slate-600 text-white placeholder-slate-500' : 'bg-white/50 border-slate-300 text-slate-900 placeholder-slate-400'} border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent transition-all duration-300 backdrop-blur-sm`}
                       placeholder="How can we help?"
-                      className="w-full"
                     />
+                    {errors.subject && (
+                      <p className="mt-2 text-sm text-red-500">
+                        {errors.subject.message}
+                      </p>
+                    )}
                   </motion.div>
 
                   {/* Message Field */}
@@ -402,7 +413,7 @@ export default function Contact() {
                     <textarea
                       {...register('message')}
                       rows={5}
-                      className={`w-full px-4 py-3 ${isDark ? 'bg-slate-800/50 border-slate-600 text-white placeholder-slate-400' : 'bg-white/50 border-slate-300 text-slate-900 placeholder-slate-500'} border rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-300 resize-none backdrop-blur-sm`}
+                      className={`w-full px-4 py-3 ${isDark ? 'bg-slate-900/50 border-slate-600 text-white placeholder-slate-500' : 'bg-white/50 border-slate-300 text-slate-900 placeholder-slate-400'} border rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent transition-all duration-300 resize-none backdrop-blur-sm`}
                       placeholder="Tell us more about your community's needs..."
                     />
                     {errors.message && (
@@ -421,7 +432,7 @@ export default function Contact() {
                     <Button
                       type="submit"
                       variant="primary"
-                      className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+                      className="w-full bg-gradient-to-r from-gray-700 to-gray-900 hover:from-gray-800 hover:to-black"
                       isLoading={isSubmitting}
                     >
                       {isSubmitting ? 'Sending...' : 'Send Message →'}

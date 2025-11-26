@@ -76,7 +76,7 @@ export default function FAQAccordion() {
             className={`text-4xl md:text-5xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'} mb-6`}
           >
             Frequently Asked
-            <span className="bg-gradient-to-r from-slate-600 to-slate-800 bg-clip-text text-transparent"> Questions</span>
+            <span className={`bg-gradient-to-r ${isDark ? 'from-white to-gray-900' : 'from-gray-700 to-black'} bg-clip-text text-transparent`}> Questions</span>
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}

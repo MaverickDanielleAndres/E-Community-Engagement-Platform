@@ -203,8 +203,8 @@ export default function FeatureGrid() {
           transition={{ duration: 0.8, delay: 0.4 }}
           className={`text-4xl md:text-5xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'} mb-4`}
         >
-          Experience the Future of
-          <span className={`bg-gradient-to-r from-slate-600 to-slate-800 ${isDark ? 'dark:from-slate-300 dark:to-slate-100' : ''} bg-clip-text text-transparent`}> Community Management</span>
+          Experience the Future of Community
+          <span className={`bg-gradient-to-r ${isDark ? 'from-white to-gray-900' : 'from-gray-700 to-black'} bg-clip-text text-transparent`}> Management</span>
         </motion.h2>
 
         <motion.p
