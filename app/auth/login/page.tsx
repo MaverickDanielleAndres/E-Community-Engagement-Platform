@@ -1,14 +1,13 @@
-import { Metadata } from 'next'
-import AuthForm from '@/components/AuthForm'
+'use client'
 
-export const metadata: Metadata = {
-  title: 'Log In - E-Community',
-  description: 'Sign in to your E-Community account',
-}
+import AuthForm from '@/components/AuthForm'
+import { useTheme } from '@/components/ThemeContext'
 
 export default function LoginPage() {
+  const { isDark } = useTheme()
+
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div>
       <AuthForm type="login" />
     </div>
   )
