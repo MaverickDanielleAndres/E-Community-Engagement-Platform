@@ -120,7 +120,7 @@ export default function FeatureGrid() {
   }
 
   return (
-    <section className={`relative overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-white/50'}`}>
+    <section className={`relative ${isDark ? 'bg-slate-800' : 'bg-white/50'}`}>
 
       {/* Dynamic Backgrounds */}
       <motion.div
