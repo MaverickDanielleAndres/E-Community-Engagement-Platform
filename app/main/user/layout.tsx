@@ -1,12 +1,23 @@
 'use client'
 
-import { UserSidebar } from '@/components/ui/UserSidebar'
+import dynamic from 'next/dynamic'
 import { UserHeader } from '@/components/ui/UserHeader'
 import { RoleGuard } from '@/components/mainapp/components'
 import { SidebarProvider, useSidebar } from '@/components/ui/SidebarContext'
 import { useTheme } from '@/components/ThemeContext'
 import { ToastProvider } from '@/components/ToastContext'
 import { useState, useEffect } from 'react'
+import { Loader2 } from 'lucide-react'
+
+// Lazy load UserSidebar with loading fallback
+const UserSidebar = dynamic(() => import('@/components/ui/UserSidebar').then(mod => ({ default: mod.UserSidebar })), {
+  loading: () => (
+    <div className="fixed left-0 top-0 bottom-0 z-30 flex items-center justify-center bg-slate-900/95 backdrop-blur-sm border-r border-slate-700 w-60">
+      <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+    </div>
+  ),
+  ssr: false
+})
 
 function UserLayoutContent({ children }: { children: React.ReactNode }) {
   const { isCollapsed } = useSidebar()

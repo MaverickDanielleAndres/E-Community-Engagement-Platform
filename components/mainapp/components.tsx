@@ -14,7 +14,8 @@ import {
 } from 'lucide-react'
 
 // Re-export EmptyState for convenience
-export { EmptyState }
+// Re-export EmptyState for convenience
+export { EmptyState, RoleGuard }
 
 // Types
 interface User {
@@ -541,7 +542,7 @@ export function ConfirmDialog({
   )
 }
 
-export function RoleGuard({ allowedRoles, userRole, fallback, children }: RoleGuardProps) {
+const RoleGuard = React.memo(function RoleGuard({ allowedRoles, userRole, fallback, children }: RoleGuardProps) {
   const { data: session, status } = useSession()
 
   // Show loading state while session is being fetched
@@ -595,7 +596,7 @@ export function RoleGuard({ allowedRoles, userRole, fallback, children }: RoleGu
 
   console.log('RoleGuard: Access granted for effectiveRole', normalizedEffectiveRole);
   return <>{children}</>
-}
+})
 
 
 

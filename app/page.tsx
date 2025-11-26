@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 import Hero from '@/components/Hero'
 import FeatureGrid from '@/components/FeatureGrid'
+import AboutUs from '@/components/AboutUs'
 import FAQAccordion from '@/components/FAQAccordion'
 import Contact from '@/components/Contact'
 // Add this to your main layout temporarily
@@ -18,6 +19,7 @@ export default function HomePage() {
       <RoleDebug />
       <Hero />
       <FeatureGrid />
+      <AboutUs />
       <FAQAccordion />
       <Contact />
     </>

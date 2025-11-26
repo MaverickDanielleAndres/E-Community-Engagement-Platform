@@ -1,13 +1,14 @@
 //components/Hero.tsx
 'use client'
 
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme } from './ThemeContext'
 import { Button } from './Button'
+import Image from 'next/image'
 
 export default function Hero() {
   const { themeClasses, isDark } = useTheme()
-  
+
   const letterVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 }
@@ -22,147 +23,200 @@ export default function Hero() {
     }
   }
 
-  const headline = "Connect. Engage. Empower your community."
-  
-  return (
-    <section className={`relative overflow-hidden ${isDark ? 'bg-gradient-to-br from-black via-slate-900 to-slate-900' : 'bg-gradient-to-br from-white via-slate-50 to-slate-100'}`}>
-      <div className="mx-auto max-w-7xl px-6 py-20 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Text Content */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center lg:text-left"
-          >
-            <motion.h1
-              variants={staggerContainer}
-              initial="hidden"
-              animate="visible"
-              className={`text-4xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-black'} sm:text-5xl lg:text-6xl mb-6`}
-            >
-              {headline.split('').map((char, index) => (
-                <motion.span
-                  key={index}
-                  variants={letterVariants}
-                  transition={{ duration: 0.3, type: 'spring', stiffness: 100 }}
-                  className={char === '.' ? `bg-gradient-to-r ${themeClasses.gradient} bg-clip-text text-transparent` : ''}
-                >
-                  {char}
-                </motion.span>
-              ))}
-            </motion.h1>
-            
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className={`mt-6 text-lg leading-8 ${isDark ? 'text-white/80' : 'text-black/80'} max-w-2xl`}
-            >
-              Create polls, resolve complaints, and measure satisfaction — all in one secure platform designed for modern communities.
-            </motion.p>
-            
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              className="mt-10 flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start"
-            >
-              <Button variant="primary" size="lg" href="/signup">
-                Get Started (Free)
-              </Button>
-              <Button variant="ghost" size="lg" href="#features">
-                See Demo
-              </Button>
-            </motion.div>
+  const headline = "Smarter way for communities to connect and engage."
 
-            {/* Trust Indicators */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.7 }}
-              className="mt-12 flex flex-col sm:flex-row items-center gap-6 text-sm text-black/60 dark:text-white/60 justify-center lg:justify-start"
-            >
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 ${isDark ? 'bg-slate-400' : 'bg-slate-500'} rounded-full`}></div>
-                <span className={isDark ? 'text-white' : 'text-black'}>Secure & Private</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 ${isDark ? 'bg-slate-400' : 'bg-slate-500'} rounded-full`}></div>
-                <span className={isDark ? 'text-white' : 'text-black'}>Easy Setup</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 ${isDark ? 'bg-slate-400' : 'bg-slate-500'} rounded-full`}></div>
-                <span className={isDark ? 'text-white' : 'text-black'}>24/7 Support</span>
-              </div>
-            </motion.div>
+  return (
+    <section className={`relative overflow-hidden min-h-screen flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-black via-slate-900 to-slate-900' : 'bg-gradient-to-br from-white via-slate-50 to-slate-100'}`}>
+      {/* Animated Circular Background */}
+      <div className="absolute inset-0 overflow-hidden">
+        <motion.div
+          animate={{
+            scale: [1, 1.2, 1],
+            rotate: [0, 90, 0],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+          className={`absolute -top-1/2 -left-1/4 w-96 h-96 ${isDark ? 'bg-slate-500/10' : 'bg-slate-500/20'} rounded-full blur-3xl`}
+        />
+        <motion.div
+          animate={{
+            scale: [1, 1.3, 1],
+            rotate: [0, -90, 0],
+          }}
+          transition={{
+            duration: 25,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+          className={`absolute -bottom-1/2 -right-1/4 w-96 h-96 ${isDark ? 'bg-slate-500/10' : 'bg-slate-500/20'} rounded-full blur-3xl`}
+        />
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-7xl px-6 pt-32 pb-16 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6 }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-slate-500/10 to-slate-500/10 border border-slate-500/20 mb-8"
+          >
+
+            <span className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+              ✨ Engange with your community online!
+            </span>
           </motion.div>
 
-          {/* Hero Image */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="relative"
+          <motion.h1
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+            className={`text-5xl md:text-7xl font-bold mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}
           >
-            <motion.div
-              whileHover={{ 
-                scale: 1.02,
-                rotateY: 5,
-                rotateX: 2
-              }}
-              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-              className="relative aspect-[4/3] lg:aspect-square"
+            {headline.split('').map((char, index) => (
+              <motion.span
+                key={index}
+                variants={letterVariants}
+                transition={{ duration: 0.3, type: 'spring', stiffness: 100 }}
+                className={char === '.' ? `bg-gradient-to-r from-slate-600 to-slate-800 bg-clip-text text-transparent` : ''}
+              >
+                {char}
+              </motion.span>
+            ))}
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+            className={`text-xl md:text-2xl mb-12 max-w-3xl mx-auto ${isDark ? 'text-slate-400' : 'text-slate-600'}`}
+          >
+            Create polls, resolve complaints, feedback, chat, engage — all in one secure platform designed for modern communities.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4"
+          >
+            <motion.button
+              whileHover={{ scale: 1.05, boxShadow: '0 20px 40px rgba(59, 130, 246, 0.3)' }}
+              whileTap={{ scale: 0.95 }}
+              className={`px-8 py-4 text-base font-medium text-white rounded-xl ${isDark ? 'bg-gradient-to-r from-slate-600 to-slate-800' : 'bg-gradient-to-r from-slate-600 to-slate-800'} shadow-lg`}
             >
-              <div className={`absolute inset-0 ${isDark ? 'bg-gradient-to-br from-slate-800/20 to-slate-900/20' : 'bg-gradient-to-br from-slate-400/10 to-slate-500/10'} rounded-3xl blur-3xl`}></div>
-              <div className={`relative ${isDark ? 'bg-slate-900/50' : 'bg-white/50'} backdrop-blur-sm rounded-3xl p-8 border ${isDark ? 'border-slate-800/50' : 'border-white/50'} shadow-xl`}>
-                <div className="grid grid-cols-1 gap-6">
-                  {/* Mock Dashboard Elements */}
-                  <div className={`bg-gradient-to-r ${isDark ? 'from-slate-800/30 to-slate-900/30' : 'from-slate-200/30 to-slate-300/30'} rounded-2xl p-4 border ${isDark ? 'border-slate-700/50' : 'border-slate-200/50'}`}>
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className={`w-3 h-3 ${isDark ? 'bg-slate-500' : 'bg-slate-600'} rounded-full`}></div>
-                      <div className={`h-4 ${isDark ? 'bg-gradient-to-r from-slate-600 to-transparent' : 'bg-gradient-to-r from-slate-500 to-transparent'} rounded w-24`}></div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className={`h-2 ${isDark ? 'bg-slate-700' : 'bg-slate-200'} rounded w-full`}></div>
-                      <div className={`h-2 ${isDark ? 'bg-slate-700' : 'bg-slate-200'} rounded w-3/4`}></div>
-                    </div>
-                  </div>
-                  
-                  <div className={`bg-gradient-to-r ${isDark ? 'from-slate-700/30 to-slate-800/30' : 'from-slate-300/30 to-slate-400/30'} rounded-2xl p-4 border ${isDark ? 'border-slate-600/50' : 'border-slate-300/50'}`}>
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className={`w-3 h-3 ${isDark ? 'bg-slate-600' : 'bg-slate-500'} rounded-full`}></div>
-                      <div className={`h-4 ${isDark ? 'bg-gradient-to-r from-slate-500 to-transparent' : 'bg-gradient-to-r from-slate-400 to-transparent'} rounded w-32`}></div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className={`h-8 ${isDark ? 'bg-slate-800' : 'bg-slate-200'} rounded`}></div>
-                      <div className={`h-8 ${isDark ? 'bg-slate-800' : 'bg-slate-200'} rounded`}></div>
-                      <div className={`h-8 ${isDark ? 'bg-slate-800' : 'bg-slate-200'} rounded`}></div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-4">
-                    <div className={`flex-1 ${isDark ? 'bg-slate-900/30' : 'bg-white/30'} rounded-xl p-3 border ${isDark ? 'border-slate-800/30' : 'border-white/30'}`}>
-                      <div className={`w-6 h-6 ${isDark ? 'bg-gradient-to-br from-slate-700 to-slate-800' : 'bg-gradient-to-br from-slate-400 to-slate-500'} rounded-lg mb-2`}></div>
-                      <div className={`h-2 ${isDark ? 'bg-slate-700' : 'bg-slate-300'} rounded w-full mb-1`}></div>
-                      <div className={`h-2 ${isDark ? 'bg-slate-700' : 'bg-slate-300'} rounded w-2/3`}></div>
-                    </div>
-                    <div className={`flex-1 ${isDark ? 'bg-slate-900/30' : 'bg-white/30'} rounded-xl p-3 border ${isDark ? 'border-slate-800/30' : 'border-white/30'}`}>
-                      <div className={`w-6 h-6 ${isDark ? 'bg-gradient-to-br from-slate-600 to-slate-700' : 'bg-gradient-to-br from-slate-500 to-slate-600'} rounded-lg mb-2`}></div>
-                      <div className={`h-2 ${isDark ? 'bg-slate-700' : 'bg-slate-300'} rounded w-full mb-1`}></div>
-                      <div className={`h-2 ${isDark ? 'bg-slate-700' : 'bg-slate-300'} rounded w-3/4`}></div>
-                    </div>
-                  </div>
+              Get Started →
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`px-8 py-4 text-base font-medium rounded-xl ${isDark ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-white text-slate-900 hover:bg-slate-50'} border ${isDark ? 'border-slate-700' : 'border-slate-200'}`}
+            >
+              ▶ Try Demo
+            </motion.button>
+          </motion.div>
+
+          {/* Dashboard Preview with Image and Fade Bottom */}
+          <motion.div
+            initial={{ opacity: 0, y: 40, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 1, delay: 0.6 }}
+            className="mt-16 relative"
+          >
+            <div className={`relative rounded-2xl overflow-hidden shadow-2xl border ${isDark ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-white'} p-4`}>
+              {/* Browser Chrome */}
+              <div className={`flex items-center gap-2 mb-4 pb-3 border-b ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                </div>
+                <div className={`flex-1 mx-4 px-3 py-1 text-xs rounded ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-600'}`}>
+                  app.ecommunity.com/dashboard
                 </div>
               </div>
-            </motion.div>
+
+              {/* Dashboard Image with Fade Bottom */}
+              <div className="relative">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.8 }}
+                  className="relative overflow-hidden rounded-xl"
+                >
+                  <Image
+                    src="/picture/Ouput.png"
+                    alt="E-Community Dashboard Preview"
+                    width={800}
+                    height={500}
+                    className="w-full h-auto object-cover"
+                    priority
+                  />
+                  {/* Fade Bottom Effect */}
+                  <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white via-white/80 to-transparent dark:from-slate-900 dark:via-slate-900/80 dark:to-transparent"></div>
+                </motion.div>
+
+                {/* Floating Stats */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 1.0 }}
+                  className={`absolute -left-4 top-1/4 hidden lg:block p-4 rounded-xl ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'} border shadow-xl`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <div>
+                      <div className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>Verified</div>
+                      <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Contact updated</div>
+                    </div>
+                  </div>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 1.1 }}
+                  className={`absolute -right-4 top-1/3 hidden lg:block p-4 rounded-xl ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'} border shadow-xl`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <div>
+                      <div className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>+125 Leads</div>
+                      <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>This month</div>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
           </motion.div>
-        </div>
+
+          {/* Trust Badges */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.2 }}
+            className="mt-16 flex flex-wrap justify-center items-center gap-8 opacity-60"
+          >
+            {['BlackRock', 'Celanese', 'DISCOVER', 'biotechne'].map((company, index) => (
+              <motion.div
+                key={company}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.3 + index * 0.1 }}
+                className={`text-lg font-semibold ${isDark ? 'text-slate-600' : 'text-slate-400'}`}
+              >
+                {company}
+              </motion.div>
+            ))}
+          </motion.div>
+        </motion.div>
       </div>
-      z
-      {/* Background Decorations */}
-      <div className={`absolute -top-24 -right-24 w-96 h-96 ${isDark ? 'bg-gradient-to-br from-slate-800/10 to-slate-900/10' : 'bg-gradient-to-br from-slate-400/10 to-slate-500/10'} rounded-full blur-3xl`}></div>
-      <div className={`absolute -bottom-24 -left-24 w-96 h-96 ${isDark ? 'bg-gradient-to-tr from-slate-900/10 to-slate-800/10' : 'bg-gradient-to-tr from-slate-500/10 to-slate-400/10'} rounded-full blur-3xl`}></div>
     </section>
   )
 }
