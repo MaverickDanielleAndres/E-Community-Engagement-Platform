@@ -150,13 +150,14 @@ export default function Hero() {
                   transition={{ delay: 0.8 }}
                   className="relative overflow-hidden rounded-xl"
                 >
-                  <Image
-                    src="/picture/Ouput.png"
+                  <video
+                    src="/hero section vid/ECOM vid.mp4"
                     alt="E-Community Dashboard Preview"
-                    width={800}
-                    height={500}
                     className="w-full h-auto object-cover"
-                    priority
+                    loop
+                    muted
+                    autoPlay
+                    playsInline
                   />
                   {/* Fade Bottom Effect */}
                   <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white via-white/80 to-transparent dark:from-slate-900 dark:via-slate-900/80 dark:to-transparent"></div>

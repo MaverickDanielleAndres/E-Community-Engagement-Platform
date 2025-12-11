@@ -296,7 +296,7 @@ export function UserSidebar() {
               transition={{ duration: 0.2 }}
             >
               <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                EComAI
+                E-Community
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Community Portal</p>
             </motion.div>

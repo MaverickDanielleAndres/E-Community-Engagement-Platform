@@ -241,16 +241,66 @@ export default function AuthForm({ type }: AuthFormProps) {
 
   const handleOAuthSignIn = async (provider: string) => {
     setIsLoading(true)
+    setError('')
+
     try {
       const result = await signIn(provider, {
-        redirect: false,
-        callbackUrl: '/main'
+        redirect: false
       })
 
       if (result?.error) {
-        setError('OAuth sign-in failed')
+        console.log('OAuth error:', result.error)
+        if (result.error.includes('verify')) {
+          setError('Please verify your email before signing in')
+        } else {
+          setError('OAuth sign-in failed')
+        }
+      } else {
+        console.log('OAuth successful, getting session...')
+        setToast({ message: 'Successfully signed in! Redirecting...', type: 'success' })
+
+        // Wait for session to be established, then redirect based on role and status
+        setTimeout(async () => {
+          try {
+            // Fetch user role and status from API instead of session
+            const response = await fetch('/api/me/summary')
+            const summary = await response.json()
+            const role = summary.user?.role?.toLowerCase() || ''
+            const status = summary.user?.status?.toLowerCase() || 'active'
+
+            let redirectPath = ''
+            if (status === 'pending') {
+              redirectPath = '/main/guest/waiting'
+            } else if (status === 'unverified') {
+              redirectPath = '/id-verification'
+            } else if (status === 'rejected') {
+              redirectPath = '/auth/login?error=rejected'
+            } else {
+              switch (role) {
+                case 'admin':
+                  redirectPath = '/main/admin'
+                  break
+                case 'resident':
+                  redirectPath = '/main/user'
+                  break
+                case 'guest':
+                  redirectPath = '/main/guest'
+                  break
+                default:
+                  redirectPath = '/main/guest'
+              }
+            }
+
+            console.log('Redirecting to:', redirectPath, 'for role:', role, 'status:', status)
+            window.location.href = redirectPath
+          } catch (error) {
+            console.error('Role fetch failed, using fallback redirect:', error)
+            window.location.href = '/main/guest'
+          }
+        }, 1500)
       }
     } catch (err) {
+      console.error('OAuth error:', err)
       setError('OAuth sign-in failed')
     } finally {
       setIsLoading(false)

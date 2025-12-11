@@ -306,7 +306,7 @@ export function AdminHeader() {
                 <h1 className={`${isSmallScreen ? 'text-xl' : 'text-2xl'} font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
                   Admin Dashboard
                 </h1>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
+                <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                   Welcome back, {session?.user?.name || 'Administrator'}
                 </p>
               </div>
@@ -394,10 +394,10 @@ export function AdminHeader() {
                 )}
               </div>
               <div className="hidden sm:block text-left min-w-0 flex-1 max-w-[150px]">
-                <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'} truncate`}>
                   {session?.user?.name || 'Administrator'}
                 </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Admin</p>
+                <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Admin</p>
               </div>
               <ChevronDown className="w-4 h-4" />
             </button>
@@ -436,10 +436,10 @@ export function AdminHeader() {
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium text-slate-900 dark:text-white truncate">
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-900'} truncate`}>
                           {session?.user?.name || 'Administrator'}
                         </p>
-                        <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
+                        <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'} truncate`}>
                           {session?.user?.email || 'admin@example.com'}
                         </p>
                       </div>
